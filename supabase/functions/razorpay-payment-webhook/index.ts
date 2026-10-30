@@ -50,25 +50,62 @@ Deno.serve(withSupabase({ auth: "none" }, async (req, ctx) => {
   if (!payment) return reply(404, { error: "No matching pending payment for this Razorpay order." });
   if (payment.verified) return reply(200, { received: true, already_applied: true });
   if (payment.gateway !== "razorpay" || payment.currency !== "INR" ||
-      payment.status === "failed" || Math.round(Number(payment.amount) * 100) !== Number(entity.amount)) {
+      !["pending", "success"].includes(payment.status) ||
+      Math.round(Number(payment.amount) * 100) !== Number(entity.amount)) {
     return reply(409, { error: "Gateway payment does not match the stored payment record." });
   }
 
-  const payload = {
-    ...(payment.gateway_payload || {}),
-    razorpay_order_id: entity.order_id,
-    razorpay_payment_id: entity.id,
-    captured: true,
-    webhook_signature_verified: true,
-    webhook_event: event.event,
-  };
-  const { error: updateError } = await admin.from("payments").update({
-    status: "success",
-    gateway_transaction_id: entity.id,
-    gateway_payload: payload,
-  }).eq("id", payment.id).eq("verified", false);
-  if (updateError) return reply(500, { error: "Could not persist verified payment." });
+  // A successful payment may be retried by Razorpay or may already have been
+  // recorded by the browser verification flow. Never overwrite a different
+  // transaction or move a failed/refunded payment back to success.
+  if (payment.status === "success" &&
+      payment.gateway_transaction_id !== entity.id) {
+    return reply(409, { error: "A different Razorpay transaction is already recorded." });
+  }
 
+  if (payment.status === "pending") {
+    const payload = {
+      ...(payment.gateway_payload || {}),
+      razorpay_order_id: entity.order_id,
+      razorpay_payment_id: entity.id,
+      captured: true,
+      webhook_signature_verified: true,
+      webhook_event: event.event,
+    };
+
+    // Compare-and-set: only the first valid callback can move pending -> success.
+    const { data: changed, error: updateError } = await admin.from("payments").update({
+      status: "success",
+      gateway_transaction_id: entity.id,
+      gateway_payload: payload,
+    }).eq("id", payment.id)
+      .eq("status", "pending")
+      .eq("verified", false)
+      .select("id")
+      .maybeSingle();
+
+    if (updateError) return reply(500, { error: "Could not persist verified payment." });
+
+    if (!changed) {
+      // Another webhook or the signed-in verification endpoint may have won
+      // the race. Re-read and accept only the exact same captured transaction.
+      const { data: latest, error: latestError } = await admin.from("payments")
+        .select("status,verified,gateway_transaction_id,gateway_order_id")
+        .eq("id", payment.id)
+        .maybeSingle();
+
+      if (latestError) return reply(500, { error: "Could not confirm payment state." });
+      if (latest?.verified) return reply(200, { received: true, already_applied: true });
+      if (!latest || latest.status !== "success" ||
+          latest.gateway_transaction_id !== entity.id ||
+          latest.gateway_order_id !== entity.order_id) {
+        return reply(409, { error: "Payment state changed; no activation was performed." });
+      }
+    }
+  }
+
+  // The database RPC locks the payment and related order/subscription rows;
+  // repeated calls are safe because verified payments return successfully.
   const { error: activateError } = await admin.rpc("verify_payment_and_activate", { p_payment_id: payment.id });
   if (activateError) return reply(500, { error: "Payment captured but database activation failed; webhook retry required." });
 
