@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS orders_update ON public.orders;
