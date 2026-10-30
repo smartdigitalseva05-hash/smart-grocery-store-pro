@@ -108,7 +108,7 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
   const list=$("orderList");list.replaceChildren();
   if(!currentShop){say("ordersMessage","Select a shop first.");return}
   say("ordersMessage","Loading orders…");
-  const {data,error}=await db.from("orders").select("id,order_number,status,total,created_at,shipping_address,items:order_items(quantity,total_price,product:products(name))").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100);
+  const {data,error}=await db.from("orders").select("id,order_number,status,payment_method,payment_status,total,created_at,shipping_address,items:order_items(quantity,total_price,product:products(name))").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100);
   if(error){say("ordersMessage",error.message,true);return}
   if(!data?.length){say("ordersMessage","No orders for this shop yet.");return}
   say("ordersMessage",data.length+" recent order(s) loaded.");
@@ -116,15 +116,15 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
    const card=document.createElement("article");card.className="order";
    const top=document.createElement("div");top.className="row";
    const info=document.createElement("div");const title=document.createElement("strong");title.textContent=o.order_number||("Order "+o.id.slice(0,8));
-   const meta=document.createElement("div");meta.className="sub";meta.textContent=new Date(o.created_at).toLocaleString()+" · "+money(o.total);info.append(title,meta);
+   const meta=document.createElement("div");meta.className="sub";meta.textContent=new Date(o.created_at).toLocaleString()+" · "+money(o.total)+" · "+(o.payment_method==="cash_on_delivery"?"COD":"Online")+" ("+(o.payment_status||"unpaid")+")";info.append(title,meta);
    const status=document.createElement("span");status.className="pill";status.textContent=(o.status||"unknown").replaceAll("_"," ");top.append(info,status);card.append(top);
    const lines=document.createElement("div");lines.className="sub";lines.style.marginTop="9px";lines.textContent=(o.items||[]).map(x=>(x.product?.name||"Item")+" × "+x.quantity).join(" · ");card.append(lines);
    const a=o.shipping_address||{};const delivery=document.createElement("div");delivery.className="sub";delivery.style.marginTop="8px";delivery.textContent="Deliver to: "+[a.label,a.full_address,a.city,a.pincode,a.phone].filter(Boolean).join(" · ");if(delivery.textContent!=="Deliver to: ")card.append(delivery);
-   const next={paid:"processing",processing:"out_for_delivery",out_for_delivery:"delivered"}[o.status];
+   const next=(o.status==="pending"&&o.payment_method==="cash_on_delivery"&&o.payment_status==="unpaid")?"processing":({paid:"processing",processing:"out_for_delivery",out_for_delivery:"delivered"}[o.status]);
    if(next){
     const actions=document.createElement("div");actions.className="product-actions";
-    const btn=document.createElement("button");btn.textContent=next==="out_for_delivery"?"Mark out for delivery":next==="delivered"?"Mark delivered":"Accept & process";
-    btn.addEventListener("click",async()=>{if(!window.confirm("Move this order to "+next.replaceAll("_"," ")+"?"))return;btn.disabled=true;say("ordersMessage","Updating order…");const {error:rpcError}=await db.rpc("update_order_status_by_shopkeeper",{p_order_id:o.id,p_new_status:next});if(rpcError){say("ordersMessage",rpcError.message,true);btn.disabled=false;return}await loadOrders()});
+    const btn=document.createElement("button");btn.textContent=next==="out_for_delivery"?"Mark out for delivery":next==="delivered"?(o.payment_method==="cash_on_delivery"&&o.payment_status==="unpaid"?"Mark delivered & COD collected":"Mark delivered"):"Accept & process";
+    btn.addEventListener("click",async()=>{if(!window.confirm(next==="delivered"&&o.payment_method==="cash_on_delivery"&&o.payment_status==="unpaid"?"Confirm delivery and cash collection? This marks the COD payment as paid.":"Move this order to "+next.replaceAll("_"," ")+"?"))return;btn.disabled=true;say("ordersMessage","Updating order…");const {error:rpcError}=await db.rpc("update_order_status_by_shopkeeper",{p_order_id:o.id,p_new_status:next});if(rpcError){say("ordersMessage",rpcError.message,true);btn.disabled=false;return}await loadOrders()});
     actions.append(btn);card.append(actions);
    }
    list.append(card);
