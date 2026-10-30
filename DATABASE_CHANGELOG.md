@@ -4,6 +4,7 @@ These migrations have already been applied to the Supabase production project.
 
 | Migration version | Migration | Change |
 |---|---|---|
+| Edge Function v3 | razorpay-subscription-checkout | Adds compare-and-set persistence for Razorpay order IDs so concurrent checkout requests reuse one stored order instead of overwriting each other. |
 | 20261030122353 | restrict_order_cancellation_to_unpaid_cod | Cancellation is limited to pending, unpaid COD orders; stock is restored transactionally. |
 | 20261030122741 | restrict_direct_order_updates | Removes direct client UPDATE access to orders; order changes use guarded database RPCs. |
 | 20261030122819 | restrict_payment_creation_to_trusted_rpc | Removes direct client INSERT access to payment records; trusted checkout RPC creates payment rows. |
