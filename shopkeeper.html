@@ -44,7 +44,7 @@ a{color:#8ce2b3}
 <label class="field">Offer text<input id="pOffer" maxlength="100" placeholder="Optional"></label>
 <label class="field">Product image URL (HTTPS, optional)<input id="pImageUrl" type="url" maxlength="2048" placeholder="https://example.com/product.jpg" inputmode="url" autocomplete="url"></label>\n<label class="field">Or upload product photo (JPG, PNG, WebP · max 5 MB)<input id="pImageFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
 </div><label class="field">Description<textarea id="pDescription" maxlength="1000"></textarea></label><button id="addButton" type="submit">Save product</button></form><div id="productMessage" class="notice" role="status"></div></div>
-<div class="panel"><div class="row"><div><h1>My products</h1><div class="sub">Manage availability and stock for the selected shop.</div></div><button id="productsRefresh" class="secondary">Refresh products</button></div><div id="productList" class="products"></div><div id="listMessage" class="notice" role="status"></div></div>
+<div class="panel"><div class="row"><div><h1>My products</h1><div class="sub">Manage availability and stock for the selected shop.</div></div><button id="exportProducts" class="secondary" type="button">Export products CSV</button><button id="productsRefresh" class="secondary">Refresh products</button></div><div id="productList" class="products"></div><div id="listMessage" class="notice" role="status"></div></div>
 <div class="panel"><div class="row"><div><h1>Incoming orders</h1><div class="sub">Orders belonging to the selected shop only.</div></div><button id="ordersRefresh" class="secondary">Refresh orders</button></div><div id="ordersMessage" class="notice" role="status"></div><div id="orderList" class="order-list"></div></div>
 </section><p class="foot">Shopkeeper access is enforced by Supabase Auth and Row Level Security. Never share your password. Owner-only controls are not available in this workspace.</p>
 </main>
@@ -202,6 +202,23 @@ a{color:#8ce2b3}
   if(error){say("productMessage","Category load: "+error.message,true);return}
   for(const c of data||[]){const o=document.createElement("option");o.value=c.id;o.textContent=c.name;sel.append(o)}
  }
+ async function exportMyProducts(){
+  if(!currentShop){say("listMessage","Select an approved shop first.",true);return}
+  const btn=$("exportProducts");btn.disabled=true;say("listMessage","Preparing your product CSV…");
+  const {data,error}=await db.from("products").select("name,price,sale_price,stock,is_available,offer_text,description,created_at").eq("shop_id",currentShop.id).order("name");
+  btn.disabled=false;
+  if(error){say("listMessage","Export failed: "+error.message,true);return}
+  if(!data?.length){say("listMessage","There are no products to export yet.",true);return}
+  const columns=["name","price","sale_price","stock","is_available","offer_text","description","created_at"];
+  const cell=v=>{const raw=v==null?"":String(v);return '"'+raw.replace(/"/g,'""')+'"'};
+  const csv=[columns.join(","),...data.map(row=>columns.map(k=>cell(row[k])).join(","))].join("\r\n");
+  const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),link=document.createElement("a");
+  const safeName=(currentShop.name||"my-shop").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"my-shop";
+  link.href=url;link.download=safeName+"-products-"+new Date().toISOString().slice(0,10)+".csv";
+  document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
+  say("listMessage","Exported "+data.length+" product(s) to CSV.");
+ }
  async function loadProducts(){
   const list=$("productList");
   if(!currentShop){list.replaceChildren();say("listMessage","Select an approved shop first.");return}list.replaceChildren();say("listMessage","Loading your products…");
@@ -272,7 +289,7 @@ a{color:#8ce2b3}
  $("starterSearch").addEventListener("input",renderStarterOptions);$("useStarter").addEventListener("click",useStarterProduct);renderStarterOptions();
  $("shopSelect").addEventListener("change",loadShopData);
  $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
- $("subscriptionButton").addEventListener("click",prepareSubscription);$("reload").addEventListener("click",boot);$("productsRefresh").addEventListener("click",loadProducts);
+ $("subscriptionButton").addEventListener("click",prepareSubscription);$("reload").addEventListener("click",boot);$("exportProducts").addEventListener("click",exportMyProducts);$("productsRefresh").addEventListener("click",loadProducts);
  $("logout").addEventListener("click",async()=>{await db.auth.signOut();showLogin("Signed out.")});
  db.auth.onAuthStateChange((_event,session)=>{if(!session)showLogin("Session ended. Sign in again.")});
  boot();
