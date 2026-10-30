@@ -65,16 +65,15 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Prepare clean website artifact
+        run: |
+          mkdir -p .pages-site
+          cp index.html portal.html apply-shop.html owner.html shopkeeper.html my-orders.html .pages-site/
+
       - name: Upload website files
         uses: actions/upload-pages-artifact@v3
         with:
-          path: |
-            index.html
-            portal.html
-            apply-shop.html
-            owner.html
-            shopkeeper.html
-            my-orders.html
+          path: .pages-site
 
       - name: Deploy website
         id: deployment
