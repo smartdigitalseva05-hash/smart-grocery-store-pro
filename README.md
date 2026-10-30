@@ -4,6 +4,7 @@ Multi-vendor grocery ordering platform with customer ordering, shopkeeper worksp
 
 ## Workspaces
 - portal.html — platform portal and live subscription pricing.
+- apply-shop.html — customer signup/login and shop application submission.
 - index.html — customer grocery storefront.
 - my-orders.html — customer order history and pending-order cancellation.
 - shopkeeper.html — shopkeeper products, stock, subscriptions and incoming orders.
