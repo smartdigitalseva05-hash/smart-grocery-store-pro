@@ -15,9 +15,11 @@ These migrations have already been applied to the Supabase production project.
 
 ## Verification notes
 
+- Migration `20261030131120_deactivate_shops_when_shopkeeper_is_disabled_or_demoted` is applied and source-controlled. Disabling a shopkeeper or changing their role away from shopkeeper automatically deactivates all their shops; reactivating the profile does not reactivate shops automatically.
+
 - Migration `20261030130935_disable_additional_super_admin_accounts` is applied and source-controlled. The existing Owner remains the only Super Admin; attempts to promote another profile to Super Admin are rejected by the database trigger. This prevents additional admin accounts from gaining the Owner-only control surface.
 
-- Rollback-only database smoke tests passed for profile RLS, role-escalation prevention, last-Super-Admin protection, shop application approval, inactive shop application creation, activation bypass rejection, synthetic subscription payment activation, product limit cap, monthly order cap, COD delivery progression, cancellation stock restoration/history, and hourly expiry deactivation. All temporary rows and plan changes were rolled back.
+- Rollback-only database smoke tests passed for profile RLS, role-escalation prevention, last-Super-Admin protection, additional-admin promotion rejection, shopkeeper-disable shop deactivation, shop application approval, inactive shop application creation, activation bypass rejection, synthetic subscription payment activation, product limit cap, monthly order cap, COD delivery progression, cancellation stock restoration/history, and hourly expiry deactivation. All temporary rows and plan changes were rolled back.
 - Latest Security Advisor result: one warning remains for leaked-password protection. Supabase documents this control as available on Pro Plan and above; no plan upgrade was made.
 - Latest Performance Advisor result: 14 informational unused-index notices remain. Indexes were retained because the project has no real workload data yet.
 
