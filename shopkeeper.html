@@ -152,7 +152,16 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
    const actions=document.createElement("div");actions.className="product-actions";
    const stock=document.createElement("button");stock.className="secondary";stock.disabled=!canManageProducts();stock.textContent="Update stock";stock.addEventListener("click",async()=>{const n=window.prompt("Enter new stock quantity:",String(p.stock));if(n===null)return;const value=Number(n);if(!Number.isInteger(value)||value<0){say("listMessage","Stock must be a whole number 0 or greater.",true);return}const {error}=await db.from("products").update({stock:value}).eq("id",p.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await loadProducts()});
    const toggle=document.createElement("button");toggle.className="secondary";toggle.disabled=!canManageProducts();toggle.textContent=p.is_available?"Hide product":"Make available";toggle.addEventListener("click",async()=>{const {error}=await db.from("products").update({is_available:!p.is_available}).eq("id",p.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await loadProducts()});
-   actions.append(stock,toggle);card.append(actions);list.append(card);
+   const edit=document.createElement("button");edit.className="secondary";edit.disabled=!canManageProducts();edit.textContent="Edit price & offer";edit.addEventListener("click",async()=>{
+     const priceText=window.prompt("New regular price (₹):",String(p.price));if(priceText===null)return;
+     const saleText=window.prompt("Offer price (₹), leave blank for no offer:",p.sale_price==null?"":String(p.sale_price));if(saleText===null)return;
+     const offerText=window.prompt("Offer text:",p.offer_text||"");if(offerText===null)return;
+     const price=Number(priceText),sale=saleText.trim()===""?null:Number(saleText);
+     if(!Number.isFinite(price)||price<=0||(sale!==null&&(!Number.isFinite(sale)||sale<=0||sale>=price))){say("listMessage","Enter a valid regular price and an optional lower offer price.",true);return}
+     const {error}=await db.from("products").update({price,sale_price:sale,offer_text:offerText.trim()||null}).eq("id",p.id).eq("shop_id",currentShop.id);
+     if(error){say("listMessage",error.message,true);return}await loadProducts();
+    });
+    actions.append(stock,edit,toggle);card.append(actions);list.append(card);
   }
  }
  $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginButton").disabled=true;say("loginMessage","Signing in…");const {error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});$("loginButton").disabled=false;if(error){say("loginMessage",error.message,true);return}await boot()});
