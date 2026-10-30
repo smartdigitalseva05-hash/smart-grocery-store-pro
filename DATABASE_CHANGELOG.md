@@ -25,6 +25,7 @@ These migrations have already been applied to the Supabase production project.
 
 - `shopkeeper.html` keeps the subscription button disabled while Razorpay Checkout is open, preventing accidental multiple checkout modals for the same pending payment.
 - `apply-shop.html` now provides a Resend confirmation email action for accounts blocked by email confirmation.
+- GitHub Actions checks the approved `index.html` blob SHA and stops deployment if that file changes unexpectedly.
 
 - Migration `20261030124909_serialize_order_cancellation_stock_restoration` is applied and source-controlled. Cancellation now locks the shop before restoring product stock, matching order-placement lock order and reducing deadlock risk during concurrent orders/cancellations.
 
