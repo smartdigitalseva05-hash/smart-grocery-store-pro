@@ -1,8 +1,8 @@
 CREATE OR REPLACE FUNCTION public.guard_shop_activation_fields()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public'
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog', 'public'
 AS $function$
 DECLARE
   v_service_role boolean := coalesce(auth.jwt() ->> 'role', '') = 'service_role';
@@ -78,13 +78,15 @@ BEGIN
   RAISE EXCEPTION 'Only the verified payment process, expiry scheduler, or protected Owner status action can change shop activation fields'
     USING ERRCODE = '42501';
 END;
-$function$
+$function$;
 
-
-CREATE OR REPLACE FUNCTION public.owner_set_shop_status(p_shop_id uuid, p_status shop_status)
- RETURNS jsonb
- LANGUAGE plpgsql
- SET search_path TO 'pg_catalog', 'public'
+CREATE OR REPLACE FUNCTION public.owner_set_shop_status(
+  p_shop_id uuid,
+  p_status public.shop_status
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SET search_path TO 'pg_catalog', 'public'
 AS $function$
 DECLARE
   v_old public.shops%rowtype;
@@ -154,5 +156,4 @@ BEGIN
     'updated_at', now()
   );
 END;
-$function$
-
+$function$;
