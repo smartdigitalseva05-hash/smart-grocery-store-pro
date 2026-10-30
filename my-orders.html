@@ -24,7 +24,7 @@
  }
  async function loadOrders(){
   const list=$("ordersList");list.replaceChildren();say("ordersMessage","Loading your orders…");
-  const {data,error}=await db.from("orders").select("id,order_number,status,subtotal,shipping_fee,total,created_at,shop:shops(name),items:order_items(quantity,price_at_purchase,total_price,product:products(name)),history:order_status_history(new_status,reason,created_at)").order("created_at",{ascending:false});
+  const {data,error}=await db.from("orders").select("id,order_number,status,payment_method,payment_status,subtotal,shipping_fee,total,created_at,shop:shops(name),items:order_items(quantity,price_at_purchase,total_price,product:products(name)),history:order_status_history(new_status,reason,created_at)").order("created_at",{ascending:false});
   if(error){say("ordersMessage",error.message,true);return}
   if(!data?.length){say("ordersMessage","No orders found for this account yet.");return}
   say("ordersMessage",data.length+" order(s) found.");
@@ -33,12 +33,12 @@
    const top=document.createElement("div");top.className="row";
    const head=document.createElement("div");const id=document.createElement("strong");id.textContent=o.order_number||("Order "+o.id.slice(0,8));const shop=document.createElement("div");shop.className="sub";shop.textContent=(o.shop?.name||"Store")+" · "+new Date(o.created_at).toLocaleString();head.append(id,shop);
    const status=document.createElement("span");status.className="pill";status.textContent=(o.status||"unknown").replaceAll("_"," ");top.append(head,status);card.append(top);
-   const totals=document.createElement("div");totals.className="sub";totals.style.marginTop="10px";totals.textContent="Subtotal "+money(o.subtotal)+" · Delivery "+money(o.shipping_fee)+" · Total "+money(o.total);card.append(totals);
+   const totals=document.createElement("div");totals.className="sub";totals.style.marginTop="10px";totals.textContent="Subtotal "+money(o.subtotal)+" · Delivery "+money(o.shipping_fee)+" · Total "+money(o.total)+" · Payment: "+(o.payment_method==="cash_on_delivery"?"Cash on delivery":"Online")+" ("+(o.payment_status||"unpaid")+")";card.append(totals);
    const items=document.createElement("ul");items.className="items";
    for(const item of (o.items||[])){const li=document.createElement("li");li.textContent=(item.product?.name||"Item")+" × "+item.quantity+" · "+money(item.total_price);items.append(li)}
    if(items.children.length)card.append(items);
    if(o.history?.length){const timeline=document.createElement("div");timeline.className="timeline";for(const h of o.history){const line=document.createElement("div");line.textContent=new Date(h.created_at).toLocaleString()+" · "+h.new_status+(h.reason?" · "+h.reason:"");timeline.append(line)}card.append(timeline)}
-   if(o.status==="pending"){
+   if(o.status==="pending"&&o.payment_status==="unpaid"){
     const actions=document.createElement("div");actions.className="actions";actions.style.marginTop="12px";const cancel=document.createElement("button");cancel.className="danger";cancel.textContent="Cancel order";cancel.addEventListener("click",async()=>{if(!window.confirm("Cancel this order? Stock will be restored by the database if cancellation is allowed."))return;cancel.disabled=true;const {error:ce}=await db.rpc("cancel_order",{p_order_id:o.id,p_reason:"Cancelled by customer"});if(ce){say("ordersMessage",ce.message,true);cancel.disabled=false;return}await loadOrders()});actions.append(cancel);card.append(actions);
    }
    list.append(card);
