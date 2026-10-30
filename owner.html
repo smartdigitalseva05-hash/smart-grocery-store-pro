@@ -70,20 +70,35 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  async function loadShops(){
    message("shopsMessage","Loading shops from protected database…");
    const list=$("shopList");list.replaceChildren();
-   const {data,error}=await client.from("shops").select("id,name,city,phone,status,is_active,created_at").order("created_at",{ascending:false});
+   const {data,error}=await client.from("shops").select("id,owner_id,name,city,phone,status,is_active,created_at").order("created_at",{ascending:false});
    if(error){message("shopsMessage",error.message,true);return}
    if(!data?.length){message("shopsMessage","No shops registered yet.");return}
+   const {data:profiles,error:profileError}=await client.from("profiles").select("id,full_name,role,is_active").in("id",data.map(s=>s.owner_id));
+   if(profileError){message("shopsMessage","Could not load shop-owner review status: "+profileError.message,true);return}
+   const profileMap=new Map((profiles||[]).map(p=>[p.id,p]));
    message("shopsMessage",data.length+" shop(s) loaded.");
    for(const shop of data){
      const card=document.createElement("article");card.className="shop-card";
      const top=document.createElement("div");top.className="shop-meta";
      const info=document.createElement("div");
      const name=document.createElement("div");name.className="shop-name";name.textContent=shop.name||"Unnamed shop";
-     const detail=document.createElement("div");detail.className="sub";detail.textContent=[shop.city,shop.phone].filter(Boolean).join(" · ")||"No city/contact added";
+     const owner=profileMap.get(shop.owner_id);
+     const detail=document.createElement("div");detail.className="sub";detail.textContent=[owner?.full_name||"Shop owner",owner?.role||"unknown role",shop.city,shop.phone].filter(Boolean).join(" · ")||"No city/contact added";
      info.append(name,detail);
      const state=document.createElement("span");state.className="pill";state.textContent=(shop.status||"unknown")+" · "+(shop.is_active?"visible":"not active");
      top.append(info,state);card.append(top);
      const actions=document.createElement("div");actions.className="shop-actions";
+     if(owner?.role==="customer" && owner?.is_active){
+       const approve=document.createElement("button");approve.type="button";approve.className="safe";approve.textContent="Approve shopkeeper account";
+       approve.addEventListener("click",async()=>{
+         if(!window.confirm("Approve this applicant as a shopkeeper? The shop itself will remain inactive until a verified subscription is paid."))return;
+         approve.disabled=true;message("shopsMessage","Approving shopkeeper account…");
+         const {error:rpcError}=await client.rpc("owner_approve_shop_application",{p_shop_id:shop.id});
+         if(rpcError){message("shopsMessage",rpcError.message,true);approve.disabled=false;return}
+         await loadShops();
+       });
+       actions.append(approve);
+     }
      const choices=[
        {status:"active",label:"Approve / Activate",cls:"safe"},
        {status:"inactive",label:"Set inactive",cls:"secondary"},
