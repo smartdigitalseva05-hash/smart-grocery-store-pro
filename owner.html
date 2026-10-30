@@ -43,6 +43,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 </div><div id="dashboardMessage" class="notice" role="status"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Shop approval & status</h1><div class="sub">Only active Super Admin can change a shop's status. Every change is audit-logged.</div></div><button id="shopsRefresh" class="secondary">Refresh shops</button></div><div id="shopsMessage" class="notice" role="status"></div><div id="shopList" class="shop-list"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Payment verification</h1><div class="sub">Only successful payments from a trusted payment process can be verified here.</div></div><button id="paymentsRefresh" class="secondary">Refresh payments</button></div><div id="paymentsMessage" class="notice" role="status"></div><div id="paymentList" class="shop-list"></div></div>
+<div class="panel shop-section"><div class="row"><div><h1>Security & audit activity</h1><div class="sub">Private event history visible only to the active Owner.</div></div><button id="auditRefresh" class="secondary">Refresh activity</button></div><div id="auditMessage" class="notice" role="status"></div><div id="auditList" class="shop-list"></div></div>
 </section>
 <p class="foot">Owner-only control panel. Database RPC checks the active Super Admin role; RLS controls shop visibility and updates. Shop status changes are recorded in audit_logs. Payment verification and subscription activation remain separate controls.</p>
 </main>
@@ -149,12 +150,29 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      list.append(card);
    }
  }
+ async function loadAuditLogs(){
+   const list=$("auditList");list.replaceChildren();message("auditMessage","Loading audit events…");
+   const {data,error}=await client.from("audit_logs").select("id,actor_id,action,entity,entity_id,old_data,new_data,created_at").order("created_at",{ascending:false}).limit(100);
+   if(error){message("auditMessage",error.message,true);return}
+   if(!data?.length){message("auditMessage","No audit events recorded yet.");return}
+   message("auditMessage",data.length+" recent event(s) loaded.");
+   for(const event of data){
+     const card=document.createElement("article");card.className="shop-card";
+     const top=document.createElement("div");top.className="shop-meta";
+     const info=document.createElement("div");
+     const title=document.createElement("div");title.className="shop-name";title.textContent=String(event.action||"event")+" · "+String(event.entity||"record");
+     const detail=document.createElement("div");detail.className="sub";detail.textContent=new Date(event.created_at).toLocaleString()+" · Actor: "+String(event.actor_id||"system").slice(0,8)+" · Record: "+String(event.entity_id||"").slice(0,8);
+     info.append(title,detail);
+     const data=document.createElement("div");data.className="sub";data.style.marginTop="9px";data.style.whiteSpace="pre-wrap";data.textContent="Before: "+JSON.stringify(event.old_data||{})+"\nAfter: "+JSON.stringify(event.new_data||{});
+     top.append(info);card.append(top,data);list.append(card);
+   }
+ }
  async function checkSession(){
    const {data:{session},error}=await client.auth.getSession();
    if(error||!session){showLogin(error?.message||"");return}
    loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
    $("ownerEmail").textContent=session.user.email||"Signed-in account";
-   await Promise.all([loadSummary(),loadShops(),loadPayments()]);
+   await Promise.all([loadSummary(),loadShops(),loadPayments(),loadAuditLogs()]);
  }
  $("loginForm").addEventListener("submit",async e=>{
    e.preventDefault();$("loginButton").disabled=true;message("loginMessage","Signing in…");
@@ -166,6 +184,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops()])});
  $("shopsRefresh").addEventListener("click",loadShops);
  $("paymentsRefresh").addEventListener("click",loadPayments);
+ $("auditRefresh").addEventListener("click",loadAuditLogs);
  $("logout").addEventListener("click",async()=>{await client.auth.signOut();showLogin("Signed out.")});
  client.auth.onAuthStateChange((_event,session)=>{if(!session)showLogin("Session ended. Please sign in again.")});
  checkSession();
