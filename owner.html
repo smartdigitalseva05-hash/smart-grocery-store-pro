@@ -215,7 +215,8 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  $("catalogRefresh").addEventListener("click",loadCatalog);
  $("addCategoryButton").addEventListener("click",async()=>{
    const name=$("newCategoryName").value.trim();if(!name){message("catalogMessage","Enter a category name.",true);return}
-   const slug=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+   const baseSlug=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+   const slug=baseSlug||("category-"+crypto.randomUUID().slice(0,8));
    const {error}=await client.from("categories").insert({name,slug,is_active:true});
    if(error){message("catalogMessage",error.message,true);return}
    $("newCategoryName").value="";await loadCatalog();
@@ -223,7 +224,8 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  $("addSubCategoryButton").addEventListener("click",async()=>{
    const category_id=$("subCategoryParent").value,name=$("newSubCategoryName").value.trim();
    if(!category_id||!name){message("catalogMessage","Select a parent category and enter a subcategory name.",true);return}
-   const slug=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+   const baseSlug=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+   const slug=baseSlug||("subcategory-"+crypto.randomUUID().slice(0,8));
    const {error}=await client.from("subcategories").insert({category_id,name,slug,is_active:true});
    if(error){message("catalogMessage",error.message,true);return}
    $("newSubCategoryName").value="";await loadCatalog();
