@@ -1,8 +1,8 @@
 CREATE OR REPLACE FUNCTION public.prevent_role_escalation()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public'
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog', 'public'
 AS $function$
 DECLARE
   active_admin_count integer;
@@ -52,5 +52,4 @@ BEGIN
 
   RETURN NEW;
 END;
-$function$
-
+$function$;
