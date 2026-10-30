@@ -36,6 +36,7 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
  let shops=[],currentShop=null;
  const say=(id,msg,bad=false)=>{$(id).textContent=msg;$(id).classList.toggle("error",bad)};
  const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(Number(n||0));
+ function canManageProducts(){return !!currentShop&&currentShop.is_active===true&&currentShop.status==="active"&&!!currentShop.subscription_expires_at&&new Date(currentShop.subscription_expires_at).getTime()>Date.now()}
  function showLogin(msg=""){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("topActions").classList.add("hidden");say("loginMessage",msg)}
  async function boot(){
   currentShop=null;shops=[];
@@ -54,8 +55,11 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
  }
  async function loadShopData(){
   currentShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!currentShop)return;
-  say("shopInfo",currentShop.name+" · "+(currentShop.city||"") +" · Status: "+currentShop.status+" · "+(currentShop.is_active?"Active":"Not active"));
-  $("addButton").disabled=false;await Promise.all([loadCategories(),loadProducts(),loadOrders()]);
+  const canManage=canManageProducts();
+  say("shopInfo",currentShop.name+" · "+(currentShop.city||"") +" · Status: "+currentShop.status+" · "+(canManage?"Paid subscription active":"Subscription approval/payment required"));
+  $("addButton").disabled=!canManage;
+  if(!canManage)say("subscriptionMessage","Product management unlocks after Owner approval and successful subscription payment.");
+  await Promise.all([loadCategories(),loadProducts(),loadOrders()]);
  }
  async function loadPlans(){
   const sel=$("planSelect");sel.replaceChildren();
@@ -146,8 +150,8 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
    const detail=document.createElement("div");detail.className="sub";detail.textContent=money(p.sale_price??p.price)+" · Stock: "+p.stock+(p.offer_text?" · "+p.offer_text:"");left.append(title,detail);
    const state=document.createElement("span");state.className="pill";state.textContent=p.is_available?"Available":"Hidden";top.append(left,state);card.append(top);
    const actions=document.createElement("div");actions.className="product-actions";
-   const stock=document.createElement("button");stock.className="secondary";stock.textContent="Update stock";stock.addEventListener("click",async()=>{const n=window.prompt("Enter new stock quantity:",String(p.stock));if(n===null)return;const value=Number(n);if(!Number.isInteger(value)||value<0){say("listMessage","Stock must be a whole number 0 or greater.",true);return}const {error}=await db.from("products").update({stock:value}).eq("id",p.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await loadProducts()});
-   const toggle=document.createElement("button");toggle.className="secondary";toggle.textContent=p.is_available?"Hide product":"Make available";toggle.addEventListener("click",async()=>{const {error}=await db.from("products").update({is_available:!p.is_available}).eq("id",p.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await loadProducts()});
+   const stock=document.createElement("button");stock.className="secondary";stock.disabled=!canManageProducts();stock.textContent="Update stock";stock.addEventListener("click",async()=>{const n=window.prompt("Enter new stock quantity:",String(p.stock));if(n===null)return;const value=Number(n);if(!Number.isInteger(value)||value<0){say("listMessage","Stock must be a whole number 0 or greater.",true);return}const {error}=await db.from("products").update({stock:value}).eq("id",p.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await loadProducts()});
+   const toggle=document.createElement("button");toggle.className="secondary";toggle.disabled=!canManageProducts();toggle.textContent=p.is_available?"Hide product":"Make available";toggle.addEventListener("click",async()=>{const {error}=await db.from("products").update({is_available:!p.is_available}).eq("id",p.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await loadProducts()});
    actions.append(stock,toggle);card.append(actions);list.append(card);
   }
  }
