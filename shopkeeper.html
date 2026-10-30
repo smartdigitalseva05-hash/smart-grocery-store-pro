@@ -14,7 +14,7 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
 <section id="loginPanel" class="panel auth"><h1>Shopkeeper sign in</h1><p class="muted">Sign in with the shopkeeper account registered by the store.</p><form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><button id="loginButton" type="submit">Sign in</button></form><div id="loginMessage" class="notice" role="status"></div></section>
 <section id="app" class="hidden">
 <div class="panel"><div class="row"><div><h1>My shop</h1><div class="sub">Only shops linked to your signed-in account are shown.</div></div><div style="min-width:220px;flex:1;max-width:360px"><select id="shopSelect" aria-label="Choose shop"></select></div></div><div id="shopInfo" class="notice"></div></div>
-<div class="panel"><h1>Subscription & billing</h1><p class="muted">Choose a plan and billing period. This creates a secure pending payment record; it does not collect money until the payment gateway is connected.</p><div class="formgrid"><label class="field">Plan<select id="planSelect"><option value="">Loading plans…</option></select></label><label class="field">Billing period<select id="billingCycle"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label></div><div id="planPrice" class="sub"></div><div class="actions" style="margin-top:12px"><button id="subscriptionButton">Prepare subscription payment</button></div><div id="subscriptionMessage" class="notice" role="status"></div></div>
+<div class="panel"><h1>Subscription & billing</h1><p class="muted">Choose a plan and billing period, then pay securely using Razorpay Checkout. The server verifies the captured payment before activating your shop.</p><div class="formgrid"><label class="field">Plan<select id="planSelect"><option value="">Loading plans…</option></select></label><label class="field">Billing period<select id="billingCycle"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label></div><div id="planPrice" class="sub"></div><div class="actions" style="margin-top:12px"><button id="subscriptionButton">Pay subscription</button></div><div id="subscriptionMessage" class="notice" role="status"></div></div>
 <div class="panel"><h1>Add a product</h1><p class="muted">Products are saved directly to Supabase. Plan limits and shop ownership are enforced by database policies/triggers.</p>
 <form id="productForm"><div class="formgrid">
 <label class="field">Product name<input id="pName" maxlength="120" required></label>
@@ -28,7 +28,7 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
 <div class="panel"><div class="row"><div><h1>Incoming orders</h1><div class="sub">Orders belonging to the selected shop only.</div></div><button id="ordersRefresh" class="secondary">Refresh orders</button></div><div id="ordersMessage" class="notice" role="status"></div><div id="orderList" class="order-list"></div></div>
 </section><p class="foot">Shopkeeper access is enforced by Supabase Auth and Row Level Security. Never share your password. Owner-only controls are not available in this workspace.</p>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 (()=>{
  const URL="https://wqlopfftzvsjsxmrmxeq.supabase.co",KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
@@ -73,11 +73,32 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
  async function prepareSubscription(){
   if(!currentShop){say("subscriptionMessage","Select a shop first.",true);return}
   const planId=$("planSelect").value;if(!planId){say("subscriptionMessage","No active plan selected.",true);return}
-  $("subscriptionButton").disabled=true;say("subscriptionMessage","Preparing secure subscription record…");
-  const {data,error}=await db.rpc("create_subscription_checkout",{p_shop_id:currentShop.id,p_plan_id:planId,p_billing_cycle:$("billingCycle").value});
+  if(!window.Razorpay){say("subscriptionMessage","Razorpay Checkout did not load. Check your internet connection and retry.",true);return}
+  $("subscriptionButton").disabled=true;say("subscriptionMessage","Creating a secure Razorpay order…");
+  const {data,error}=await db.functions.invoke("razorpay-subscription-checkout",{body:{shop_id:currentShop.id,plan_id:planId,billing_cycle:$("billingCycle").value}});
   $("subscriptionButton").disabled=false;
-  if(error){say("subscriptionMessage",error.message,true);return}
-  say("subscriptionMessage","Pending payment record created. Amount: "+money(data.amount)+". Reference: "+data.payment_id+". No money has been collected yet; secure Razorpay checkout/webhook integration is still required.");
+  if(error){say("subscriptionMessage",data?.error||error.message,true);return}
+  if(!data?.order_id||!data?.key_id){say("subscriptionMessage","Payment order response is incomplete. Please contact support.",true);return}
+  const options={
+   key:data.key_id,amount:data.amount,currency:data.currency,order_id:data.order_id,
+   name:data.name,description:data.description,prefill:data.prefill||{},
+   theme:{color:"#38bdf8"},
+   handler:async function(response){
+    say("subscriptionMessage","Payment received. Verifying signature and captured status with Razorpay…");
+    $("subscriptionButton").disabled=true;
+    const {data:verified,error:verifyError}=await db.functions.invoke("razorpay-verify-subscription-payment",{body:{
+     payment_id:data.payment_id,razorpay_order_id:response.razorpay_order_id,
+     razorpay_payment_id:response.razorpay_payment_id,razorpay_signature:response.razorpay_signature
+    }});
+    $("subscriptionButton").disabled=false;
+    if(verifyError){say("subscriptionMessage",verified?.error||verifyError.message+" If money was debited, do not pay again; contact support with reference "+data.payment_id,true);return}
+    say("subscriptionMessage","Payment verified successfully. Your subscription is active and shop activation has been applied.");
+    await boot();
+   },
+   modal:{ondismiss:function(){say("subscriptionMessage","Checkout closed. Your pending order is saved; press Pay subscription to reopen the same order.")}}
+  };
+  try{const checkout=new window.Razorpay(options);checkout.open()}
+  catch(e){say("subscriptionMessage","Could not open Razorpay Checkout: "+String(e),true)}
  }
  async function loadOrders(){
   const list=$("orderList");list.replaceChildren();
