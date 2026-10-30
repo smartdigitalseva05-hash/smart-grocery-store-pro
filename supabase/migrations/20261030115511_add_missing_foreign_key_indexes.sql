@@ -1,0 +1,13 @@
+create index if not exists idx_audit_logs_actor_id on public.audit_logs(actor_id);
+create index if not exists idx_delivery_addresses_user_id on public.delivery_addresses(user_id);
+create index if not exists idx_order_items_product_id on public.order_items(product_id);
+create index if not exists idx_order_status_history_changed_by on public.order_status_history(changed_by);
+create index if not exists idx_order_status_history_order_id on public.order_status_history(order_id);
+create index if not exists idx_payments_order_id on public.payments(order_id);
+create index if not exists idx_payments_shop_subscription_id on public.payments(shop_subscription_id);
+create index if not exists idx_payments_user_id on public.payments(user_id);
+create index if not exists idx_products_category_id on public.products(category_id);
+create index if not exists idx_products_subcategory_id on public.products(subcategory_id);
+create index if not exists idx_shop_subscriptions_plan_id on public.shop_subscriptions(plan_id);
+create index if not exists idx_shop_subscriptions_shop_id on public.shop_subscriptions(shop_id);
+create index if not exists idx_shops_subscription_plan_id on public.shops(subscription_plan_id);
