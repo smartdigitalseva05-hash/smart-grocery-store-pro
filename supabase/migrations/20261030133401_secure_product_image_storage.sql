@@ -1,3 +1,4 @@
+
 -- Restrict product image uploads to the active, subscribed owner of each shop.
 -- Public reads remain available because product-images is a public bucket.
 update storage.buckets
