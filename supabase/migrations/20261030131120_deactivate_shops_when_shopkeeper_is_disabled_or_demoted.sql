@@ -1,8 +1,8 @@
 CREATE OR REPLACE FUNCTION public.guard_shop_activation_fields()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public'
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog', 'public'
 AS $function$
 DECLARE
   v_service_role boolean := coalesce(auth.jwt() ->> 'role', '') = 'service_role';
@@ -75,14 +75,13 @@ BEGIN
   RAISE EXCEPTION 'Only the verified payment process, expiry scheduler, or protected Owner status action can change shop activation fields'
     USING ERRCODE = '42501';
 END;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.prevent_role_escalation()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public'
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog', 'public'
 AS $function$
 DECLARE
   active_admin_count integer;
@@ -145,5 +144,4 @@ BEGIN
 
   RETURN NEW;
 END;
-$function$
-
+$function$;
