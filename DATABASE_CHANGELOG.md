@@ -15,6 +15,8 @@ These migrations have already been applied to the Supabase production project.
 
 ## Verification notes
 
+- Migration `20261030123909_merge_product_historical_read_policy` is applied and source-controlled. It merges active-shop product visibility and a customer's own historical-order product visibility into one SELECT policy; the multiple-permissive-policy performance warning is cleared.
+
 - Migration `20261030123652_guard_subscription_activation_state` is applied and source-controlled. It checks that the shopkeeper account remains approved and active, the shop is not suspended, the subscription is pending and linked to the payment, and the captured amount matches its billing cycle before activating a shop.
 - Razorpay Edge Function source files are tracked under `supabase/functions/`. Checkout function version 3 prevents simultaneous checkout calls from overwriting the stored order reference.
 
