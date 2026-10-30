@@ -44,7 +44,7 @@ Deno.serve(withSupabase({ auth: "none" }, async (req, ctx) => {
 
   const admin = ctx.supabaseAdmin;
   const { data: payment, error: lookupError } = await admin.from("payments")
-    .select("id,user_id,amount,currency,status,verified,gateway,gateway_order_id,gateway_payload")
+    .select("id,user_id,amount,currency,status,verified,gateway,gateway_order_id,gateway_transaction_id,gateway_payload")
     .eq("gateway_order_id", entity.order_id).maybeSingle();
   if (lookupError) return reply(500, { error: "Payment lookup failed." });
   if (!payment) return reply(404, { error: "No matching pending payment for this Razorpay order." });
