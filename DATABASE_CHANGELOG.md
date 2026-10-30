@@ -15,13 +15,15 @@ These migrations have already been applied to the Supabase production project.
 
 ## Verification notes
 
+- Migration `20261030124909_serialize_order_cancellation_stock_restoration` is applied and source-controlled. Cancellation now locks the shop before restoring product stock, matching order-placement lock order and reducing deadlock risk during concurrent orders/cancellations.
+
 - Migration `20261030124558_require_explicit_subscription_billing_cycle` is applied. The checkout RPC now rejects a missing billing cycle instead of accidentally falling through to yearly pricing. The `shop_subscriptions.billing_cycle` column is also now NOT NULL; the existing monthly/yearly check constraint remains in place.
 - All three Razorpay Edge Functions now use Supabase's `@supabase/server` authentication wrapper. User-facing functions use the authenticated-user context; the Razorpay webhook uses signature verification and the server-side admin client. Checkout and verification explicitly handle browser CORS preflight before auth middleware.
 
 - Migration `20261030123909_merge_product_historical_read_policy` is applied and source-controlled. It merges active-shop product visibility and a customer's own historical-order product visibility into one SELECT policy; the multiple-permissive-policy performance warning is cleared.
 
 - Migration `20261030123652_guard_subscription_activation_state` is applied and source-controlled. It checks that the shopkeeper account remains approved and active, the shop is not suspended, the subscription is pending and linked to the payment, and the captured amount matches its billing cycle before activating a shop.
-- Razorpay Edge Function source files are tracked under `supabase/functions/`. Checkout function version 3 prevents simultaneous checkout calls from overwriting the stored order reference.
+- Razorpay Edge Function source files are tracked under `supabase/functions/`. Checkout function v5 and verification function v3 use Supabase's server auth wrapper; checkout v5 also prevents concurrent calls from overwriting the stored Razorpay order reference. Webhook v2 uses the server-side admin client after signature validation.
 
 - All 14 public tables have Row Level Security enabled.
 - Direct order UPDATE and direct payment INSERT policies are absent.
