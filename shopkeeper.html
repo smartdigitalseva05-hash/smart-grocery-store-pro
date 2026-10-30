@@ -22,7 +22,8 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
 <label class="field">Price (₹)<input id="pPrice" type="number" min="0.01" step="0.01" required></label>
 <label class="field">Offer price (₹)<input id="pSale" type="number" min="0.01" step="0.01" placeholder="Optional"></label>
 <label class="field">Stock quantity<input id="pStock" type="number" min="0" step="1" value="0" required></label>
-<label class="field">Offer text<input id="pOffer" maxlength="100" placeholder="Optional"></label>\n<label class="field">Product image URL (HTTPS, optional)<input id="pImageUrl" type="url" maxlength="2048" placeholder="https://example.com/product.jpg" inputmode="url" autocomplete="url"></label>
+<label class="field">Offer text<input id="pOffer" maxlength="100" placeholder="Optional"></label>
+<label class="field">Product image URL (HTTPS, optional)<input id="pImageUrl" type="url" maxlength="2048" placeholder="https://example.com/product.jpg" inputmode="url" autocomplete="url"></label>
 </div><label class="field">Description<textarea id="pDescription" maxlength="1000"></textarea></label><button id="addButton" type="submit">Save product</button></form><div id="productMessage" class="notice" role="status"></div></div>
 <div class="panel"><div class="row"><div><h1>My products</h1><div class="sub">Manage availability and stock for the selected shop.</div></div><button id="productsRefresh" class="secondary">Refresh products</button></div><div id="productList" class="products"></div><div id="listMessage" class="notice" role="status"></div></div>
 <div class="panel"><div class="row"><div><h1>Incoming orders</h1><div class="sub">Orders belonging to the selected shop only.</div></div><button id="ordersRefresh" class="secondary">Refresh orders</button></div><div id="ordersMessage" class="notice" role="status"></div><div id="orderList" class="order-list"></div></div>
@@ -36,7 +37,8 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
  const db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
  let shops=[],currentShop=null;
  const say=(id,msg,bad=false)=>{$(id).textContent=msg;$(id).classList.toggle("error",bad)};
- const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(Number(n||0));\n function safeImageUrl(value){try{const u=new URL(String(value||"").trim());return u.protocol==="https:"?u.href:""}catch{return ""}}
+ const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(Number(n||0));
+ function safeImageUrl(value){try{const u=new URL(String(value||"").trim());return u.protocol==="https:"?u.href:""}catch{return ""}}
  function canManageProducts(){return !!currentShop&&currentShop.is_active===true&&currentShop.status==="active"&&!!currentShop.subscription_expires_at&&new Date(currentShop.subscription_expires_at).getTime()>Date.now()}
  function showLogin(msg=""){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("topActions").classList.add("hidden");say("loginMessage",msg)}
  async function boot(){
@@ -148,7 +150,8 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
    const top=document.createElement("div");top.className="row";
    const left=document.createElement("div");const title=document.createElement("div");title.className="product-title";title.textContent=p.name;
    const detail=document.createElement("div");detail.className="sub";detail.textContent=money(p.sale_price??p.price)+" · Stock: "+p.stock+(p.offer_text?" · "+p.offer_text:"");left.append(title,detail);
-   const state=document.createElement("span");state.className="pill";state.textContent=p.is_available?"Available":"Hidden";top.append(left,state);card.append(top);\n   const firstImage=Array.isArray(p.images)?p.images[0]:null;const imageUrl=safeImageUrl(typeof firstImage==="string"?firstImage:firstImage?.url);if(imageUrl){const thumb=document.createElement("img");thumb.className="product-thumb";thumb.loading="lazy";thumb.alt=p.name+" product image";thumb.src=imageUrl;thumb.referrerPolicy="no-referrer";card.insertBefore(thumb,top)}
+   const state=document.createElement("span");state.className="pill";state.textContent=p.is_available?"Available":"Hidden";top.append(left,state);card.append(top);
+   const firstImage=Array.isArray(p.images)?p.images[0]:null;const imageUrl=safeImageUrl(typeof firstImage==="string"?firstImage:firstImage?.url);if(imageUrl){const thumb=document.createElement("img");thumb.className="product-thumb";thumb.loading="lazy";thumb.alt=p.name+" product image";thumb.src=imageUrl;thumb.referrerPolicy="no-referrer";card.insertBefore(thumb,top)}
    const actions=document.createElement("div");actions.className="product-actions";
    const stock=document.createElement("button");stock.className="secondary";stock.disabled=!canManageProducts();stock.textContent="Update stock";stock.addEventListener("click",async()=>{const n=window.prompt("Enter new stock quantity:",String(p.stock));if(n===null)return;const value=Number(n);if(!Number.isInteger(value)||value<0){say("listMessage","Stock must be a whole number 0 or greater.",true);return}const {error}=await db.from("products").update({stock:value}).eq("id",p.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await loadProducts()});
    const toggle=document.createElement("button");toggle.className="secondary";toggle.disabled=!canManageProducts();toggle.textContent=p.is_available?"Hide product":"Make available";toggle.addEventListener("click",async()=>{const {error}=await db.from("products").update({is_available:!p.is_available}).eq("id",p.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await loadProducts()});
