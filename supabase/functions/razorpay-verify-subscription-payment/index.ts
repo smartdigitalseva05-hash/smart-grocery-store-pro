@@ -29,10 +29,18 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return reply(401, { error: "Invalid or expired session." });
 
-  let body: { payment_id?: string; razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string };
-  try { body = await req.json(); } catch { return reply(400, { error: "Invalid JSON body." }); }
-  if (!body.payment_id || !body.razorpay_order_id || !body.razorpay_payment_id || !body.razorpay_signature) {
-    return reply(400, { error: "Missing payment verification fields." });
+  let rawBody: unknown;
+  try { rawBody = await req.json(); } catch { return reply(400, { error: "Invalid JSON body." }); }
+  if (!rawBody || typeof rawBody !== "object" || Array.isArray(rawBody)) {
+    return reply(400, { error: "Request body must be a JSON object." });
+  }
+  const body = rawBody as { payment_id?: string; razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string };
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (typeof body.payment_id !== "string" || !uuidPattern.test(body.payment_id) ||
+      typeof body.razorpay_order_id !== "string" || !/^order_[A-Za-z0-9]+$/.test(body.razorpay_order_id) ||
+      typeof body.razorpay_payment_id !== "string" || !/^pay_[A-Za-z0-9]+$/.test(body.razorpay_payment_id) ||
+      typeof body.razorpay_signature !== "string" || !/^[a-f0-9]{64}$/i.test(body.razorpay_signature)) {
+    return reply(400, { error: "Invalid payment verification fields." });
   }
 
   const { data: payment, error: paymentError } = await userClient.from("payments")
