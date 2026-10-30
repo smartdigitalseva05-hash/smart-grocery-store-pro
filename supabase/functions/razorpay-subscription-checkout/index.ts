@@ -22,10 +22,17 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return reply(401, { error: "Invalid or expired session." });
 
-  let body: { shop_id?: string; plan_id?: string; billing_cycle?: string };
-  try { body = await req.json(); } catch { return reply(400, { error: "Invalid JSON body." }); }
-  if (!body.shop_id || !body.plan_id || !["monthly", "yearly"].includes(String(body.billing_cycle))) {
-    return reply(400, { error: "A shop, plan and valid billing cycle are required." });
+  let rawBody: unknown;
+  try { rawBody = await req.json(); } catch { return reply(400, { error: "Invalid JSON body." }); }
+  if (!rawBody || typeof rawBody !== "object" || Array.isArray(rawBody)) {
+    return reply(400, { error: "Request body must be a JSON object." });
+  }
+  const body = rawBody as { shop_id?: string; plan_id?: string; billing_cycle?: string };
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (typeof body.shop_id !== "string" || !uuidPattern.test(body.shop_id) ||
+      typeof body.plan_id !== "string" || !uuidPattern.test(body.plan_id) ||
+      !["monthly", "yearly"].includes(String(body.billing_cycle))) {
+    return reply(400, { error: "A valid shop ID, plan ID and monthly/yearly billing cycle are required." });
   }
 
   const { data: checkout, error: checkoutError } = await userClient.rpc("create_subscription_checkout", {
