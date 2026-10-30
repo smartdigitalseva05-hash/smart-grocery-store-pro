@@ -36,6 +36,7 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
  const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(Number(n||0));
  function showLogin(msg=""){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("topActions").classList.add("hidden");say("loginMessage",msg)}
  async function boot(){
+  currentShop=null;shops=[];
   const {data:{session},error}=await db.auth.getSession();
   if(error||!session){showLogin(error?.message||"");return}
   const {data:profile,error:pe}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
@@ -61,7 +62,8 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
   for(const c of data||[]){const o=document.createElement("option");o.value=c.id;o.textContent=c.name;sel.append(o)}
  }
  async function loadProducts(){
-  const list=$("productList");list.replaceChildren();say("listMessage","Loading your products…");
+  const list=$("productList");
+  if(!currentShop){list.replaceChildren();say("listMessage","Select an approved shop first.");return}list.replaceChildren();say("listMessage","Loading your products…");
   const {data,error}=await db.from("products").select("id,name,price,sale_price,stock,is_available,offer_text").eq("shop_id",currentShop.id).order("created_at",{ascending:false});
   if(error){say("listMessage",error.message,true);return}
   if(!data?.length){say("listMessage","No products added to this shop yet.");return}
