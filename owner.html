@@ -113,7 +113,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
        if(shop.status===choice.status && shop.is_active===(choice.status==="active")) continue;
        const btn=document.createElement("button");btn.type="button";btn.className=choice.cls;btn.textContent=choice.label;
        btn.addEventListener("click",async()=>{
-         const confirmText=choice.status==="active"?"Activate this shop? This does not verify payment or create a subscription.":choice.status==="suspended"?"Suspend this shop?":"Set this shop inactive?";
+         const confirmText=choice.status==="active"?"Activate this shop? The database will allow this only when a verified, successful, unexpired subscription already exists. This action does not create a subscription.":choice.status==="suspended"?"Suspend this shop?":"Set this shop inactive?";
          if(!window.confirm(confirmText)) return;
          btn.disabled=true;message("shopsMessage","Updating "+(shop.name||"shop")+"…");
          const {error:rpcError}=await client.rpc("owner_set_shop_status",{p_shop_id:shop.id,p_status:choice.status});
