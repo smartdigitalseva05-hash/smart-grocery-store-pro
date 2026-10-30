@@ -24,6 +24,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type-check deployed Supabase Edge Functions
+        run: |
+          deno check \
+            supabase/functions/razorpay-subscription-checkout/index.ts \
+            supabase/functions/razorpay-verify-subscription-payment/index.ts \
+            supabase/functions/razorpay-payment-webhook/index.ts
+
       - name: Validate website files and inline JavaScript
         run: |
           node <<'NODE'
