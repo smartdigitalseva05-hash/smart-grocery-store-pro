@@ -58,3 +58,5 @@ This file documents applied database changes; it is not a replacement for the Su
 - Shopkeeper product creation now supports direct photo upload to Supabase Storage, stores the public image URL and object path in the product's JSONB `images` field, validates file type/size, and removes an uploaded object if product insertion fails. Product image URL editing remains available.
 
 - Migration `20261030133751_revoke_anon_private_helper_execution` is applied and source-controlled. Anonymous execution was revoked from `private.is_shop_owner(uuid)` and `private.is_super_admin()`; authenticated users retain the execution grants needed by RLS policies.
+
+- Migration-source reconciliation completed: all 49 migrations currently recorded in the production project's `supabase_migrations.schema_migrations` now have matching `supabase/migrations/<version>_<name>.sql` files in GitHub. The 37 missing scripts were recovered from the database's stored migration statements; no migrations were re-applied during this source-recovery process.
