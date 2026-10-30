@@ -19,6 +19,9 @@ Multi-vendor grocery ordering platform with customer ordering, shopkeeper worksp
 
 Annual prices are 10 months of the monthly price. Pricing is read from the Supabase subscription_plans table.
 
+## Orders
+Customer checkout currently places cash-on-delivery orders. Shopkeepers can accept pending COD orders, move them through delivery, and the COD payment is marked paid only when delivery is confirmed as collected.
+
 ## Payment setup
 See PAYMENT_SETUP.md for Razorpay Edge Function secrets, webhook registration and Test Mode checklist. Payment processing is not live until merchant secrets are configured and test payments pass.
 
