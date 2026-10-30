@@ -47,11 +47,7 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   const paymentId = String(checkout.payment_id);
   const amountPaise = Math.round(Number(checkout.amount) * 100);
   if (!Number.isSafeInteger(amountPaise) || amountPaise < 100) {
-    await admin.from("payments").update({ status: "failed", gateway_payload: { reason: "Invalid amount" } })
-      .eq("id", paymentId).eq("status", "pending").eq("verified", false);
-    await admin.from("shop_subscriptions").update({ status: "cancelled" })
-      .eq("id", checkout.subscription_id).eq("status", "pending_payment");
-    return reply(400, { error: "Invalid payment amount." });
+    return reply(400, { error: "Invalid payment amount. Please contact the store owner." });
   }
 
   const { data: currentPayment, error: currentError } = await admin.from("payments")
@@ -92,7 +88,6 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
 
       const { data: saved, error: saveError } = await admin.from("payments")
         .update({
-          gateway: "razorpay",
           gateway_order_id: String(result.id),
           gateway_payload: {
             razorpay_order_id: String(result.id),
