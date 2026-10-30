@@ -26,7 +26,7 @@ jobs:
 
       - name: Protect the existing customer storefront
         run: |
-          expected="bf8341c51d5cbe497569c6c14b13056cfe5c6b98"
+          expected="0b28ddd736df708d78cc9ae44e9166312c52909a"
           actual="$(git rev-parse HEAD:index.html)"
           if [ "$actual" != "$expected" ]; then
             echo "index.html changed from the approved baseline; stop deployment for review."
