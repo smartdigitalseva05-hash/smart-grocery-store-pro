@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1220"><title>Apply for a Shop · Smart Grocery Store Pro</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#142136;--line:#2b3b52;--muted:#a9b8cb;--text:#f5f8fc;--accent:#38bdf8;--bad:#fca5a5}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#203b56,transparent 40%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif}main{width:min(680px,calc(100% - 26px));margin:24px auto}.panel{background:#142136ef;border:1px solid var(--line);border-radius:17px;padding:20px;margin-top:16px}h1{font-size:25px;margin:0 0 8px}.muted{color:var(--muted);font-size:13px;line-height:1.6}.field{display:block;color:var(--muted);font-size:13px;margin:12px 0}input,textarea{display:block;width:100%;margin-top:6px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#0b1422;color:var(--text);font:inherit}textarea{min-height:72px;resize:vertical}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 12px}button{border:0;border-radius:10px;padding:12px 16px;background:var(--accent);color:#062033;font-weight:800;cursor:pointer}button:disabled{opacity:.55}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.notice{margin-top:12px;color:var(--muted);font-size:13px}.error{color:var(--bad)}.hidden{display:none!important}a{color:#7dd3fc}.foot{margin:20px 0;color:var(--muted);font-size:12px}
+</style></head><body><main>
+<div class="panel"><h1>🏪 Apply for a Shop</h1><p class="muted">Create your account and submit your shop details. Your shop remains inactive until the Owner reviews and approves it. No subscription or payment is taken on this page.</p><div class="row"><a href="./portal.html">← Back to portal</a><span id="sessionInfo" class="muted"></span></div></div>
+<section id="authPanel" class="panel"><h1>Account access</h1><div class="row"><button id="signupTab" type="button">Create account</button><button id="loginTab" type="button">I already have an account</button></div>
+<form id="authForm"><label class="field" id="nameWrap">Your full name<input id="fullName" maxlength="100" autocomplete="name"></label><label class="field">Email<input id="email" type="email" required autocomplete="username"></label><label class="field">Password<input id="password" type="password" minlength="8" required autocomplete="new-password"></label><button id="authButton" type="submit">Create account</button></form><div id="authMessage" class="notice" role="status"></div></section>
+<section id="shopPanel" class="panel hidden"><h1>Shop details</h1><form id="shopForm"><label class="field">Shop name<input id="shopName" maxlength="120" required></label><label class="field">Shop description<textarea id="description" maxlength="1000"></textarea></label><div class="grid"><label class="field">Contact phone<input id="phone" type="tel" maxlength="25" required></label><label class="field">Business email<input id="shopEmail" type="email"></label><label class="field">Address<input id="address" maxlength="250" required></label><label class="field">City / Town<input id="city" maxlength="100" required></label></div><button id="submitButton" type="submit">Submit shop application</button></form><div id="shopMessage" class="notice" role="status"></div></section>
+<p class="foot">Your account initially receives customer permissions. Shopkeeper permissions are assigned only after Owner review. Do not send passwords or payment credentials to anyone.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+(()=>{
+ const URL="https://wqlopfftzvsjsxmrmxeq.supabase.co",KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX",db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
+ let mode="signup",user=null;
+ const say=(id,msg,bad=false)=>{$(id).textContent=msg;$(id).classList.toggle("error",bad)};
+ function setMode(next){mode=next;$("nameWrap").classList.toggle("hidden",mode!=="signup");$("authButton").textContent=mode==="signup"?"Create account":"Sign in";$("password").autocomplete=mode==="signup"?"new-password":"current-password";say("authMessage","")}
+ async function showSession(){
+  const {data:{session}}=await db.auth.getSession();user=session?.user||null;
+  if(!user){$("authPanel").classList.remove("hidden");$("shopPanel").classList.add("hidden");$("sessionInfo").textContent="";return}
+  $("authPanel").classList.add("hidden");$("shopPanel").classList.remove("hidden");$("sessionInfo").textContent="Signed in: "+user.email;
+  const {data:existing}=await db.from("shops").select("id,name,status").eq("owner_id",user.id).limit(1);
+  if(existing?.length){$("shopForm").classList.add("hidden");say("shopMessage","Your shop application already exists: "+existing[0].name+" · "+existing[0].status+". Contact the Owner for review.");}
+ }
+ $("signupTab").addEventListener("click",()=>setMode("signup"));$("loginTab").addEventListener("click",()=>setMode("login"));
+ $("authForm").addEventListener("submit",async e=>{
+  e.preventDefault();$("authButton").disabled=true;say("authMessage",mode==="signup"?"Creating account…":"Signing in…");
+  const email=$("email").value.trim(),password=$("password").value;
+  if(mode==="signup"){
+   const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:$("fullName").value.trim()}}});
+   if(error){say("authMessage",error.message,true)}
+   else if(data.session){say("authMessage","Account created. Continue with your shop details.");await showSession()}
+   else{say("authMessage","Account created. Confirm the email sent by Supabase, then return here and sign in.")}
+  }else{
+   const {error}=await db.auth.signInWithPassword({email,password});
+   if(error)say("authMessage",error.message,true);else await showSession();
+  }
+  $("authButton").disabled=false;
+ });
+ $("shopForm").addEventListener("submit",async e=>{
+  e.preventDefault();if(!user){say("shopMessage","Please sign in again.",true);return}
+  const name=$("shopName").value.trim(),phone=$("phone").value.trim(),address=$("address").value.trim(),city=$("city").value.trim();
+  if(!name||!phone||!address||!city){say("shopMessage","Fill all required shop details.",true);return}
+  $("submitButton").disabled=true;say("shopMessage","Submitting application…");
+  const slug=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,55)+"-"+crypto.randomUUID().slice(0,8);
+  const {data,error}=await db.from("shops").insert({owner_id:user.id,name,slug,description:$("description").value.trim()||null,phone,email:$("shopEmail").value.trim()||user.email,address,city}).select("id,name,status").single();
+  $("submitButton").disabled=false;
+  if(error){say("shopMessage",error.message,true);return}
+  $("shopForm").classList.add("hidden");say("shopMessage","Application submitted for "+data.name+". Status: "+data.status+". Your shop is inactive until Owner approval and a verified subscription. You can close this page now.");
+ });
+ $("password").minLength=8;db.auth.onAuthStateChange((_event,session)=>{user=session?.user||null;if(!user)showSession()});showSession();
+})();
+</script></body></html>
