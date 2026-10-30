@@ -1,12 +1,7 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { withSupabase } from "npm:@supabase/server";
 
 function reply(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-}
-function keyFromJson(name: string): string {
-  const raw = Deno.env.get(name);
-  if (!raw) return "";
-  try { return JSON.parse(raw).default || ""; } catch { return ""; }
 }
 async function hmacHex(secret: string, body: string): Promise<string> {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -20,12 +15,10 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-Deno.serve(async (req: Request) => {
+Deno.serve(withSupabase({ auth: "none" }, async (req, ctx) => {
   if (req.method !== "POST") return reply(405, { error: "Method not allowed" });
   const webhookSecret = Deno.env.get("RAZORPAY_WEBHOOK_SECRET") || "";
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-  const secretKey = keyFromJson("SUPABASE_SECRET_KEYS") || Deno.env.get("SUPABASE_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  if (!webhookSecret || !supabaseUrl || !secretKey) return reply(500, { error: "Webhook secrets are not configured." });
+  if (!webhookSecret) return reply(500, { error: "Webhook secret is not configured." });
 
   const rawBody = await req.text();
   const supplied = req.headers.get("X-Razorpay-Signature") || "";
@@ -45,7 +38,7 @@ Deno.serve(async (req: Request) => {
     return reply(200, { received: true, ignored: true, reason: "Payment is not captured INR." });
   }
 
-  const admin = createClient(supabaseUrl, secretKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const admin = ctx.supabaseAdmin;
   const { data: payment, error: lookupError } = await admin.from("payments")
     .select("id,user_id,amount,currency,status,verified,gateway,gateway_order_id,gateway_payload")
     .eq("gateway_order_id", entity.order_id).maybeSingle();
@@ -76,4 +69,4 @@ Deno.serve(async (req: Request) => {
   if (activateError) return reply(500, { error: "Payment captured but database activation failed; webhook retry required." });
 
   return reply(200, { received: true, applied: true, payment_id: payment.id });
-});
+}));
