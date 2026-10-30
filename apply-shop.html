@@ -5,7 +5,7 @@
 </style></head><body><main>
 <div class="panel"><h1>🏪 Apply for a Shop</h1><p class="muted">Create your account and submit your shop details. Your shop remains inactive until the Owner reviews and approves it. No subscription or payment is taken on this page.</p><div class="row"><a href="./portal.html">← Back to portal</a><span id="sessionInfo" class="muted"></span></div></div>
 <section id="authPanel" class="panel"><h1>Account access</h1><div class="row"><button id="signupTab" type="button">Create account</button><button id="loginTab" type="button">I already have an account</button></div>
-<form id="authForm"><label class="field" id="nameWrap">Your full name<input id="fullName" maxlength="100" autocomplete="name"></label><label class="field">Email<input id="email" type="email" required autocomplete="username"></label><label class="field">Password<input id="password" type="password" minlength="8" required autocomplete="new-password"></label><button id="authButton" type="submit">Create account</button></form><div id="authMessage" class="notice" role="status"></div></section>
+<form id="authForm"><label class="field" id="nameWrap">Your full name<input id="fullName" maxlength="100" autocomplete="name"></label><label class="field">Email<input id="email" type="email" required autocomplete="username"></label><label class="field">Password<input id="password" type="password" minlength="8" required autocomplete="new-password"></label><button id="authButton" type="submit">Create account</button></form><div id="authMessage" class="notice" role="status"></div><button id="resendConfirmation" type="button" class="hidden">Resend confirmation email</button></section>
 <section id="shopPanel" class="panel hidden"><h1>Shop details</h1><form id="shopForm"><label class="field">Shop name<input id="shopName" maxlength="120" required></label><label class="field">Shop description<textarea id="description" maxlength="1000"></textarea></label><div class="grid"><label class="field">Contact phone<input id="phone" type="tel" maxlength="25" required></label><label class="field">Business email<input id="shopEmail" type="email"></label><label class="field">Address<input id="address" maxlength="250" required></label><label class="field">City / Town<input id="city" maxlength="100" required></label></div><button id="submitButton" type="submit">Submit shop application</button></form><div id="shopMessage" class="notice" role="status"></div></section>
 <p class="foot">Your account initially receives customer permissions. Shopkeeper permissions are assigned only after Owner review. Do not send passwords or payment credentials to anyone.</p>
 </main>
@@ -23,6 +23,15 @@
   if(existing?.length){$("shopForm").classList.add("hidden");say("shopMessage","Your shop application already exists: "+existing[0].name+" · "+existing[0].status+". Contact the Owner for review.");}
  }
  $("signupTab").addEventListener("click",()=>setMode("signup"));$("loginTab").addEventListener("click",()=>setMode("login"));
+ $("resendConfirmation").addEventListener("click",async()=>{
+  const email=$("email").value.trim();
+  if(!email){say("authMessage","Enter your email address first.",true);return}
+  const button=$("resendConfirmation");button.disabled=true;say("authMessage","Sending a new confirmation email…");
+  const {error}=await db.auth.resend({type:"signup",email});
+  button.disabled=false;
+  if(error)say("authMessage",error.message,true);
+  else say("authMessage","Confirmation email requested. Check your inbox, Spam and Promotions folders.");
+ });
  $("authForm").addEventListener("submit",async e=>{
   e.preventDefault();$("authButton").disabled=true;say("authMessage",mode==="signup"?"Creating account…":"Signing in…");
   const email=$("email").value.trim(),password=$("password").value;
@@ -30,10 +39,13 @@
    const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:$("fullName").value.trim()}}});
    if(error){say("authMessage",error.message,true)}
    else if(data.session){say("authMessage","Account created. Continue with your shop details.");await showSession()}
-   else{say("authMessage","Account created. Confirm the email sent by Supabase, then return here and sign in.")}
+   else{$("resendConfirmation").classList.remove("hidden");say("authMessage","Account created. Confirm the email sent by Supabase, then return here and sign in. You can resend the confirmation email below.")}
   }else{
    const {error}=await db.auth.signInWithPassword({email,password});
-   if(error)say("authMessage",error.message,true);else await showSession();
+   if(error){
+    say("authMessage",error.message,true);
+    if(String(error.message||"").toLowerCase().includes("email not confirmed"))$("resendConfirmation").classList.remove("hidden");
+   }else{$("resendConfirmation").classList.add("hidden");await showSession()}
   }
   $("authButton").disabled=false;
  });
