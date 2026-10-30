@@ -42,6 +42,10 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <div class="metric"><span>Expired subscriptions</span><strong id="subscriptions_expired">—</strong></div>
 </div><div id="dashboardMessage" class="notice" role="status"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Shop approval & status</h1><div class="sub">Only active Super Admin can change a shop's status. Every change is audit-logged.</div></div><button id="shopsRefresh" class="secondary">Refresh shops</button></div><div id="shopsMessage" class="notice" role="status"></div><div id="shopList" class="shop-list"></div></div>
+<div class="panel shop-section"><div class="row"><div><h1>Catalog management</h1><div class="sub">Create and enable product categories and subcategories.</div></div><button id="catalogRefresh" class="secondary">Refresh catalog</button></div>
+<div class="formgrid"><label class="field">New category<input id="newCategoryName" maxlength="80" placeholder="e.g. Fruits & Vegetables"></label><label class="field">New subcategory parent<select id="subCategoryParent"></select></label><label class="field">New subcategory<input id="newSubCategoryName" maxlength="80" placeholder="e.g. Fresh Fruits"></label></div>
+<div class="shop-actions"><button id="addCategoryButton" class="safe" type="button">Add category</button><button id="addSubCategoryButton" class="secondary" type="button">Add subcategory</button></div>
+<div id="catalogMessage" class="notice" role="status"></div><div id="catalogList" class="shop-list"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Payment verification</h1><div class="sub">Only successful payments from a trusted payment process can be verified here.</div></div><button id="paymentsRefresh" class="secondary">Refresh payments</button></div><div id="paymentsMessage" class="notice" role="status"></div><div id="paymentList" class="shop-list"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Security & audit activity</h1><div class="sub">Private event history visible only to the active Owner.</div></div><button id="auditRefresh" class="secondary">Refresh activity</button></div><div id="auditMessage" class="notice" role="status"></div><div id="auditList" class="shop-list"></div></div>
 </section>
@@ -121,6 +125,30 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      card.append(actions);list.append(card);
    }
  }
+ async function loadCatalog(){
+   const list=$("catalogList");list.replaceChildren();message("catalogMessage","Loading catalog…");
+   const {data:cats,error:catError}=await client.from("categories").select("id,name,slug,is_active").order("name");
+   if(catError){message("catalogMessage",catError.message,true);return}
+   const {data:subs,error:subError}=await client.from("subcategories").select("id,category_id,name,slug,is_active").order("name");
+   if(subError){message("catalogMessage",subError.message,true);return}
+   const parent=$("subCategoryParent");parent.replaceChildren();
+   for(const cat of cats||[]){const opt=document.createElement("option");opt.value=cat.id;opt.textContent=cat.name;parent.append(opt)}
+   if(!cats?.length){const opt=document.createElement("option");opt.value="";opt.textContent="Create a category first";parent.append(opt)}
+   const subMap=new Map((subs||[]).map(s=>[s.category_id,s]));
+   message("catalogMessage",(cats||[]).length+" categories · "+(subs||[]).length+" subcategories.");
+   for(const cat of cats||[]){
+     const card=document.createElement("article");card.className="shop-card";
+     const top=document.createElement("div");top.className="shop-meta";
+     const info=document.createElement("div");const title=document.createElement("div");title.className="shop-name";title.textContent=cat.name;
+     const detail=document.createElement("div");detail.className="sub";detail.textContent=cat.slug+" · "+(cat.is_active?"Active":"Inactive");info.append(title,detail);
+     const btn=document.createElement("button");btn.className=cat.is_active?"danger":"safe";btn.textContent=cat.is_active?"Disable category":"Enable category";
+     btn.addEventListener("click",async()=>{btn.disabled=true;const {error}=await client.from("categories").update({is_active:!cat.is_active}).eq("id",cat.id);if(error){message("catalogMessage",error.message,true);btn.disabled=false;return}await loadCatalog()});
+     top.append(info,btn);card.append(top);
+     const children=(subs||[]).filter(s=>s.category_id===cat.id);
+     for(const sub of children){const line=document.createElement("div");line.className="row";line.style.marginTop="10px";const label=document.createElement("span");label.className="sub";label.textContent="↳ "+sub.name+" · "+(sub.is_active?"Active":"Inactive");const toggle=document.createElement("button");toggle.className="secondary";toggle.textContent=sub.is_active?"Disable":"Enable";toggle.addEventListener("click",async()=>{toggle.disabled=true;const {error}=await client.from("subcategories").update({is_active:!sub.is_active}).eq("id",sub.id);if(error){message("catalogMessage",error.message,true);toggle.disabled=false;return}await loadCatalog()});line.append(label,toggle);card.append(line)}
+     list.append(card);
+   }
+ }
  async function loadPayments(){
    const list=$("paymentList");list.replaceChildren();message("paymentsMessage","Loading payment records…");
    const {data,error}=await client.from("payments").select("id,order_id,shop_subscription_id,user_id,amount,currency,status,verified,gateway,created_at").order("created_at",{ascending:false}).limit(100);
@@ -172,7 +200,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    if(error||!session){showLogin(error?.message||"");return}
    loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
    $("ownerEmail").textContent=session.user.email||"Signed-in account";
-   await Promise.all([loadSummary(),loadShops(),loadPayments(),loadAuditLogs()]);
+   await Promise.all([loadSummary(),loadShops(),loadCatalog(),loadPayments(),loadAuditLogs()]);
  }
  $("loginForm").addEventListener("submit",async e=>{
    e.preventDefault();$("loginButton").disabled=true;message("loginMessage","Signing in…");
@@ -184,6 +212,22 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops()])});
  $("shopsRefresh").addEventListener("click",loadShops);
  $("paymentsRefresh").addEventListener("click",loadPayments);
+ $("catalogRefresh").addEventListener("click",loadCatalog);
+ $("addCategoryButton").addEventListener("click",async()=>{
+   const name=$("newCategoryName").value.trim();if(!name){message("catalogMessage","Enter a category name.",true);return}
+   const slug=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+   const {error}=await client.from("categories").insert({name,slug,is_active:true});
+   if(error){message("catalogMessage",error.message,true);return}
+   $("newCategoryName").value="";await loadCatalog();
+ });
+ $("addSubCategoryButton").addEventListener("click",async()=>{
+   const category_id=$("subCategoryParent").value,name=$("newSubCategoryName").value.trim();
+   if(!category_id||!name){message("catalogMessage","Select a parent category and enter a subcategory name.",true);return}
+   const slug=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+   const {error}=await client.from("subcategories").insert({category_id,name,slug,is_active:true});
+   if(error){message("catalogMessage",error.message,true);return}
+   $("newSubCategoryName").value="";await loadCatalog();
+ });
  $("auditRefresh").addEventListener("click",loadAuditLogs);
  $("logout").addEventListener("click",async()=>{await client.auth.signOut();showLogin("Signed out.")});
  client.auth.onAuthStateChange((_event,session)=>{if(!session)showLogin("Session ended. Please sign in again.")});
