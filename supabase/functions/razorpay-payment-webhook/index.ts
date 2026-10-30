@@ -26,8 +26,12 @@ Deno.serve(withSupabase({ auth: "none" }, async (req, ctx) => {
   const expected = await hmacHex(webhookSecret, rawBody);
   if (!safeEqual(expected, supplied.toLowerCase())) return reply(400, { error: "Webhook signature verification failed." });
 
-  let event: Record<string, any>;
-  try { event = JSON.parse(rawBody); } catch { return reply(400, { error: "Invalid webhook JSON." }); }
+  let parsedEvent: unknown;
+  try { parsedEvent = JSON.parse(rawBody); } catch { return reply(400, { error: "Invalid webhook JSON." }); }
+  if (!parsedEvent || typeof parsedEvent !== "object" || Array.isArray(parsedEvent)) {
+    return reply(400, { error: "Webhook body must be a JSON object." });
+  }
+  const event = parsedEvent as Record<string, any>;
   if (!["payment.captured", "order.paid"].includes(String(event.event || ""))) {
     return reply(200, { received: true, ignored: true, event: event.event || "unknown" });
   }
