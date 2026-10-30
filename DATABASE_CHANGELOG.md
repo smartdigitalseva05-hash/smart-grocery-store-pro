@@ -15,6 +15,8 @@ These migrations have already been applied to the Supabase production project.
 
 ## Verification notes
 
+- Migration `20261030125950_grant_minimal_payment_access_to_edge_service_role` adds only the read and update column permissions required by the payment Edge Functions; it does not permit creating or deleting payment records.
+
 - Migration `20261030125729_close_direct_superadmin_shop_activation_bypass` is applied and source-controlled. Direct Super Admin table updates can no longer activate shops or alter subscription plan/expiry fields; the protected Owner status RPC rechecks a verified active subscription, and the expiry job can only deactivate shops.
 
 - `shopkeeper.html` keeps the subscription button disabled while Razorpay Checkout is open, preventing accidental multiple checkout modals for the same pending payment.
@@ -27,7 +29,7 @@ These migrations have already been applied to the Supabase production project.
 - Migration `20261030123909_merge_product_historical_read_policy` is applied and source-controlled. It merges active-shop product visibility and a customer's own historical-order product visibility into one SELECT policy; the multiple-permissive-policy performance warning is cleared.
 
 - Migration `20261030123652_guard_subscription_activation_state` is applied and source-controlled. It checks that the shopkeeper account remains approved and active, the shop is not suspended, the subscription is pending and linked to the payment, and the captured amount matches its billing cycle before activating a shop.
-- Razorpay Edge Function source files are tracked under `supabase/functions/`. Checkout function v6 and verification function v4 use Supabase's server auth wrapper and strict request validation; checkout v6 prevents concurrent calls from overwriting the stored Razorpay order reference. Webhook v3 uses the server-side admin client after signature validation and rejects malformed JSON.
+- Razorpay Edge Function source files are tracked under `supabase/functions/`. Checkout function v7 and verification function v4 use Supabase's server auth wrapper and strict request validation; checkout v6 prevents concurrent calls from overwriting the stored Razorpay order reference. Webhook v3 uses the server-side admin client after signature validation and rejects malformed JSON.
 
 - All 14 public tables have Row Level Security enabled.
 - Direct order UPDATE and direct payment INSERT policies are absent.
