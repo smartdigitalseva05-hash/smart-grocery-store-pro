@@ -156,7 +156,10 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
    <button class="btn" id="submitAuth">Login</button>
    <button class="btn btn-light" id="closeAuth">Close</button>
   </div>
-  <p class="small" style="margin-top:18px">
+  <p class="small" style="margin-top:12px">
+   <a href="#" id="forgotPassword">Forgot password?</a>
+  </p>
+  <p class="small" style="margin-top:10px">
    <a href="#" id="switchAuth">Create a new account</a>
   </p>
  </div>
@@ -217,6 +220,7 @@ let categories = [];
 let cart = [];
 let selectedCategory = "all";
 let signupMode = false;
+let resetMode = false;
 let checkoutMode = false;
 
 const $ = id => document.getElementById(id);
@@ -265,9 +269,21 @@ async function initialize() {
     currentUser = data.session?.user || null;
     updateAccount();
 
-    db.auth.onAuthStateChange((_event, session) => {
+    db.auth.onAuthStateChange((event, session) => {
       currentUser = session?.user || null;
       updateAccount();
+      if (event === "PASSWORD_RECOVERY") {
+        resetMode = true;
+        signupMode = false;
+        updateAuthModal();
+        $("authTitle").textContent = "Set New Password";
+        $("authPassword").value = "";
+        $("authPassword").placeholder = "New password (12+ characters)";
+        $("submitAuth").textContent = "Update Password";
+        $("switchAuth").classList.add("hidden");
+        $("forgotPassword").classList.add("hidden");
+        $("authModal").classList.remove("hidden");
+      }
       if (currentUser) loadProducts();
     });
 
@@ -509,6 +525,7 @@ $("closeCart").onclick = () => {
 
 function openAuth() {
   signupMode = false;
+  resetMode = false;
   updateAuthModal();
   $("authModal").classList.remove("hidden");
 }
@@ -516,6 +533,9 @@ function openAuth() {
 function updateAuthModal() {
   $("authTitle").textContent =
     signupMode ? "Create Account" : "Welcome Back";
+  $("authPassword").placeholder = "Password";
+  $("switchAuth").classList.toggle("hidden", resetMode);
+  $("forgotPassword").classList.toggle("hidden", signupMode || resetMode);
 
   $("authName").classList.toggle("hidden", !signupMode);
   $("submitAuth").textContent =
@@ -532,7 +552,28 @@ $("closeAuth").onclick = () => $("authModal").classList.add("hidden");
 $("switchAuth").onclick = e => {
   e.preventDefault();
   signupMode = !signupMode;
+  resetMode = false;
   updateAuthModal();
+};
+
+$("forgotPassword").onclick = async e => {
+  e.preventDefault();
+  if (!db) return notify("Supabase connection is not ready.");
+  const email = $("authEmail").value.trim();
+  if (!email) return notify("Enter your account email first.");
+  const link = $("forgotPassword");
+  link.style.pointerEvents = "none";
+  try {
+    const {error} = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+    if (error) throw error;
+    notify("Password reset link sent. Check your email inbox and spam folder.");
+  } catch (error) {
+    notify("Password reset failed: " + error.message);
+  } finally {
+    link.style.pointerEvents = "";
+  }
 };
 
 $("submitAuth").onclick = async () => {
@@ -543,7 +584,7 @@ $("submitAuth").onclick = async () => {
   const name = $("authName").value.trim();
 
   if (!email || !password) return notify("Enter email and password.");
-  if (signupMode && password.length < 12) return notify("Use a password with at least 12 characters.");
+  if ((signupMode || resetMode) && password.length < 12) return notify("Use a password with at least 12 characters.");
   if (signupMode && !name) return notify("Enter your full name.");
 
   $("submitAuth").disabled = true;
@@ -551,7 +592,15 @@ $("submitAuth").onclick = async () => {
   try {
     let result;
 
-    if (signupMode) {
+    if (resetMode) {
+      result = await db.auth.updateUser({password});
+      if (result.error) throw result.error;
+      resetMode = false;
+      $("authPassword").value = "";
+      $("authModal").classList.add("hidden");
+      notify("Password updated. Please login with your new password.");
+      return;
+    } else if (signupMode) {
       await window.checkPasswordSecurity(password);
       result = await db.auth.signUp({
         email,
@@ -567,6 +616,11 @@ $("submitAuth").onclick = async () => {
     }
 
     if (result.error) throw result.error;
+
+    if (signupMode && result.data.user && Array.isArray(result.data.user.identities) && result.data.user.identities.length === 0) {
+      notify("This email already has an account. Login or use Forgot password.");
+      return;
+    }
 
     if (signupMode && !result.data.session) {
       notify("Account created! Check your email to confirm signup.");
