@@ -14,6 +14,7 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
 <section id="loginPanel" class="panel auth"><h1>Shopkeeper sign in</h1><p class="muted">Sign in with the shopkeeper account registered by the store.</p><form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><button id="loginButton" type="submit">Sign in</button></form><div id="loginMessage" class="notice" role="status"></div></section>
 <section id="app" class="hidden">
 <div class="panel"><div class="row"><div><h1>My shop</h1><div class="sub">Only shops linked to your signed-in account are shown.</div></div><div style="min-width:220px;flex:1;max-width:360px"><select id="shopSelect" aria-label="Choose shop"></select></div></div><div id="shopInfo" class="notice"></div></div>
+<div class="panel"><h1>Subscription & billing</h1><p class="muted">Choose a plan and billing period. This creates a secure pending payment record; it does not collect money until the payment gateway is connected.</p><div class="formgrid"><label class="field">Plan<select id="planSelect"><option value="">Loading plans…</option></select></label><label class="field">Billing period<select id="billingCycle"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label></div><div id="planPrice" class="sub"></div><div class="actions" style="margin-top:12px"><button id="subscriptionButton">Prepare subscription payment</button></div><div id="subscriptionMessage" class="notice" role="status"></div></div>
 <div class="panel"><h1>Add a product</h1><p class="muted">Products are saved directly to Supabase. Plan limits and shop ownership are enforced by database policies/triggers.</p>
 <form id="productForm"><div class="formgrid">
 <label class="field">Product name<input id="pName" maxlength="120" required></label>
@@ -48,12 +49,34 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
   const sel=$("shopSelect");sel.replaceChildren();
   for(const s of shops){const o=document.createElement("option");o.value=s.id;o.textContent=s.name+" ("+s.status+")";sel.append(o)}
   if(!shops.length){say("shopInfo","No shop is linked to this account yet. Contact the Owner for approval.");$("productForm").querySelector("button").disabled=true;return}
-  currentShop=shops[0];sel.value=currentShop.id;await loadShopData();
+  currentShop=shops[0];sel.value=currentShop.id;await Promise.all([loadPlans(),loadShopData()]);
  }
  async function loadShopData(){
   currentShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!currentShop)return;
   say("shopInfo",currentShop.name+" · "+(currentShop.city||"") +" · Status: "+currentShop.status+" · "+(currentShop.is_active?"Active":"Not active"));
   $("addButton").disabled=false;await Promise.all([loadCategories(),loadProducts()]);
+ }
+ async function loadPlans(){
+  const sel=$("planSelect");sel.replaceChildren();
+  const {data,error}=await db.from("subscription_plans").select("id,name,price_monthly,price_yearly,is_active").eq("is_active",true).order("price_monthly");
+  if(error){say("subscriptionMessage",error.message,true);return}
+  for(const p of data||[]){const o=document.createElement("option");o.value=p.id;o.dataset.monthly=p.price_monthly;o.dataset.yearly=p.price_yearly;o.textContent=p.name;sel.append(o)}
+  if(!data?.length){const o=document.createElement("option");o.value="";o.textContent="No active plans";sel.append(o)}
+  updatePlanPrice();
+ }
+ function updatePlanPrice(){
+  const o=$("planSelect").selectedOptions[0];if(!o||!o.value){$("planPrice").textContent="No active subscription plan available.";return}
+  const cycle=$("billingCycle").value,amount=Number(o.dataset[cycle]||0);
+  $("planPrice").textContent="Current database price: "+new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(amount)+" / "+(cycle==="monthly"?"month":"year");
+ }
+ async function prepareSubscription(){
+  if(!currentShop){say("subscriptionMessage","Select a shop first.",true);return}
+  const planId=$("planSelect").value;if(!planId){say("subscriptionMessage","No active plan selected.",true);return}
+  $("subscriptionButton").disabled=true;say("subscriptionMessage","Preparing secure subscription record…");
+  const {data,error}=await db.rpc("create_subscription_checkout",{p_shop_id:currentShop.id,p_plan_id:planId,p_billing_cycle:$("billingCycle").value});
+  $("subscriptionButton").disabled=false;
+  if(error){say("subscriptionMessage",error.message,true);return}
+  say("subscriptionMessage","Pending payment record created. Amount: "+money(data.amount)+". Reference: "+data.payment_id+". No money has been collected yet; secure Razorpay checkout/webhook integration is still required.");
  }
  async function loadCategories(){
   const {data,error}=await db.from("categories").select("id,name").eq("is_active",true).order("name");
@@ -92,7 +115,9 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
   if(error){say("productMessage",error.message,true);return}
   $("productForm").reset();$("pStock").value="0";say("productMessage","Product saved successfully.");await loadProducts();
  });
- $("shopSelect").addEventListener("change",loadShopData);$("reload").addEventListener("click",boot);$("productsRefresh").addEventListener("click",loadProducts);
+ $("shopSelect").addEventListener("change",loadShopData);
+ $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
+ $("subscriptionButton").addEventListener("click",prepareSubscription);$("reload").addEventListener("click",boot);$("productsRefresh").addEventListener("click",loadProducts);
  $("logout").addEventListener("click",async()=>{await db.auth.signOut();showLogin("Signed out.")});
  db.auth.onAuthStateChange((_event,session)=>{if(!session)showLogin("Session ended. Sign in again.")});
  boot();
