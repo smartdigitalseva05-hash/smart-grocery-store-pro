@@ -164,7 +164,15 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
      const {error}=await db.from("products").update({price,sale_price:sale,offer_text:offerText.trim()||null}).eq("id",p.id).eq("shop_id",currentShop.id);
      if(error){say("listMessage",error.message,true);return}await loadProducts();
     });
-    actions.append(stock,edit,toggle);card.append(actions);list.append(card);
+    const imageEdit=document.createElement("button");imageEdit.className="secondary";imageEdit.disabled=!canManageProducts();imageEdit.textContent="Edit image";imageEdit.addEventListener("click",async()=>{
+     const first=Array.isArray(p.images)?p.images[0]:null;const current=typeof first==="string"?first:first?.url||"";
+     const entered=window.prompt("Product image HTTPS URL (leave blank to remove):",current);if(entered===null)return;
+     const clean=entered.trim(),url=clean?safeImageUrl(clean):"";
+     if(clean&&!url){say("listMessage","Only a valid HTTPS image URL is accepted.",true);return}
+     const {error}=await db.from("products").update({images:url?[{url}]:[]}).eq("id",p.id).eq("shop_id",currentShop.id);
+     if(error){say("listMessage",error.message,true);return}say("listMessage","Product image updated.");await loadProducts();
+    });
+    actions.append(stock,edit,toggle,imageEdit);card.append(actions);list.append(card);
   }
  }
  $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginButton").disabled=true;say("loginMessage","Signing in…");const {error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});$("loginButton").disabled=false;if(error){say("loginMessage",error.message,true);return}await boot()});
