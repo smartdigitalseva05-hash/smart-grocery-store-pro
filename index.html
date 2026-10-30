@@ -201,6 +201,7 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
  </div>
 </div>
 
+<script src="./password-security.js"></script>
 <script>
 /* =========================================
    1. SUPABASE CONFIGURATION
@@ -542,7 +543,7 @@ $("submitAuth").onclick = async () => {
   const name = $("authName").value.trim();
 
   if (!email || !password) return notify("Enter email and password.");
-  if (password.length < 6) return notify("Password must have at least 6 characters.");
+  if (signupMode && password.length < 12) return notify("Use a password with at least 12 characters.");
   if (signupMode && !name) return notify("Enter your full name.");
 
   $("submitAuth").disabled = true;
@@ -551,6 +552,7 @@ $("submitAuth").onclick = async () => {
     let result;
 
     if (signupMode) {
+      await window.checkPasswordSecurity(password);
       result = await db.auth.signUp({
         email,
         password,
