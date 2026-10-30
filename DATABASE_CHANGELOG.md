@@ -15,6 +15,8 @@ These migrations have already been applied to the Supabase production project.
 
 ## Verification notes
 
+- Migration `20261030125729_close_direct_superadmin_shop_activation_bypass` is applied and source-controlled. Direct Super Admin table updates can no longer activate shops or alter subscription plan/expiry fields; the protected Owner status RPC rechecks a verified active subscription, and the expiry job can only deactivate shops.
+
 - `shopkeeper.html` keeps the subscription button disabled while Razorpay Checkout is open, preventing accidental multiple checkout modals for the same pending payment.
 
 - Migration `20261030124909_serialize_order_cancellation_stock_restoration` is applied and source-controlled. Cancellation now locks the shop before restoring product stock, matching order-placement lock order and reducing deadlock risk during concurrent orders/cancellations.
