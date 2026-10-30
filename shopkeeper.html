@@ -23,6 +23,8 @@ button.danger{background:#7f2931;color:#fff0f0}
 .brand{letter-spacing:-.4px;color:#d7f6df}
 .foot{color:#91aa9a}
 a{color:#8ce2b3}
+
+.starter-bulk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:12px;max-height:320px;overflow:auto;padding:4px}.starter-choice{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--line,#dbe5df);border-radius:12px;background:var(--surface,#fff);font-size:13px}.starter-choice input{width:18px;height:18px;accent-color:#0b8f68}.starter-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.starter-tools button{width:auto}.starter-count{font-size:13px;color:var(--muted,#64748b);margin-top:8px}
 </style></head>
 <body><main>
 <header class="top"><div><div class="brand">🛒 Smart Grocery Store Pro</div><div class="sub">Premium shop management · <a href="./showcase.html">Platform overview</a> · <a href="./catalogue.html">200 product ideas</a></div></div><div id="topActions" class="actions hidden"><button id="reload" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
@@ -31,6 +33,7 @@ a{color:#8ce2b3}
 <div class="panel"><div class="row"><div><h1>My shop</h1><div class="sub">Only shops linked to your signed-in account are shown.</div></div><div style="min-width:220px;flex:1;max-width:360px"><select id="shopSelect" aria-label="Choose shop"></select></div></div><div id="shopInfo" class="notice"></div></div>
 <div class="panel"><h1>Subscription & billing</h1><p class="muted">Choose a plan and billing period, then pay securely using Razorpay Checkout. The server verifies the captured payment before activating your shop.</p><div class="formgrid"><label class="field">Plan<select id="planSelect"><option value="">Loading plans…</option></select></label><label class="field">Billing period<select id="billingCycle"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label></div><div id="planPrice" class="sub"></div><div class="actions" style="margin-top:12px"><button id="subscriptionButton">Pay subscription</button></div><div id="subscriptionMessage" class="notice" role="status"></div></div>
 <div class="panel"><h1>Quick add from 200 starter products</h1><p class="muted">Choose a starter item to prefill the form. Confirm the real price, stock and photo before saving.</p><div class="formgrid"><label class="field">Search starter products<input id="starterSearch" type="search" placeholder="Search rice, oil, soap…"></label><label class="field">Choose starter product<select id="starterSelect"><option value="">Choose from 200 products…</option></select></label></div><button id="useStarter" type="button" class="secondary">Use starter product</button><span id="starterHint" class="sub" role="status">Templates are not live inventory.</span></div>
+<div class="panel"><h1>Bulk add starter products</h1><p class="muted">Select multiple items from the 200-product starter catalogue. They will be saved as <strong>hidden drafts</strong> with zero stock, so customers cannot order them until you confirm price, stock and photos.</p><label class="field">Search starter catalogue<input id="bulkStarterSearch" type="search" placeholder="Search product or category…"></label><div class="starter-tools"><button id="bulkSelectVisible" type="button" class="secondary">Select visible</button><button id="bulkClear" type="button" class="secondary">Clear selection</button><button id="bulkImport" type="button">Add selected as hidden drafts</button></div><div id="bulkStarterCount" class="starter-count" role="status">0 selected</div><div id="bulkStarterList" class="starter-bulk-grid"></div><div id="bulkStarterMessage" class="notice" role="status"></div></div>
 <div class="panel"><h1>Add a product</h1><p class="muted">Products are saved directly to Supabase. Plan limits and shop ownership are enforced by database policies/triggers.</p>
 <form id="productForm"><div class="formgrid">
 <label class="field">Product name<input id="pName" maxlength="120" required></label>
@@ -151,6 +154,47 @@ a{color:#8ce2b3}
  }
 
  function renderStarterOptions(){const q=$("starterSearch").value.trim().toLowerCase(),sel=$("starterSelect"),old=sel.value;const matches=STARTER_PRODUCTS.map((p,i)=>({...p,i})).filter(p=>(p.name+" "+p.category).toLowerCase().includes(q));sel.replaceChildren();const head=document.createElement("option");head.value="";head.textContent=matches.length+" matching products";sel.append(head);for(const p of matches){const o=document.createElement("option");o.value=String(p.i);o.textContent=p.name+" · "+p.category+" · suggested ₹"+p.price;sel.append(o)}if(matches.some(p=>String(p.i)===old))sel.value=old}
+ const bulkStarterSelection=new Set();
+ function renderBulkStarterList(){
+  const q=$("bulkStarterSearch").value.trim().toLowerCase();
+  const list=$("bulkStarterList");list.replaceChildren();
+  STARTER_PRODUCTS.forEach((p,i)=>{
+   if(q&&!((p.name+" "+p.category).toLowerCase().includes(q)))return;
+   const label=document.createElement("label");label.className="starter-choice";
+   const input=document.createElement("input");input.type="checkbox";input.checked=bulkStarterSelection.has(i);input.dataset.starterIndex=String(i);
+   input.addEventListener("change",()=>{if(input.checked)bulkStarterSelection.add(i);else bulkStarterSelection.delete(i);updateBulkStarterCount()});
+   const span=document.createElement("span");span.textContent=p.emoji+" "+p.name+" · ₹"+p.price;
+   label.append(input,span);list.append(label);
+  });
+  updateBulkStarterCount();
+ }
+ function updateBulkStarterCount(){
+  $("bulkStarterCount").textContent=bulkStarterSelection.size+" selected · "+STARTER_PRODUCTS.length+" starter products available";
+  $("bulkImport").disabled=bulkStarterSelection.size===0||!canManageProducts();
+ }
+ async function importSelectedStarterProducts(){
+  if(!currentShop){say("bulkStarterMessage","Select an approved shop first.",true);return}
+  if(!canManageProducts()){say("bulkStarterMessage","An active subscription is required before adding products.",true);return}
+  const chosen=[...bulkStarterSelection].map(i=>STARTER_PRODUCTS[i]).filter(Boolean);
+  if(!chosen.length)return;
+  const btn=$("bulkImport");btn.disabled=true;say("bulkStarterMessage","Checking existing products and preparing hidden drafts…");
+  const {data:existing,error:readError}=await db.from("products").select("name").eq("shop_id",currentShop.id);
+  if(readError){say("bulkStarterMessage","Could not check existing products: "+readError.message,true);updateBulkStarterCount();return}
+  const existingNames=new Set((existing||[]).map(p=>String(p.name||"").trim().toLowerCase()));
+  const fresh=chosen.filter(p=>!existingNames.has(p.name.trim().toLowerCase()));
+  if(!fresh.length){say("bulkStarterMessage","All selected products already exist in this shop. No duplicates were added.",true);updateBulkStarterCount();return}
+  const categoryOptions=[...$("pCategory").options];
+  const rows=fresh.map(p=>{
+   const category=categoryOptions.find(o=>o.textContent.trim().toLowerCase()===p.category.toLowerCase());
+   const slug=p.name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,65)+"-"+crypto.randomUUID().slice(0,8);
+   return {shop_id:currentShop.id,category_id:category?.value||null,name:p.name,slug,description:p.category+" · Starter draft. Confirm actual local price, stock and photo before publishing.",price:p.price,sale_price:null,stock:0,images:[],is_available:false,offer_text:null};
+  });
+  const {error}=await db.from("products").insert(rows);
+  if(error){say("bulkStarterMessage","Nothing was imported. Check your active plan/product limit and try a smaller selection. "+error.message,true);updateBulkStarterCount();return}
+  fresh.forEach(p=>{const i=STARTER_PRODUCTS.findIndex(x=>x.name===p.name);if(i>=0)bulkStarterSelection.delete(i)});
+  say("bulkStarterMessage",fresh.length+" hidden draft(s) added. "+(chosen.length-fresh.length)+" duplicate(s) skipped. Add real stock, confirm price and upload photos before making products available.");
+  renderBulkStarterList();await loadProducts();
+ }
  function useStarterProduct(){const v=$("starterSelect").value;if(v===""){say("starterHint","Choose a product first.",true);return}const p=STARTER_PRODUCTS[Number(v)];if(!p)return;$("pName").value=p.name;$("pPrice").value=String(p.price);$("pSale").value="";$("pStock").value="0";$("pOffer").value="";$("pImageUrl").value="";$("pImageFile").value="";$("pDescription").value=p.category+" · Starter catalogue suggestion; verify before publishing.";const o=[...$("pCategory").options].find(x=>x.textContent.trim().toLowerCase()===p.category.toLowerCase());$("pCategory").value=o?o.value:"";$("starterHint").textContent=p.name+" added to form. Set real stock and upload a photo.";say("productMessage","Template filled. Confirm price and stock before saving.");$("pName").focus()}
  async function loadCategories(){
   const {data,error}=await db.from("categories").select("id,name").eq("is_active",true).order("name");
@@ -220,6 +264,11 @@ a{color:#8ce2b3}
   if(error){say("productMessage",error.message,true);return}
   $("productForm").reset();$("pStock").value="0";say("productMessage","Product saved successfully.");await loadProducts();
  });
+ $("bulkStarterSearch").addEventListener("input",renderBulkStarterList);
+ $("bulkSelectVisible").addEventListener("click",()=>{const q=$("bulkStarterSearch").value.trim().toLowerCase();STARTER_PRODUCTS.forEach((p,i)=>{if(!q||(p.name+" "+p.category).toLowerCase().includes(q))bulkStarterSelection.add(i)});renderBulkStarterList()});
+ $("bulkClear").addEventListener("click",()=>{bulkStarterSelection.clear();renderBulkStarterList()});
+ $("bulkImport").addEventListener("click",importSelectedStarterProducts);
+ renderBulkStarterList();
  $("starterSearch").addEventListener("input",renderStarterOptions);$("useStarter").addEventListener("click",useStarterProduct);renderStarterOptions();
  $("shopSelect").addEventListener("change",loadShopData);
  $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
