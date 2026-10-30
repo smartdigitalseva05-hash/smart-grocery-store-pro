@@ -15,6 +15,8 @@ These migrations have already been applied to the Supabase production project.
 
 ## Verification notes
 
+- Migration `20261030131422_restrict_shop_writes_to_active_profiles` is applied and source-controlled. Shop applications require an active profile; only an active approved shopkeeper or the primary Owner can update shop records. A rollback test confirmed approved shopkeepers can update their shop, while disabled accounts cannot.
+
 - Migration `20261030131256_require_active_profiles_for_customer_and_shopkeeper_actions` is applied and source-controlled. Shop-owner RLS now requires an active shopkeeper profile; inactive accounts cannot place/cancel orders or manage shop orders through RPCs. Customers can still access their own orders while their account is active.
 
 - Migration `20261030131120_deactivate_shops_when_shopkeeper_is_disabled_or_demoted` is applied and source-controlled. Disabling a shopkeeper or changing their role away from shopkeeper automatically deactivates all their shops; reactivating the profile does not reactivate shops automatically.
