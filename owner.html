@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101827"><title>Smart Grocery Store Pro · Owner</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#131e30;--line:#26364d;--muted:#9fb0c5;--text:#f4f7fb;--accent:#7dd3fc;--bad:#fca5a5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#19314c 0,transparent 34%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{width:min(1100px,100% - 28px);margin:36px auto}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:24px}.brand{font-size:20px;font-weight:750}.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.panel{background:#131e30eF;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 16px 45px #0003}
+h1{font-size:25px;margin:0 0 8px}.muted{color:var(--muted)}.auth{max-width:430px;margin:7vh auto}.field{display:block;width:100%;margin:12px 0 4px;color:var(--muted);font-size:13px}input{width:100%;padding:13px 14px;margin-top:6px;border:1px solid var(--line);border-radius:11px;background:#0b1422;color:var(--text);font:inherit}
+button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#062033;font-weight:750;font-size:14px;cursor:pointer}button.secondary{background:#24364d;color:var(--text)}button:disabled{opacity:.55;cursor:wait}
+.actions{display:flex;gap:9px;flex-wrap:wrap}.notice{margin-top:14px;color:var(--muted);font-size:13px;min-height:20px}.notice.error{color:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px;margin-top:20px}.metric{padding:18px;background:#0d1727;border:1px solid var(--line);border-radius:15px}.metric span{display:block;color:var(--muted);font-size:13px}.metric strong{display:block;font-size:27px;margin-top:9px;letter-spacing:.2px}
+.hidden{display:none!important}.foot{margin-top:20px;color:var(--muted);font-size:12px}.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+@media(max-width:520px){main{margin:18px auto}.panel{padding:17px}.top{align-items:flex-start}.brand{font-size:17px}}
+</style>
+</head>
+<body>
+<main>
+<header class="top"><div><div class="brand">🛒 Smart Grocery Store Pro</div><div class="sub">Private Owner Control Panel</div></div><div id="topActions" class="actions hidden"><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
+<section id="loginPanel" class="panel auth">
+<h1>Owner sign in</h1><p class="muted">Use your existing Supabase Owner account. Access is checked by the database, not by a browser-stored role.</p>
+<form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><div class="actions" style="margin-top:17px"><button id="loginButton" type="submit">Sign in securely</button></div></form><div id="loginMessage" class="notice" role="status"></div>
+</section>
+<section id="dashboard" class="hidden">
+<div class="panel"><div class="row"><div><h1>Owner overview</h1><div id="updated" class="sub">Loading secure summary…</div></div><span class="muted" id="ownerEmail"></span></div>
+<div class="grid" id="metrics">
+<div class="metric"><span>Customers</span><strong id="customers">—</strong></div>
+<div class="metric"><span>Shopkeepers</span><strong id="shopkeepers">—</strong></div>
+<div class="metric"><span>Total shops</span><strong id="shops_total">—</strong></div>
+<div class="metric"><span>Active shops</span><strong id="shops_active">—</strong></div>
+<div class="metric"><span>Inactive / pending shops</span><strong id="shops_pending_or_inactive">—</strong></div>
+<div class="metric"><span>Total products</span><strong id="products_total">—</strong></div>
+<div class="metric"><span>Total orders</span><strong id="orders_total">—</strong></div>
+<div class="metric"><span>Pending orders</span><strong id="orders_pending">—</strong></div>
+<div class="metric"><span>Delivered orders</span><strong id="orders_delivered">—</strong></div>
+<div class="metric"><span>Verified payments</span><strong id="payments_verified">—</strong></div>
+<div class="metric"><span>Verified payment total</span><strong id="verified_payment_amount_inr">—</strong></div>
+<div class="metric"><span>Active subscriptions</span><strong id="subscriptions_active">—</strong></div>
+<div class="metric"><span>Expired subscriptions</span><strong id="subscriptions_expired">—</strong></div>
+</div><div id="dashboardMessage" class="notice" role="status"></div></div>
+</section>
+<p class="foot">Owner-only overview. All figures are returned by a database function that checks the authenticated Super Admin role. This page does not provide shop, customer, payment, or settings mutation controls yet.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+ const SUPABASE_URL = "https://wqlopfftzvsjsxmrmxeq.supabase.co";
+ const SUPABASE_ANON_KEY = "sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
+ const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+ const $ = id => document.getElementById(id);
+ const loginPanel=$("loginPanel"), dashboard=$("dashboard"), topActions=$("topActions");
+ const money = n => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(n||0));
+ function message(id,text,error=false){$(id).textContent=text;$(id).classList.toggle("error",error)}
+ function showLogin(text=""){loginPanel.classList.remove("hidden");dashboard.classList.add("hidden");topActions.classList.add("hidden");message("loginMessage",text)}
+ async function loadSummary(){
+   message("dashboardMessage","Checking Owner permissions…");
+   const {data,error}=await client.rpc("owner_dashboard_summary");
+   if(error){message("dashboardMessage",error.message,true);return}
+   const fields=["customers","shopkeepers","shops_total","shops_active","shops_pending_or_inactive","products_total","orders_total","orders_pending","orders_delivered","payments_verified","subscriptions_active","subscriptions_expired"];
+   for(const key of fields) $(key).textContent=Number(data[key]||0).toLocaleString("en-IN");
+   $("verified_payment_amount_inr").textContent=money(data.verified_payment_amount_inr);
+   $("updated").textContent="Last refreshed: "+new Date(data.generated_at).toLocaleString();
+   message("dashboardMessage","Database authorization passed. Summary loaded.");
+ }
+ async function checkSession(){
+   const {data:{session},error}=await client.auth.getSession();
+   if(error||!session){showLogin(error?.message||"");return}
+   loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
+   $("ownerEmail").textContent=session.user.email||"Signed-in account";
+   await loadSummary();
+ }
+ $("loginForm").addEventListener("submit",async e=>{
+   e.preventDefault();$("loginButton").disabled=true;message("loginMessage","Signing in…");
+   const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+   $("loginButton").disabled=false;
+   if(error){message("loginMessage",error.message,true);return}
+   await checkSession();
+ });
+ $("refresh").addEventListener("click",loadSummary);
+ $("logout").addEventListener("click",async()=>{await client.auth.signOut();showLogin("Signed out.")});
+ client.auth.onAuthStateChange((_event,session)=>{if(!session)showLogin("Session ended. Please sign in again.")});
+ checkSession();
+})();
+</script>
+</body></html>
