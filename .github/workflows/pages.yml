@@ -31,7 +31,7 @@ jobs:
 
       - name: Type-check deployed Supabase Edge Functions
         run: |
-          deno check \
+          deno check --node-modules-dir=auto \
             supabase/functions/razorpay-subscription-checkout/index.ts \
             supabase/functions/razorpay-verify-subscription-payment/index.ts \
             supabase/functions/razorpay-payment-webhook/index.ts
