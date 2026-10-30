@@ -1,0 +1,689 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#087f5b">
+<title>Smart Grocery Store Pro</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+  --green:#087f5b;
+  --dark:#07543e;
+  --light:#e9f8f1;
+  --bg:#f5f7f6;
+  --text:#18231f;
+  --muted:#718078;
+  --white:#fff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Arial,sans-serif;color:var(--text)}
+button,input,select{font:inherit}
+button{cursor:pointer}
+header{background:var(--white);padding:15px 5%;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10;box-shadow:0 2px 12px #0000000d}
+.brand{font-size:19px;font-weight:800;color:var(--green)}
+.brand span{color:#f2a900}
+.header-actions{display:flex;gap:8px;align-items:center}
+.btn{border:0;border-radius:9px;padding:11px 16px;background:var(--green);color:white;font-weight:700}
+.btn:hover{background:var(--dark)}
+.btn-light{background:var(--light);color:var(--green)}
+.container{width:92%;max-width:1200px;margin:22px auto}
+.hero{background:linear-gradient(120deg,#07543e,#10a36f);border-radius:18px;padding:35px 25px;color:white}
+.hero h1{font-size:clamp(26px,5vw,42px);margin:0 0 12px}
+.hero p{line-height:1.6;max-width:560px}
+.search-row{display:flex;gap:10px;margin:20px 0}
+.search-row input{flex:1;min-width:0}
+input,select{width:100%;padding:13px;border:1px solid #dce4df;border-radius:9px;background:white;outline:none}
+input:focus,select:focus{border-color:var(--green)}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:25px 0 15px}
+.section-title h2{font-size:22px;margin:0}
+.categories{display:flex;gap:9px;overflow-x:auto;padding:4px 0 12px}
+.cat{border:1px solid #dce7e0;background:white;padding:10px 16px;border-radius:30px;white-space:nowrap}
+.cat.active{background:var(--green);color:white;border-color:var(--green)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.product{background:white;border-radius:14px;overflow:hidden;border:1px solid #edf0ee}
+.product img{width:100%;height:155px;object-fit:cover;background:#edf5ef}
+.product-info{padding:13px}
+.product h3{font-size:15px;margin:0 0 7px}
+.small{font-size:12px;color:var(--muted)}
+.price{font-size:18px;font-weight:800;margin:10px 0;color:var(--green)}
+.old{font-size:12px;color:#999;text-decoration:line-through;margin-left:5px}
+.product .btn{width:100%;padding:10px}
+.panel{background:white;padding:20px;border-radius:15px;margin:18px 0}
+.hidden{display:none!important}
+.notice{padding:12px;border-radius:9px;margin:12px 0;background:#e9f8f1;color:#07543e}
+.error{background:#fff0ef;color:#a12820}
+.modal{position:fixed;inset:0;background:#0008;z-index:30;display:flex;align-items:center;justify-content:center;padding:15px}
+.modal-card{background:white;border-radius:16px;padding:22px;width:100%;max-width:430px;max-height:90vh;overflow:auto}
+.modal-card h2{margin-top:0}
+.modal-card input{margin:7px 0}
+.modal-actions{display:flex;gap:9px;margin-top:14px}
+.modal-actions button{flex:1}
+.cart-line{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #eee;padding:12px 0}
+.cart-line button{border:0;background:#ffe9e7;color:#b22;border-radius:6px;padding:5px 9px}
+footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
+#message{position:fixed;bottom:18px;left:5%;right:5%;z-index:50;text-align:center}
+.toast{background:#18231f;color:white;padding:13px;border-radius:10px;max-width:500px;margin:auto}
+@media(max-width:850px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){
+ header{padding:12px 4%}.brand{font-size:16px}
+ .header-actions .btn{padding:9px 10px;font-size:12px}
+ .container{width:94%;margin:15px auto}
+ .hero{padding:25px 18px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .product img{height:125px}
+ .product-info{padding:10px}
+ .product h3{font-size:14px}
+ .search-row{flex-direction:column}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">🛒 Smart <span>Grocery</span></div>
+  <div class="header-actions">
+    <button class="btn btn-light" id="cartBtn">🛍 Cart (<span id="cartCount">0</span>)</button>
+    <button class="btn" id="authBtn">Login</button>
+  </div>
+</header>
+
+<main class="container">
+
+<section class="hero">
+  <h1>Fresh Grocery, Delivered to You!</h1>
+  <p>Shop your daily essentials from local grocery stores. Quality products, simple ordering and convenient shopping.</p>
+  <button class="btn" style="background:white;color:#07543e" onclick="document.getElementById('productsSection').scrollIntoView({behavior:'smooth'})">Shop Now →</button>
+</section>
+
+<div class="search-row">
+  <input id="searchInput" placeholder="🔍 Search grocery products...">
+  <select id="sortSelect">
+    <option value="default">Sort: Recommended</option>
+    <option value="low">Price: Low to High</option>
+    <option value="high">Price: High to Low</option>
+    <option value="name">Name: A to Z</option>
+  </select>
+</div>
+
+<section id="productsSection">
+  <div class="section-title">
+    <h2>Shop by Category</h2>
+  </div>
+  <div class="categories" id="categories">
+    <button class="cat active" data-category="all">All Products</button>
+  </div>
+
+  <div class="section-title">
+    <h2>Popular Products</h2>
+    <span class="small" id="productCount">Loading...</span>
+  </div>
+
+  <div id="status" class="notice">Connecting to store...</div>
+  <div class="grid" id="productGrid"></div>
+</section>
+
+<section class="panel">
+  <h2>My Account</h2>
+  <p id="accountInfo">Login to manage your account and orders.</p>
+  <button class="btn btn-light" id="profileBtn">My Profile</button>
+  <button class="btn btn-light hidden" id="logoutBtn">Logout</button>
+</section>
+
+</main>
+
+<footer>
+  <strong>Smart Grocery Store Pro</strong>
+  <p>Fresh products. Easy shopping. Local stores.</p>
+  <p>Independent online marketplace. Not affiliated with any government organization.</p>
+</footer>
+
+<div id="message"></div>
+
+<!-- AUTH MODAL -->
+<div class="modal hidden" id="authModal">
+ <div class="modal-card">
+  <h2 id="authTitle">Welcome Back</h2>
+  <div id="authNotice"></div>
+  <input id="authName" placeholder="Full name (for signup)" class="hidden">
+  <input id="authEmail" type="email" placeholder="Email address">
+  <input id="authPassword" type="password" placeholder="Password">
+  <div class="modal-actions">
+   <button class="btn" id="submitAuth">Login</button>
+   <button class="btn btn-light" id="closeAuth">Close</button>
+  </div>
+  <p class="small" style="margin-top:18px">
+   <a href="#" id="switchAuth">Create a new account</a>
+  </p>
+ </div>
+</div>
+
+<!-- CART MODAL -->
+<div class="modal hidden" id="cartModal">
+ <div class="modal-card">
+  <h2>🛍 Your Shopping Cart</h2>
+  <div id="cartItems"></div>
+  <h3 id="cartTotal">Total: ₹0</h3>
+  <div id="checkoutFields" class="hidden">
+   <h3>Delivery Details</h3>
+   <input id="address" placeholder="Full delivery address">
+   <input id="city" placeholder="City">
+   <input id="pincode" placeholder="6-digit pincode" maxlength="6">
+   <input id="phone" placeholder="Mobile number">
+   <input id="notes" placeholder="Order notes (optional)">
+  </div>
+  <div class="modal-actions">
+   <button class="btn" id="checkoutBtn">Checkout</button>
+   <button class="btn btn-light" id="closeCart">Close</button>
+  </div>
+ </div>
+</div>
+
+<script>
+/* =========================================
+   1. SUPABASE CONFIGURATION
+   Replace these two values with your own.
+========================================= */
+
+const SUPABASE_URL = "https://wqlopfftzvsjsxmrmxeq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
+let db = null;
+let currentUser = null;
+let products = [];
+let categories = [];
+let cart = [];
+let selectedCategory = "all";
+let signupMode = false;
+let checkoutMode = false;
+
+const $ = id => document.getElementById(id);
+
+function notify(message, error=false) {
+  $("message").innerHTML =
+    `<div class="toast">${escapeHTML(message)}</div>`;
+  setTimeout(() => $("message").innerHTML="", 3500);
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;",
+    '"':"&quot;", "'":"&#39;"
+  })[c]);
+}
+
+function money(value) {
+  return "₹" + Number(value || 0).toFixed(2);
+}
+
+/* =========================================
+   2. CONNECT TO SUPABASE
+========================================= */
+
+async function initialize() {
+  if (
+    SUPABASE_URL.includes("YOUR_") ||
+    SUPABASE_KEY.includes("YOUR_")
+  ) {
+    $("status").textContent =
+      "Supabase setup pending. Add your project URL and Publishable key in the HTML code.";
+    $("status").classList.add("error");
+    return;
+  }
+
+  try {
+    db = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const {data, error} = await db.auth.getSession();
+    if (error) throw error;
+
+    currentUser = data.session?.user || null;
+    updateAccount();
+
+    db.auth.onAuthStateChange((_event, session) => {
+      currentUser = session?.user || null;
+      updateAccount();
+      if (currentUser) loadProducts();
+    });
+
+    await loadCategories();
+    await loadProducts();
+
+  } catch (e) {
+    showError("Connection error: " + e.message);
+  }
+}
+
+function showError(message) {
+  $("status").textContent = message;
+  $("status").classList.add("error");
+}
+
+/* =========================================
+   3. LOAD CATEGORIES
+========================================= */
+
+async function loadCategories() {
+  if (!db) return;
+
+  const {data, error} = await db
+    .from("categories")
+    .select("id,name")
+    .eq("is_active", true)
+    .order("name");
+
+  if (error) {
+    console.warn("Category loading:", error.message);
+    return;
+  }
+
+  categories = data || [];
+  $("categories").innerHTML =
+    `<button class="cat active" data-category="all">All Products</button>` +
+    categories.map(c =>
+      `<button class="cat" data-category="${escapeHTML(c.id)}">${escapeHTML(c.name)}</button>`
+    ).join("");
+}
+
+/* =========================================
+   4. LOAD PRODUCTS
+========================================= */
+
+async function loadProducts() {
+  if (!db) return;
+
+  $("status").textContent = "Loading products...";
+
+  const {data, error} = await db
+    .from("products")
+    .select("id,shop_id,category_id,name,description,price,sale_price,stock,images,is_available")
+    .eq("is_available", true)
+    .gt("stock", 0)
+    .order("created_at", {ascending:false});
+
+  if (error) {
+    showError("Products could not load: " + error.message);
+    return;
+  }
+
+  products = data || [];
+  $("status").classList.remove("error");
+  $("status").textContent = products.length
+    ? "Fresh groceries available from our stores."
+    : "No products available yet. Shopkeepers can add products after their dashboard is ready.";
+
+  renderProducts();
+}
+
+function imageOf(product) {
+  let images = product.images;
+  if (typeof images === "string") {
+    try { images = JSON.parse(images); }
+    catch(e) { images = []; }
+  }
+
+  if (Array.isArray(images) && images.length) {
+    const first = images[0];
+    if (typeof first === "string") return first;
+    if (first?.url) return first.url;
+  }
+
+  return "https://placehold.co/400x300/e9f8f1/087f5b?text=Grocery";
+}
+
+function renderProducts() {
+  let list = products.filter(p => {
+    const matchesCategory =
+      selectedCategory === "all" ||
+      p.category_id === selectedCategory;
+
+    const search = $("searchInput").value.toLowerCase();
+    const matchesSearch =
+      (p.name || "").toLowerCase().includes(search) ||
+      (p.description || "").toLowerCase().includes(search);
+
+    return matchesCategory && matchesSearch;
+  });
+
+  const sort = $("sortSelect").value;
+  if (sort === "low") list.sort((a,b) => effectivePrice(a)-effectivePrice(b));
+  if (sort === "high") list.sort((a,b) => effectivePrice(b)-effectivePrice(a));
+  if (sort === "name") list.sort((a,b) => a.name.localeCompare(b.name));
+
+  $("productCount").textContent = list.length + " products";
+
+  $("productGrid").innerHTML = list.map(p => `
+    <article class="product">
+      <img src="${escapeHTML(imageOf(p))}"
+           alt="${escapeHTML(p.name)}"
+           loading="lazy"
+           onerror="this.src='https://placehold.co/400x300/e9f8f1/087f5b?text=Grocery'">
+      <div class="product-info">
+        <h3>${escapeHTML(p.name)}</h3>
+        <div class="small">${escapeHTML(p.description || "Quality grocery product")}</div>
+        <div class="price">
+          ${money(effectivePrice(p))}
+          ${p.sale_price != null ? `<span class="old">${money(p.price)}</span>` : ""}
+        </div>
+        <div class="small">Stock: ${p.stock}</div>
+        <br>
+        <button class="btn addBtn" data-id="${p.id}">Add to Cart</button>
+      </div>
+    </article>
+  `).join("");
+
+  if (!list.length) {
+    $("productGrid").innerHTML =
+      '<p class="small">No matching products found.</p>';
+  }
+}
+
+function effectivePrice(p) {
+  return Number(p.sale_price ?? p.price);
+}
+
+/* =========================================
+   5. CATEGORY AND SEARCH EVENTS
+========================================= */
+
+$("categories").addEventListener("click", e => {
+  const btn = e.target.closest("[data-category]");
+  if (!btn) return;
+
+  selectedCategory = btn.dataset.category;
+  document.querySelectorAll(".cat").forEach(b =>
+    b.classList.toggle("active", b === btn)
+  );
+  renderProducts();
+});
+
+$("searchInput").addEventListener("input", renderProducts);
+$("sortSelect").addEventListener("change", renderProducts);
+
+/* =========================================
+   6. SHOPPING CART
+========================================= */
+
+$("productGrid").addEventListener("click", e => {
+  const btn = e.target.closest(".addBtn");
+  if (!btn) return;
+  addToCart(btn.dataset.id);
+});
+
+function addToCart(id) {
+  const product = products.find(p => p.id === id);
+  if (!product) return;
+
+  if (cart.length && cart[0].shop_id !== product.shop_id) {
+    notify("Please order products from one shop at a time.");
+    return;
+  }
+
+  const existing = cart.find(x => x.id === id);
+  const quantity = existing ? existing.quantity + 1 : 1;
+
+  if (quantity > product.stock || quantity > 100) {
+    notify("Maximum available stock reached.");
+    return;
+  }
+
+  if (existing) existing.quantity++;
+  else cart.push({...product, quantity:1});
+
+  updateCart();
+  notify("Product added to cart!");
+}
+
+function updateCart() {
+  const count = cart.reduce((sum,p) => sum+p.quantity, 0);
+  $("cartCount").textContent = count;
+
+  $("cartItems").innerHTML = cart.length
+    ? cart.map(p => `
+      <div class="cart-line">
+        <div>
+          <strong>${escapeHTML(p.name)}</strong>
+          <div class="small">${money(effectivePrice(p))} × ${p.quantity}</div>
+        </div>
+        <div>
+          <strong>${money(effectivePrice(p)*p.quantity)}</strong><br>
+          <button data-remove="${p.id}">Remove</button>
+        </div>
+      </div>
+    `).join("")
+    : '<p class="small">Your cart is empty.</p>';
+
+  $("cartTotal").textContent =
+    "Subtotal: " + money(cart.reduce(
+      (sum,p) => sum+effectivePrice(p)*p.quantity, 0
+    ));
+}
+
+$("cartItems").addEventListener("click", e => {
+  const btn = e.target.closest("[data-remove]");
+  if (!btn) return;
+  cart = cart.filter(p => p.id !== btn.dataset.remove);
+  updateCart();
+});
+
+$("cartBtn").onclick = () => {
+  checkoutMode = false;
+  $("checkoutFields").classList.add("hidden");
+  $("checkoutBtn").textContent = "Checkout";
+  $("cartModal").classList.remove("hidden");
+  updateCart();
+};
+
+$("closeCart").onclick = () => {
+  $("cartModal").classList.add("hidden");
+};
+
+/* =========================================
+   7. AUTHENTICATION
+========================================= */
+
+function openAuth() {
+  signupMode = false;
+  updateAuthModal();
+  $("authModal").classList.remove("hidden");
+}
+
+function updateAuthModal() {
+  $("authTitle").textContent =
+    signupMode ? "Create Account" : "Welcome Back";
+
+  $("authName").classList.toggle("hidden", !signupMode);
+  $("submitAuth").textContent =
+    signupMode ? "Create Account" : "Login";
+
+  $("switchAuth").textContent =
+    signupMode ? "Already have an account? Login" :
+    "Create a new account";
+}
+
+$("authBtn").onclick = openAuth;
+$("closeAuth").onclick = () => $("authModal").classList.add("hidden");
+
+$("switchAuth").onclick = e => {
+  e.preventDefault();
+  signupMode = !signupMode;
+  updateAuthModal();
+};
+
+$("submitAuth").onclick = async () => {
+  if (!db) return notify("Supabase connection is not configured.");
+
+  const email = $("authEmail").value.trim();
+  const password = $("authPassword").value;
+  const name = $("authName").value.trim();
+
+  if (!email || !password) return notify("Enter email and password.");
+  if (password.length < 6) return notify("Password must have at least 6 characters.");
+  if (signupMode && !name) return notify("Enter your full name.");
+
+  $("submitAuth").disabled = true;
+
+  try {
+    let result;
+
+    if (signupMode) {
+      result = await db.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {full_name:name}
+        }
+      });
+    } else {
+      result = await db.auth.signInWithPassword({
+        email,password
+      });
+    }
+
+    if (result.error) throw result.error;
+
+    if (signupMode && !result.data.session) {
+      notify("Account created! Check your email to confirm signup.");
+    } else {
+      notify(signupMode ? "Account created!" : "Login successful!");
+    }
+
+    if (result.data.session) {
+      currentUser = result.data.user;
+      updateAccount();
+      await loadProducts();
+    }
+
+    $("authModal").classList.add("hidden");
+
+  } catch(e) {
+    notify(e.message);
+  } finally {
+    $("submitAuth").disabled = false;
+  }
+};
+
+/* =========================================
+   8. ACCOUNT AND LOGOUT
+========================================= */
+
+function updateAccount() {
+  $("authBtn").textContent = currentUser ? "Account" : "Login";
+  $("accountInfo").textContent = currentUser
+    ? "Logged in as " + currentUser.email
+    : "Login to manage your account and orders.";
+
+  $("logoutBtn").classList.toggle("hidden", !currentUser);
+}
+
+$("profileBtn").onclick = () => {
+  if (!currentUser) return openAuth();
+  notify("Signed in as " + currentUser.email);
+};
+
+$("logoutBtn").onclick = async () => {
+  if (!db) return;
+  const {error} = await db.auth.signOut();
+  if (error) return notify(error.message);
+  currentUser = null;
+  cart = [];
+  updateCart();
+  updateAccount();
+  notify("Logged out successfully.");
+};
+
+/* =========================================
+   9. CHECKOUT AND PLACE ORDER
+========================================= */
+
+$("checkoutBtn").onclick = async () => {
+  if (!cart.length) return notify("Your cart is empty.");
+  if (!currentUser) {
+    $("cartModal").classList.add("hidden");
+    openAuth();
+    return notify("Login before checkout.");
+  }
+
+  if (!checkoutMode) {
+    checkoutMode = true;
+    $("checkoutFields").classList.remove("hidden");
+    $("checkoutBtn").textContent = "Place Order";
+    return;
+  }
+
+  const address = $("address").value.trim();
+  const city = $("city").value.trim();
+  const pincode = $("pincode").value.trim();
+  const phone = $("phone").value.trim();
+
+  if (!address || !city || !phone || !/^[0-9]{6}$/.test(pincode)) {
+    return notify("Enter a complete address and valid 6-digit pincode.");
+  }
+
+  $("checkoutBtn").disabled = true;
+
+  try {
+    const {data: addressData, error: addressError} = await db
+      .from("delivery_addresses")
+      .insert({
+        user_id:currentUser.id,
+        full_address:address,
+        city,
+        pincode,
+        phone,
+        is_default:false
+      })
+      .select("id")
+      .single();
+
+    if (addressError) throw addressError;
+
+    const items = cart.map(p => ({
+      product_id:p.id,
+      quantity:p.quantity
+    }));
+
+    const {data: orderId, error: orderError} = await db.rpc(
+            "place_order",
+      {
+        p_shop_id: cart[0].shop_id,
+        p_address_id: addressData.id,
+        p_items: items
+      }
+    );
+
+    if (orderError) throw orderError;
+
+    cart = [];
+    updateCart();
+    checkoutMode = false;
+    $("checkoutFields").classList.add("hidden");
+    $("cartModal").classList.add("hidden");
+
+    notify("Order placed successfully! Order ID: " + orderId);
+    await loadProducts();
+
+  } catch (e) {
+    notify("Order failed: " + e.message);
+  } finally {
+    $("checkoutBtn").disabled = false;
+  }
+};
+
+/* =========================================
+   10. START APPLICATION
+========================================= */
+
+updateCart();
+initialize();
+</script>
+
+</body>
+</html>
+  
