@@ -22,6 +22,9 @@ Annual prices are 10 months of the monthly price. Pricing is read from the Supab
 ## Orders
 Customer checkout currently places cash-on-delivery orders. Shopkeepers can accept pending COD orders, move them through delivery, and the COD payment is marked paid only when delivery is confirmed as collected.
 
+## Subscription expiry automation
+Supabase Cron runs the subscription expiry routine hourly. Expired subscriptions deactivate their shops and prevent shopkeepers from changing products until a valid subscription is active again.
+
 ## Payment setup
 See PAYMENT_SETUP.md for Razorpay Edge Function secrets, webhook registration and Test Mode checklist. Payment processing is not live until merchant secrets are configured and test payments pass.
 
