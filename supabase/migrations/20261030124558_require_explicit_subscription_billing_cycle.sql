@@ -1,8 +1,12 @@
-CREATE OR REPLACE FUNCTION private.create_subscription_checkout(p_shop_id uuid, p_plan_id uuid, p_billing_cycle text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public'
+CREATE OR REPLACE FUNCTION private.create_subscription_checkout(
+  p_shop_id uuid,
+  p_plan_id uuid,
+  p_billing_cycle text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog', 'public'
 AS $function$
 declare
   v_uid uuid := auth.uid();
@@ -155,7 +159,4 @@ begin
     'reused', false
   );
 end;
-$function$
-
-
-ALTER TABLE public.shop_subscriptions ALTER COLUMN billing_cycle SET NOT NULL;
+$function$;
