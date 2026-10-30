@@ -15,6 +15,9 @@ These migrations have already been applied to the Supabase production project.
 
 ## Verification notes
 
+- Migration `20261030123652_guard_subscription_activation_state` is applied and source-controlled. It checks that the shopkeeper account remains approved and active, the shop is not suspended, the subscription is pending and linked to the payment, and the captured amount matches its billing cycle before activating a shop.
+- Razorpay Edge Function source files are tracked under `supabase/functions/`. Checkout function version 3 prevents simultaneous checkout calls from overwriting the stored order reference.
+
 - All 14 public tables have Row Level Security enabled.
 - Direct order UPDATE and direct payment INSERT policies are absent.
 - The product-limit and order-limit functions were re-read after migration.
