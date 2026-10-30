@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { withSupabase } from "npm:@supabase/server";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -9,31 +9,16 @@ const cors = {
 function reply(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: cors });
 }
-function keyFromJson(name: string): string {
-  const raw = Deno.env.get(name);
-  if (!raw) return "";
-  try { return JSON.parse(raw).default || ""; } catch { return ""; }
-}
 
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (req.method !== "POST") return reply(405, { error: "Method not allowed" });
 
-  const url = Deno.env.get("SUPABASE_URL") || "";
-  const publishable = keyFromJson("SUPABASE_PUBLISHABLE_KEYS") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY") || "";
-  const secret = keyFromJson("SUPABASE_SECRET_KEYS") || Deno.env.get("SUPABASE_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   const keyId = Deno.env.get("RAZORPAY_KEY_ID") || "";
   const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET") || "";
-  if (!url || !publishable || !secret) return reply(500, { error: "Supabase Edge Function keys are not configured." });
-  if (!keyId || !keySecret) return reply(503, { error: "Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Supabase Edge Function Secrets." });
+  if (!keyId || !keySecret) return reply(503, { error: "Razorpay secrets are not configured." });
 
-  const authorization = req.headers.get("Authorization");
-  if (!authorization?.startsWith("Bearer ")) return reply(401, { error: "Sign in is required." });
-  const userClient = createClient(url, publishable, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+  const userClient = ctx.supabase;
+  const admin = ctx.supabaseAdmin;
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return reply(401, { error: "Invalid or expired session." });
 
@@ -55,13 +40,13 @@ Deno.serve(async (req: Request) => {
   const paymentId = String(checkout.payment_id);
   const amountPaise = Math.round(Number(checkout.amount) * 100);
   if (!Number.isSafeInteger(amountPaise) || amountPaise < 100) {
-    await admin.from("payments").update({ status: "failed", gateway_payload: { reason: "Invalid amount" } }).eq("id", paymentId).eq("status", "pending").eq("verified", false);
-    await admin.from("shop_subscriptions").update({ status: "cancelled" }).eq("id", checkout.subscription_id).eq("status", "pending_payment");
+    await admin.from("payments").update({ status: "failed", gateway_payload: { reason: "Invalid amount" } })
+      .eq("id", paymentId).eq("status", "pending").eq("verified", false);
+    await admin.from("shop_subscriptions").update({ status: "cancelled" })
+      .eq("id", checkout.subscription_id).eq("status", "pending_payment");
     return reply(400, { error: "Invalid payment amount." });
   }
 
-  // Reuse an already persisted Razorpay order whenever another checkout request
-  // won the race and stored it before this invocation reached the database.
   const { data: currentPayment, error: currentError } = await admin.from("payments")
     .select("id,user_id,amount,currency,status,verified,gateway,gateway_order_id,shop_subscription_id")
     .eq("id", paymentId).eq("user_id", userData.user.id).single();
@@ -97,16 +82,13 @@ Deno.serve(async (req: Request) => {
       if (!response.ok || !result.id || result.amount !== amountPaise || result.currency !== "INR") {
         throw new Error(result?.error?.description || "Razorpay did not create the expected order.");
       }
-      const createdOrderId = String(result.id);
 
-      // Compare-and-set: only the invocation that sees NULL may persist an order.
-      // Other concurrent invocations must reuse the winning stored order ID.
       const { data: saved, error: saveError } = await admin.from("payments")
         .update({
           gateway: "razorpay",
-          gateway_order_id: createdOrderId,
+          gateway_order_id: String(result.id),
           gateway_payload: {
-            razorpay_order_id: createdOrderId,
+            razorpay_order_id: String(result.id),
             receipt,
             amount_paise: amountPaise,
             currency: "INR",
@@ -134,8 +116,6 @@ Deno.serve(async (req: Request) => {
         orderId = String(winner.gateway_order_id);
       }
     } catch (error) {
-      // Do not cancel a shared pending payment here: another concurrent request
-      // may already have created and stored a valid Razorpay order for it.
       console.error("Razorpay order creation failed", String(error).slice(0, 500));
       return reply(502, { error: "Payment order could not be created. Please retry." });
     }
@@ -152,3 +132,4 @@ Deno.serve(async (req: Request) => {
     prefill: { email: userData.user.email || "" },
   });
 });
+Deno.serve((req) => req.method === "OPTIONS" ? new Response("ok", { headers: cors }) : handler(req));
