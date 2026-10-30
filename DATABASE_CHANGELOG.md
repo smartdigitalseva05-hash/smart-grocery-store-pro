@@ -15,6 +15,10 @@ These migrations have already been applied to the Supabase production project.
 
 ## Verification notes
 
+- Rollback-only database smoke tests passed for profile RLS, role-escalation prevention, last-Super-Admin protection, inactive shop application creation, activation bypass rejection, synthetic subscription payment activation, monthly order cap, COD delivery progression, cancellation stock restoration/history, and hourly expiry deactivation. All temporary rows and plan changes were rolled back.
+- Latest Security Advisor result: one warning remains for leaked-password protection. Supabase documents this control as available on Pro Plan and above; no plan upgrade was made.
+- Latest Performance Advisor result: 14 informational unused-index notices remain. Indexes were retained because the project has no real workload data yet.
+
 - Migration `20261030125950_grant_minimal_payment_access_to_edge_service_role` adds only the read and update column permissions required by the payment Edge Functions; it does not permit creating or deleting payment records.
 
 - Migration `20261030125729_close_direct_superadmin_shop_activation_bypass` is applied and source-controlled. Direct Super Admin table updates can no longer activate shops or alter subscription plan/expiry fields; the protected Owner status RPC rechecks a verified active subscription, and the expiry job can only deactivate shops.
