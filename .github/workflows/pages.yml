@@ -31,10 +31,13 @@ jobs:
 
       - name: Type-check deployed Supabase Edge Functions
         run: |
+          mkdir -p "$RUNNER_TEMP/edge-function-check"
+          cp -R supabase/functions "$RUNNER_TEMP/edge-function-check/"
+          cd "$RUNNER_TEMP/edge-function-check"
           deno check --node-modules-dir=auto \
-            supabase/functions/razorpay-subscription-checkout/index.ts \
-            supabase/functions/razorpay-verify-subscription-payment/index.ts \
-            supabase/functions/razorpay-payment-webhook/index.ts
+            functions/razorpay-subscription-checkout/index.ts \
+            functions/razorpay-verify-subscription-payment/index.ts \
+            functions/razorpay-payment-webhook/index.ts
 
       - name: Validate website files and inline JavaScript
         run: |
@@ -65,7 +68,13 @@ jobs:
       - name: Upload website files
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: |
+            index.html
+            portal.html
+            apply-shop.html
+            owner.html
+            shopkeeper.html
+            my-orders.html
 
       - name: Deploy website
         id: deployment
