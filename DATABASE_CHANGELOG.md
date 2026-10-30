@@ -15,6 +15,8 @@ These migrations have already been applied to the Supabase production project.
 
 ## Verification notes
 
+- Migration `20261030131256_require_active_profiles_for_customer_and_shopkeeper_actions` is applied and source-controlled. Shop-owner RLS now requires an active shopkeeper profile; inactive accounts cannot place/cancel orders or manage shop orders through RPCs. Customers can still access their own orders while their account is active.
+
 - Migration `20261030131120_deactivate_shops_when_shopkeeper_is_disabled_or_demoted` is applied and source-controlled. Disabling a shopkeeper or changing their role away from shopkeeper automatically deactivates all their shops; reactivating the profile does not reactivate shops automatically.
 
 - Migration `20261030130935_disable_additional_super_admin_accounts` is applied and source-controlled. The existing Owner remains the only Super Admin; attempts to promote another profile to Super Admin are rejected by the database trigger. This prevents additional admin accounts from gaining the Owner-only control surface.
