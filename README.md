@@ -19,6 +19,9 @@ Multi-vendor grocery ordering platform with customer ordering, shopkeeper worksp
 
 Annual prices are 10 months of the monthly price. Pricing is read from the Supabase subscription_plans table.
 
+## Payment setup
+See PAYMENT_SETUP.md for Razorpay Edge Function secrets, webhook registration and Test Mode checklist. Payment processing is not live until merchant secrets are configured and test payments pass.
+
 ## Backend
 Supabase project: wqlopfftzvsjsxmrmxeq.
 The frontend uses a publishable key only. Authorization and tenant isolation must be enforced by database RLS and validated RPCs; never put service-role/secret keys in browser code.
