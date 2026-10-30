@@ -1,8 +1,9 @@
 CREATE OR REPLACE FUNCTION private.is_shop_owner(p_shop_id uuid)
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public'
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'pg_catalog', 'public'
 AS $function$
   SELECT private.is_super_admin()
     OR EXISTS (
