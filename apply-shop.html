@@ -5,11 +5,11 @@
 </style></head><body><main>
 <div class="panel"><h1>🏪 Apply for a Shop</h1><p class="muted">Create your account and submit your shop details. Your shop remains inactive until the Owner reviews and approves it. No subscription or payment is taken on this page.</p><div class="row"><a href="./portal.html">← Back to portal</a><span id="sessionInfo" class="muted"></span></div></div>
 <section id="authPanel" class="panel"><h1>Account access</h1><div class="row"><button id="signupTab" type="button">Create account</button><button id="loginTab" type="button">I already have an account</button></div>
-<form id="authForm"><label class="field" id="nameWrap">Your full name<input id="fullName" maxlength="100" autocomplete="name"></label><label class="field">Email<input id="email" type="email" required autocomplete="username"></label><label class="field">Password<input id="password" type="password" minlength="8" required autocomplete="new-password"></label><button id="authButton" type="submit">Create account</button></form><div id="authMessage" class="notice" role="status"></div><button id="resendConfirmation" type="button" class="hidden">Resend confirmation email</button></section>
+<form id="authForm"><label class="field" id="nameWrap">Your full name<input id="fullName" maxlength="100" autocomplete="name"></label><label class="field">Email<input id="email" type="email" required autocomplete="username"></label><label class="field">Password<input id="password" type="password" minlength="12" required autocomplete="new-password"></label><button id="authButton" type="submit">Create account</button></form><div id="authMessage" class="notice" role="status"></div><button id="resendConfirmation" type="button" class="hidden">Resend confirmation email</button></section>
 <section id="shopPanel" class="panel hidden"><h1>Shop details</h1><form id="shopForm"><label class="field">Shop name<input id="shopName" maxlength="120" required></label><label class="field">Shop description<textarea id="description" maxlength="1000"></textarea></label><div class="grid"><label class="field">Contact phone<input id="phone" type="tel" maxlength="25" required></label><label class="field">Business email<input id="shopEmail" type="email"></label><label class="field">Address<input id="address" maxlength="250" required></label><label class="field">City / Town<input id="city" maxlength="100" required></label></div><button id="submitButton" type="submit">Submit shop application</button></form><div id="shopMessage" class="notice" role="status"></div></section>
 <p class="foot">Your account initially receives customer permissions. Shopkeeper permissions are assigned only after Owner review. Do not send passwords or payment credentials to anyone.</p>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./password-security.js"></script><script>
 (()=>{
  const URL="https://wqlopfftzvsjsxmrmxeq.supabase.co",KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX",db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
  let mode="signup",user=null;
@@ -36,6 +36,7 @@
   e.preventDefault();$("authButton").disabled=true;say("authMessage",mode==="signup"?"Creating account…":"Signing in…");
   const email=$("email").value.trim(),password=$("password").value;
   if(mode==="signup"){
+   try { await window.checkPasswordSecurity(password); } catch(checkError) { say("authMessage",checkError.message,true); $("authButton").disabled=false; return; }
    const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:$("fullName").value.trim()}}});
    if(error){say("authMessage",error.message,true)}
    else if(data.session){say("authMessage","Account created. Continue with your shop details.");await showSession()}
@@ -60,6 +61,6 @@
   if(error){say("shopMessage",error.message,true);return}
   $("shopForm").classList.add("hidden");say("shopMessage","Application submitted for "+data.name+". Status: "+data.status+". Your shop is inactive until Owner approval and a verified subscription. You can close this page now.");
  });
- $("password").minLength=8;db.auth.onAuthStateChange((_event,session)=>{user=session?.user||null;if(!user)showSession()});showSession();
+ $("password").minLength=12;db.auth.onAuthStateChange((_event,session)=>{user=session?.user||null;if(!user)showSession()});showSession();
 })();
 </script></body></html>
