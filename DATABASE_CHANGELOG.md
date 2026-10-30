@@ -15,7 +15,7 @@ These migrations have already been applied to the Supabase production project.
 
 ## Verification notes
 
-- Rollback-only database smoke tests passed for profile RLS, role-escalation prevention, last-Super-Admin protection, inactive shop application creation, activation bypass rejection, synthetic subscription payment activation, product limit cap, monthly order cap, COD delivery progression, cancellation stock restoration/history, and hourly expiry deactivation. All temporary rows and plan changes were rolled back.
+- Rollback-only database smoke tests passed for profile RLS, role-escalation prevention, last-Super-Admin protection, shop application approval, inactive shop application creation, activation bypass rejection, synthetic subscription payment activation, product limit cap, monthly order cap, COD delivery progression, cancellation stock restoration/history, and hourly expiry deactivation. All temporary rows and plan changes were rolled back.
 - Latest Security Advisor result: one warning remains for leaked-password protection. Supabase documents this control as available on Pro Plan and above; no plan upgrade was made.
 - Latest Performance Advisor result: 14 informational unused-index notices remain. Indexes were retained because the project has no real workload data yet.
 
@@ -24,6 +24,7 @@ These migrations have already been applied to the Supabase production project.
 - Migration `20261030125729_close_direct_superadmin_shop_activation_bypass` is applied and source-controlled. Direct Super Admin table updates can no longer activate shops or alter subscription plan/expiry fields; the protected Owner status RPC rechecks a verified active subscription, and the expiry job can only deactivate shops.
 
 - `shopkeeper.html` keeps the subscription button disabled while Razorpay Checkout is open, preventing accidental multiple checkout modals for the same pending payment.
+- `apply-shop.html` now provides a Resend confirmation email action for accounts blocked by email confirmation.
 
 - Migration `20261030124909_serialize_order_cancellation_stock_restoration` is applied and source-controlled. Cancellation now locks the shop before restoring product stock, matching order-placement lock order and reducing deadlock risk during concurrent orders/cancellations.
 
