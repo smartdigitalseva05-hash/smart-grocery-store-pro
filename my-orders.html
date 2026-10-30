@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>Smart Grocery Store Pro · My Orders</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#131e30;--line:#26364d;--muted:#9fb0c5;--text:#f4f7fb;--accent:#38bdf8;--bad:#fca5a5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#19314c 0,transparent 34%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}main{width:min(900px,100% - 26px);margin:28px auto}.top,.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{font-weight:800;font-size:20px}.sub,.muted{color:var(--muted);font-size:13px}.panel{background:#131e30ef;border:1px solid var(--line);border-radius:17px;padding:20px;margin-top:17px}.auth{max-width:430px;margin:7vh auto}h1{font-size:24px;margin:0 0 8px}.field{display:block;color:var(--muted);font-size:13px;margin:12px 0}input{display:block;width:100%;margin-top:6px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#0b1422;color:var(--text);font:inherit}button{border:0;border-radius:10px;padding:11px 15px;background:var(--accent);color:#062033;font-weight:750;cursor:pointer}button.secondary{background:#24364d;color:var(--text)}button.danger{background:#7f1d1d;color:#fee2e2}button:disabled{opacity:.55;cursor:wait}.actions{display:flex;gap:8px;flex-wrap:wrap}.notice{min-height:20px;margin-top:12px;color:var(--muted);font-size:13px}.notice.error{color:var(--bad)}.hidden{display:none!important}.order{padding:16px;background:#0d1727;border:1px solid var(--line);border-radius:14px;margin-top:12px}.pill{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:4px 8px;text-transform:capitalize}.items{margin:12px 0 0;padding-left:18px;color:#dce6f3}.items li{margin:5px 0}.timeline{border-left:2px solid #31445d;margin:12px 0 0 5px;padding-left:13px}.timeline div{font-size:12px;color:var(--muted);margin:7px 0}.foot{font-size:12px;color:var(--muted);margin:20px 0}@media(max-width:520px){main{margin:16px auto}.panel{padding:15px}.brand{font-size:17px}}
+</style></head><body><main>
+<header class="top"><div><div class="brand">🛒 Smart Grocery Store Pro</div><div class="sub">Customer · My Orders</div></div><div id="topActions" class="actions hidden"><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
+<section id="loginPanel" class="panel auth"><h1>Customer sign in</h1><p class="muted">Use the same customer account used to place your order.</p><form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><button id="loginButton" type="submit">Sign in</button></form><div id="loginMessage" class="notice" role="status"></div></section>
+<section id="app" class="hidden"><div class="panel"><div class="row"><div><h1>Order history</h1><div class="sub">Your orders, item details and delivery status.</div></div></div><div id="ordersMessage" class="notice" role="status"></div><div id="ordersList"></div></div></section>
+<p class="foot">Orders are loaded for the signed-in customer only. Access is enforced by database Row Level Security. Order cancellation is processed by the database RPC and cannot be reversed here.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+(()=>{
+ const URL="https://wqlopfftzvsjsxmrmxeq.supabase.co",KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
+ const db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
+ const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(Number(n||0));
+ const say=(id,msg,bad=false)=>{$(id).textContent=msg;$(id).classList.toggle("error",bad)};
+ function login(msg=""){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("topActions").classList.add("hidden");say("loginMessage",msg)}
+ async function boot(){
+  const {data:{session},error}=await db.auth.getSession();if(error||!session){login(error?.message||"");return}
+  const {data:p,error:pe}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
+  if(pe||!p||p.role!=="customer"||!p.is_active){await db.auth.signOut();login(pe?.message||"This account is not an active customer account.");return}
+  $("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("topActions").classList.remove("hidden");await loadOrders();
+ }
+ async function loadOrders(){
+  const list=$("ordersList");list.replaceChildren();say("ordersMessage","Loading your orders…");
+  const {data,error}=await db.from("orders").select("id,order_number,status,subtotal,shipping_fee,total,created_at,shop:shops(name),items:order_items(quantity,price_at_purchase,total_price,product:products(name)),history:order_status_history(new_status,reason,created_at)").order("created_at",{ascending:false});
+  if(error){say("ordersMessage",error.message,true);return}
+  if(!data?.length){say("ordersMessage","No orders found for this account yet.");return}
+  say("ordersMessage",data.length+" order(s) found.");
+  for(const o of data){
+   const card=document.createElement("article");card.className="order";
+   const top=document.createElement("div");top.className="row";
+   const head=document.createElement("div");const id=document.createElement("strong");id.textContent=o.order_number||("Order "+o.id.slice(0,8));const shop=document.createElement("div");shop.className="sub";shop.textContent=(o.shop?.name||"Store")+" · "+new Date(o.created_at).toLocaleString();head.append(id,shop);
+   const status=document.createElement("span");status.className="pill";status.textContent=(o.status||"unknown").replaceAll("_"," ");top.append(head,status);card.append(top);
+   const totals=document.createElement("div");totals.className="sub";totals.style.marginTop="10px";totals.textContent="Subtotal "+money(o.subtotal)+" · Delivery "+money(o.shipping_fee)+" · Total "+money(o.total);card.append(totals);
+   const items=document.createElement("ul");items.className="items";
+   for(const item of (o.items||[])){const li=document.createElement("li");li.textContent=(item.product?.name||"Item")+" × "+item.quantity+" · "+money(item.total_price);items.append(li)}
+   if(items.children.length)card.append(items);
+   if(o.history?.length){const timeline=document.createElement("div");timeline.className="timeline";for(const h of o.history){const line=document.createElement("div");line.textContent=new Date(h.created_at).toLocaleString()+" · "+h.new_status+(h.reason?" · "+h.reason:"");timeline.append(line)}card.append(timeline)}
+   if(["pending","paid"].includes(o.status)){
+    const actions=document.createElement("div");actions.className="actions";actions.style.marginTop="12px";const cancel=document.createElement("button");cancel.className="danger";cancel.textContent="Cancel order";cancel.addEventListener("click",async()=>{if(!window.confirm("Cancel this order? Stock will be restored by the database if cancellation is allowed."))return;cancel.disabled=true;const {error:ce}=await db.rpc("cancel_order",{p_order_id:o.id,p_reason:"Cancelled by customer"});if(ce){say("ordersMessage",ce.message,true);cancel.disabled=false;return}await loadOrders()});actions.append(cancel);card.append(actions);
+   }
+   list.append(card);
+  }
+ }
+ $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginButton").disabled=true;say("loginMessage","Signing in…");const {error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});$("loginButton").disabled=false;if(error){say("loginMessage",error.message,true);return}await boot()});
+ $("refresh").addEventListener("click",loadOrders);$("logout").addEventListener("click",async()=>{await db.auth.signOut();login("Signed out.")});db.auth.onAuthStateChange((_e,s)=>{if(!s)login("Session ended. Sign in again.")});boot();
+})();
+</script></body></html>
