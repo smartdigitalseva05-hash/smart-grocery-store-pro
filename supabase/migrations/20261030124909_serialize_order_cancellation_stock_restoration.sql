@@ -1,8 +1,11 @@
-CREATE OR REPLACE FUNCTION private.cancel_order(p_order_id uuid, p_reason text DEFAULT NULL::text)
- RETURNS boolean
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public'
+CREATE OR REPLACE FUNCTION private.cancel_order(
+  p_order_id uuid,
+  p_reason text DEFAULT NULL
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog', 'public'
 AS $function$
 DECLARE
   v_order public.orders%rowtype;
@@ -69,5 +72,4 @@ BEGIN
 
   RETURN true;
 END;
-$function$
-
+$function$;
