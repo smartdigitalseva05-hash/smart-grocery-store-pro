@@ -53,3 +53,6 @@ These migrations have already been applied to the Supabase production project.
 - End-to-end customer/shopkeeper/payment workflows still require test accounts, at least one approved shop, and Razorpay test credentials. Do not treat the application as production-verified until those flows pass.
 
 This file documents applied database changes; it is not a replacement for the Supabase migration SQL files.
+
+- Migration `20261030133401_secure_product_image_storage` is applied and source-controlled. The public `product-images` bucket accepts only JPEG, PNG, and WebP images up to 5 MB. Authenticated uploads, updates, and deletes are restricted to the active, subscribed owner of the shop UUID used as the first storage path segment. Public image reads support storefront rendering.
+- Shopkeeper product creation now supports direct photo upload to Supabase Storage, stores the public image URL and object path in the product's JSONB `images` field, validates file type/size, and removes an uploaded object if product insertion fails. Product image URL editing remains available.
