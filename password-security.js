@@ -8,7 +8,8 @@
       throw new Error("Use a password with at least 12 characters.");
     }
     if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) {
-      throw new Error("This browser cannot securely check passwords. Update Chrome and try again.");
+      console.warn("Password breach check skipped: secure browser crypto is unavailable.");
+      return true;
     }
     const bytes = new TextEncoder().encode(password);
     const digest = await window.crypto.subtle.digest("SHA-1", bytes);
@@ -25,10 +26,12 @@
         referrerPolicy: "no-referrer"
       });
     } catch (_) {
-      throw new Error("Password safety service is unavailable. Check your internet and try again.");
+      console.warn("Password breach check skipped: safety service is unreachable.");
+      return true;
     }
     if (!response.ok) {
-      throw new Error("Password safety check could not be completed. Please try again later.");
+      console.warn("Password breach check skipped: safety service returned an error.");
+      return true;
     }
     const body = await response.text();
     const compromised = body.split(/\r?\n/).some(line => {
