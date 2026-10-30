@@ -559,20 +559,22 @@ $("switchAuth").onclick = e => {
 $("forgotPassword").onclick = async e => {
   e.preventDefault();
   if (!db) return notify("Supabase connection is not ready.");
-  const email = $("authEmail").value.trim();
+  const email = $("authEmail").value.trim().toLowerCase();
   if (!email) return notify("Enter your account email first.");
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return notify("Enter a valid email address.");
   const link = $("forgotPassword");
   link.style.pointerEvents = "none";
+  link.setAttribute("aria-disabled", "true");
   try {
-    const {error} = await db.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + window.location.pathname
-    });
+    const redirectTo = new URL(window.location.pathname, window.location.origin).href;
+    const {error} = await db.auth.resetPasswordForEmail(email, {redirectTo});
     if (error) throw error;
-    notify("Password reset link sent. Check your email inbox and spam folder.");
+    notify("Reset email requested. Check Inbox, Spam and Promotions. Open the newest link on this same website.");
   } catch (error) {
-    notify("Password reset failed: " + error.message);
+    notify("Reset request failed: " + (error.message || "Please try again."));
   } finally {
     link.style.pointerEvents = "";
+    link.removeAttribute("aria-disabled");
   }
 };
 
@@ -598,7 +600,7 @@ $("submitAuth").onclick = async () => {
       resetMode = false;
       $("authPassword").value = "";
       $("authModal").classList.add("hidden");
-      notify("Password updated. Please login with your new password.");
+      notify("Password changed successfully. Your account is ready to use.");
       return;
     } else if (signupMode) {
       await window.checkPasswordSecurity(password);
@@ -656,13 +658,25 @@ function updateAccount() {
   $("logoutBtn").classList.toggle("hidden", !currentUser);
 }
 
-$("profileBtn").onclick = () => {
+$("profileBtn").onclick = async () => {
   if (!currentUser) return openAuth();
-  const metadata = currentUser.user_metadata || {};
-  $("profileName").value = metadata.full_name || "";
-  $("profilePhone").value = metadata.phone || "";
+  if (!db) return notify("Database connection is not ready.");
+  $("profileName").value = "";
+  $("profilePhone").value = "";
   $("profileEmail").value = currentUser.email || "";
   $("profileModal").classList.remove("hidden");
+  try {
+    const {data, error} = await db.from("profiles")
+      .select("full_name,phone")
+      .eq("id", currentUser.id)
+      .single();
+    if (error) throw error;
+    $("profileName").value = data.full_name || currentUser.user_metadata?.full_name || "";
+    $("profilePhone").value = data.phone || "";
+  } catch (error) {
+    $("profileModal").classList.add("hidden");
+    notify("Profile could not be loaded: " + error.message);
+  }
 };
 
 $("closeProfileBtn").onclick = () => {
@@ -681,14 +695,16 @@ $("saveProfileBtn").onclick = async () => {
   const saveButton = $("saveProfileBtn");
   saveButton.disabled = true;
   try {
-    const {data, error} = await db.auth.updateUser({
-      data: {full_name: fullName, phone: phone}
-    });
+    const {data, error} = await db.from("profiles")
+      .update({full_name: fullName, phone: phone || null})
+      .eq("id", currentUser.id)
+      .select("id,full_name,phone")
+      .single();
     if (error) throw error;
-    currentUser = data.user || currentUser;
+    currentUser.user_metadata = {...(currentUser.user_metadata || {}), full_name: data.full_name, phone: data.phone || ""};
     updateAccount();
     $("profileModal").classList.add("hidden");
-    notify("Profile updated successfully.");
+    notify("Profile saved successfully.");
   } catch (e) {
     notify("Could not update profile: " + e.message);
   } finally {
