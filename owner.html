@@ -42,6 +42,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <div class="metric"><span>Expired subscriptions</span><strong id="subscriptions_expired">—</strong></div>
 </div><div id="dashboardMessage" class="notice" role="status"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Shop approval & status</h1><div class="sub">Only active Super Admin can change a shop's status. Every change is audit-logged.</div></div><button id="shopsRefresh" class="secondary">Refresh shops</button></div><div id="shopsMessage" class="notice" role="status"></div><div id="shopList" class="shop-list"></div></div>
+<div class="panel shop-section"><div class="row"><div><h1>Payment verification</h1><div class="sub">Only successful payments from a trusted payment process can be verified here.</div></div><button id="paymentsRefresh" class="secondary">Refresh payments</button></div><div id="paymentsMessage" class="notice" role="status"></div><div id="paymentList" class="shop-list"></div></div>
 </section>
 <p class="foot">Owner-only control panel. Database RPC checks the active Super Admin role; RLS controls shop visibility and updates. Shop status changes are recorded in audit_logs. Payment verification and subscription activation remain separate controls.</p>
 </main>
@@ -104,12 +105,41 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      card.append(actions);list.append(card);
    }
  }
+ async function loadPayments(){
+   const list=$("paymentList");list.replaceChildren();message("paymentsMessage","Loading payment records…");
+   const {data,error}=await client.from("payments").select("id,order_id,shop_subscription_id,user_id,amount,currency,status,verified,gateway,created_at").order("created_at",{ascending:false}).limit(100);
+   if(error){message("paymentsMessage",error.message,true);return}
+   if(!data?.length){message("paymentsMessage","No payment records found.");return}
+   message("paymentsMessage",data.length+" recent payment(s) loaded.");
+   for(const p of data){
+     const card=document.createElement("article");card.className="shop-card";
+     const top=document.createElement("div");top.className="shop-meta";
+     const info=document.createElement("div");
+     const title=document.createElement("div");title.className="shop-name";title.textContent=money(p.amount)+" "+(p.currency||"INR");
+     const detail=document.createElement("div");detail.className="sub";detail.textContent=(p.shop_subscription_id?"Subscription ":"Order ")+(p.shop_subscription_id||p.order_id||"No linked record").slice(0,12)+" · "+(p.gateway||"gateway")+" · "+new Date(p.created_at).toLocaleString();
+     info.append(title,detail);
+     const state=document.createElement("span");state.className="pill";state.textContent=p.status+(p.verified?" · verified":" · not verified");top.append(info,state);card.append(top);
+     if(p.status==="success"&&!p.verified){
+       const actions=document.createElement("div");actions.className="shop-actions";
+       const btn=document.createElement("button");btn.className="safe";btn.textContent="Verify & apply payment";
+       btn.addEventListener("click",async()=>{
+         if(!window.confirm("Verify this successful payment and apply it to its linked order or subscription?"))return;
+         btn.disabled=true;message("paymentsMessage","Verifying payment…");
+         const {error:rpcError}=await client.rpc("verify_payment_and_activate",{p_payment_id:p.id});
+         if(rpcError){message("paymentsMessage",rpcError.message,true);btn.disabled=false;return}
+         await Promise.all([loadPayments(),loadSummary(),loadShops()]);
+       });
+       actions.append(btn);card.append(actions);
+     }
+     list.append(card);
+   }
+ }
  async function checkSession(){
    const {data:{session},error}=await client.auth.getSession();
    if(error||!session){showLogin(error?.message||"");return}
    loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
    $("ownerEmail").textContent=session.user.email||"Signed-in account";
-   await Promise.all([loadSummary(),loadShops()]);
+   await Promise.all([loadSummary(),loadShops(),loadPayments()]);
  }
  $("loginForm").addEventListener("submit",async e=>{
    e.preventDefault();$("loginButton").disabled=true;message("loginMessage","Signing in…");
@@ -120,6 +150,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  });
  $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops()])});
  $("shopsRefresh").addEventListener("click",loadShops);
+ $("paymentsRefresh").addEventListener("click",loadPayments);
  $("logout").addEventListener("click",async()=>{await client.auth.signOut();showLogin("Signed out.")});
  client.auth.onAuthStateChange((_event,session)=>{if(!session)showLogin("Session ended. Please sign in again.")});
  checkSession();
