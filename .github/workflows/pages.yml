@@ -24,6 +24,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Validate website files and inline JavaScript
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const required = ['index.html', 'portal.html', 'apply-shop.html', 'owner.html', 'shopkeeper.html', 'my-orders.html', 'PAYMENT_SETUP.md'];
+          const missing = required.filter(file => !fs.existsSync(file));
+          if (missing.length) throw new Error('Missing required project files: ' + missing.join(', '));
+          const pages = required.filter(file => file.endsWith('.html'));
+          for (const file of pages) {
+            const html = fs.readFileSync(file, 'utf8');
+            const ids = [...html.matchAll(/\\bid\\s*=\\s*["']([^"']+)["']/gi)].map(match => match[1]);
+            const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+            if (duplicates.length) throw new Error(file + ' has duplicate element IDs: ' + [...new Set(duplicates)].join(', '));
+            const scripts = [...html.matchAll(/<script\\b(?![^>]*\\bsrc\\s*=)[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+            scripts.forEach((match, index) => {
+              try { new Function(match[1]); }
+              catch (error) { throw new Error(file + ' inline script ' + (index + 1) + ' has a syntax error: ' + error.message); }
+            });
+            console.log('Validated ' + file + ' (' + scripts.length + ' inline script(s))');
+          }
+          console.log('All required website files and inline JavaScript passed validation.');
+          NODE
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
