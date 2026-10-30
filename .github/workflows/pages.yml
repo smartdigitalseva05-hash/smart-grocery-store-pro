@@ -24,6 +24,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Protect the existing customer storefront
+        run: |
+          expected="bf8341c51d5cbe497569c6c14b13056cfe5c6b98"
+          actual="$(git rev-parse HEAD:index.html)"
+          if [ "$actual" != "$expected" ]; then
+            echo "index.html changed from the approved baseline; stop deployment for review."
+            exit 1
+          fi
+
       - name: Set up Deno
         uses: denoland/setup-deno@v2
         with:
