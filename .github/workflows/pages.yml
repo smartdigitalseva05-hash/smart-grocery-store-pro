@@ -77,7 +77,7 @@ jobs:
       - name: Prepare clean website artifact
         run: |
           mkdir -p .pages-site
-          cp index.html portal.html showcase.html catalogue.html apply-shop.html owner.html shopkeeper.html my-orders.html .pages-site/
+          cp index.html portal.html showcase.html catalogue.html apply-shop.html owner.html shopkeeper.html my-orders.html password-security.js .pages-site/
 
       - name: Upload website files
         uses: actions/upload-pages-artifact@v3
