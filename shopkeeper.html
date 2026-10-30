@@ -23,7 +23,7 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
 <label class="field">Offer price (₹)<input id="pSale" type="number" min="0.01" step="0.01" placeholder="Optional"></label>
 <label class="field">Stock quantity<input id="pStock" type="number" min="0" step="1" value="0" required></label>
 <label class="field">Offer text<input id="pOffer" maxlength="100" placeholder="Optional"></label>
-<label class="field">Product image URL (HTTPS, optional)<input id="pImageUrl" type="url" maxlength="2048" placeholder="https://example.com/product.jpg" inputmode="url" autocomplete="url"></label>
+<label class="field">Product image URL (HTTPS, optional)<input id="pImageUrl" type="url" maxlength="2048" placeholder="https://example.com/product.jpg" inputmode="url" autocomplete="url"></label>\n<label class="field">Or upload product photo (JPG, PNG, WebP · max 5 MB)<input id="pImageFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
 </div><label class="field">Description<textarea id="pDescription" maxlength="1000"></textarea></label><button id="addButton" type="submit">Save product</button></form><div id="productMessage" class="notice" role="status"></div></div>
 <div class="panel"><div class="row"><div><h1>My products</h1><div class="sub">Manage availability and stock for the selected shop.</div></div><button id="productsRefresh" class="secondary">Refresh products</button></div><div id="productList" class="products"></div><div id="listMessage" class="notice" role="status"></div></div>
 <div class="panel"><div class="row"><div><h1>Incoming orders</h1><div class="sub">Orders belonging to the selected shop only.</div></div><button id="ordersRefresh" class="secondary">Refresh orders</button></div><div id="ordersMessage" class="notice" role="status"></div><div id="orderList" class="order-list"></div></div>
@@ -178,12 +178,15 @@ main{width:min(1000px,100% - 26px);margin:28px auto}.top,.row{display:flex;justi
  $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginButton").disabled=true;say("loginMessage","Signing in…");const {error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});$("loginButton").disabled=false;if(error){say("loginMessage",error.message,true);return}await boot()});
  $("productForm").addEventListener("submit",async e=>{
   e.preventDefault();if(!currentShop){say("productMessage","No shop selected.",true);return}
-  const name=$("pName").value.trim(),price=Number($("pPrice").value),sale=$("pSale").value===""?null:Number($("pSale").value),stock=Number($("pStock").value),imageText=$("pImageUrl").value.trim(),imageUrl=imageText?safeImageUrl(imageText):"";
-  if(!name||!Number.isFinite(price)||price<=0||!Number.isInteger(stock)||stock<0||(sale!==null&&(!Number.isFinite(sale)||sale<=0||sale>=price))||(imageText&&!imageUrl)){say("productMessage","Check name, price, offer price, stock, and use a valid HTTPS image URL.",true);return}
+  const name=$("pName").value.trim(),price=Number($("pPrice").value),sale=$("pSale").value===""?null:Number($("pSale").value),stock=Number($("pStock").value),imageText=$("pImageUrl").value.trim(),imageUrl=imageText?safeImageUrl(imageText):"",imageFile=$("pImageFile").files?.[0]||null;
+  if(!name||!Number.isFinite(price)||price<=0||!Number.isInteger(stock)||stock<0||(sale!==null&&(!Number.isFinite(sale)||sale<=0||sale>=price))||(imageText&&!imageUrl)||(imageFile&&(!["image/jpeg","image/png","image/webp"].includes(imageFile.type)||imageFile.size>5242880))||(imageUrl&&imageFile)){say("productMessage","Check product details. Use one HTTPS image URL OR one JPG/PNG/WebP photo up to 5 MB.",true);return}
   $("addButton").disabled=true;say("productMessage","Saving product…");
   const slug=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70)+"-"+crypto.randomUUID().slice(0,8);
-  const payload={shop_id:currentShop.id,category_id:$("pCategory").value||null,name,slug,description:$("pDescription").value.trim()||null,price,sale_price:sale,stock,images:imageUrl?[{url:imageUrl}]:[],is_available:true,offer_text:$("pOffer").value.trim()||null};
+  let imageRecord=imageUrl?{url:imageUrl}:null,uploadedPath=null;
+  if(imageFile){const ext=imageFile.type==="image/jpeg"?"jpg":imageFile.type==="image/png"?"png":"webp";uploadedPath=currentShop.id+"/"+crypto.randomUUID()+"."+ext;const {error:uploadError}=await db.storage.from("product-images").upload(uploadedPath,imageFile,{cacheControl:"3600",contentType:imageFile.type,upsert:false});if(uploadError){$("addButton").disabled=false;say("productMessage","Image upload failed: "+uploadError.message,true);return}const {data:publicData}=db.storage.from("product-images").getPublicUrl(uploadedPath);imageRecord={url:publicData.publicUrl,path:uploadedPath}}
+  const payload={shop_id:currentShop.id,category_id:$("pCategory").value||null,name,slug,description:$("pDescription").value.trim()||null,price,sale_price:sale,stock,images:imageRecord?[imageRecord]:[],is_available:true,offer_text:$("pOffer").value.trim()||null};
   const {error}=await db.from("products").insert(payload);$("addButton").disabled=false;
+  if(error&&uploadedPath){await db.storage.from("product-images").remove([uploadedPath])}
   if(error){say("productMessage",error.message,true);return}
   $("productForm").reset();$("pStock").value="0";say("productMessage","Product saved successfully.");await loadProducts();
  });
