@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { withSupabase } from "npm:@supabase/server";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -8,11 +8,6 @@ const cors = {
 };
 function reply(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: cors });
-}
-function keyFromJson(name: string): string {
-  const raw = Deno.env.get(name);
-  if (!raw) return "";
-  try { return JSON.parse(raw).default || ""; } catch { return ""; }
 }
 async function hmacHex(secret: string, message: string): Promise<string> {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -26,25 +21,11 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (req.method !== "POST") return reply(405, { error: "Method not allowed" });
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-  const publishableKey = keyFromJson("SUPABASE_PUBLISHABLE_KEYS") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY") || "";
-  const secretKey = keyFromJson("SUPABASE_SECRET_KEYS") || Deno.env.get("SUPABASE_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID") || "";
-  const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET") || "";
-  if (!supabaseUrl || !publishableKey || !secretKey) return reply(500, { error: "Supabase Edge Function keys are not configured." });
-  if (!razorpayKeyId || !razorpayKeySecret) return reply(503, { error: "Razorpay secrets are not configured." });
-
-  const authorization = req.headers.get("Authorization");
-  if (!authorization?.startsWith("Bearer ")) return reply(401, { error: "Sign in is required." });
-  const userClient = createClient(supabaseUrl, publishableKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const admin = createClient(supabaseUrl, secretKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const userClient = ctx.supabase;
+  const admin = ctx.supabaseAdmin;
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return reply(401, { error: "Invalid or expired session." });
 
@@ -64,7 +45,11 @@ Deno.serve(async (req: Request) => {
     return reply(409, { error: "Payment does not match the pending Razorpay order." });
   }
 
-  const expectedSignature = await hmacHex(razorpayKeySecret, payment.gateway_order_id + "|" + body.razorpay_payment_id);
+  const keyId = Deno.env.get("RAZORPAY_KEY_ID") || "";
+  const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET") || "";
+  if (!keyId || !keySecret) return reply(503, { error: "Razorpay secrets are not configured." });
+
+  const expectedSignature = await hmacHex(keySecret, payment.gateway_order_id + "|" + body.razorpay_payment_id);
   if (!safeEqual(expectedSignature, body.razorpay_signature.toLowerCase())) {
     return reply(400, { error: "Razorpay payment signature is invalid." });
   }
@@ -72,7 +57,7 @@ Deno.serve(async (req: Request) => {
   let gatewayPayment: Record<string, unknown>;
   try {
     const response = await fetch("https://api.razorpay.com/v1/payments/" + encodeURIComponent(body.razorpay_payment_id), {
-      headers: { "Authorization": "Basic " + btoa(razorpayKeyId + ":" + razorpayKeySecret) },
+      headers: { "Authorization": "Basic " + btoa(keyId + ":" + keySecret) },
     });
     gatewayPayment = await response.json();
     if (!response.ok) throw new Error("Could not retrieve payment from Razorpay.");
@@ -109,3 +94,4 @@ Deno.serve(async (req: Request) => {
 
   return reply(200, { verified: true, payment_id: payment.id, message: "Payment verified and subscription applied." });
 });
+Deno.serve((req) => req.method === "OPTIONS" ? new Response("ok", { headers: cors }) : handler(req));
