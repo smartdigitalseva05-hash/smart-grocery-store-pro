@@ -866,6 +866,7 @@ async function loadShopData(){
 
 
  $("shopSelect").addEventListener("change",loadShopData);
+ $("ordersRefresh").addEventListener("click",loadOrders);
  $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
  $("trialButton").addEventListener("click",startFreeTrial);$("subscriptionButton").addEventListener("click",prepareSubscription);$("reload").addEventListener("click",boot);$("exportProducts").addEventListener("click",exportMyProducts);$("productsRefresh").addEventListener("click",loadProducts);
  $("logout").addEventListener("click",async()=>{await db.auth.signOut();showLogin("Signed out.")});
