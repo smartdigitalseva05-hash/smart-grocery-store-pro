@@ -24,7 +24,7 @@ Annual prices are 10 months of the monthly price. Pricing is read from the Supab
 The shopkeeper dashboard now includes these vertical-specific tools:
 - **Garments:** SKU, size and colour variants with per-variant price, stock, availability, edit and delete controls.
 - **Jewellery:** item code, metal type, purity, gross/net weight, stone weight, metal rate, making-charge method, hallmark and certificate details. The displayed metal-plus-making estimate is indicative only and excludes stones, taxes and other charges.
-- **Restaurant:** table register with seating capacity and live table status; menu catalogue with price, category and preparation time; kitchen tickets for table/takeaway orders with item notes, guest count and ticket status (new, preparing, ready, served, cancelled).
+- **Restaurant:** table register with seating capacity and live table status; menu catalogue with price, category and preparation time; multi-item kitchen tickets for table/takeaway orders with per-item quantity and notes, guest count and ticket status (new, preparing, ready, served, cancelled).
 - **Hotel:** room register with room type, floor, guest capacity, nightly rate and room status; guest reservations with dates, phone, guest count, booking status and check-in/check-out; database trigger prevents overlapping active reservations for the same room.
 - **Office / Company:** employee register with code, contact, designation and employment type; date-wise attendance with present, absent, half-day and leave status plus check-in/check-out times.
 - **Electronics:** device register with IMEI 1/2, serial number, brand/model, supplier, purchase/sale price, warranty dates and device lifecycle status; duplicate IMEI/serial values are blocked within each shop.
