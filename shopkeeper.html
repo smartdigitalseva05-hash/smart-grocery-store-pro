@@ -290,9 +290,9 @@ async function loadRestaurantMenu(){
  const panel=$("restaurantKitchenPanel"),list=$("restaurantMenuList");
  if(!panel||!list)return;
  const active=!!currentShop&&currentShop.business_type==="restaurant";panel.classList.toggle("hidden",!active);if(!active)return;
- list.replaceChildren();select.replaceChildren();say("restaurantMenuMessage","Loading menu…");
+ list.replaceChildren();restaurantMenuOptions=[];say("restaurantMenuMessage","Loading menu…");
  const {data,error}=await db.from("restaurant_menu_items").select("id,name,category,description,price,prep_time_minutes,is_available").eq("shop_id",currentShop.id).order("category").order("name");
- if(error){say("restaurantMenuMessage","Menu load failed: "+error.message,true);select.add(new Option("Menu unavailable",""));return}
+ if(error){say("restaurantMenuMessage","Menu load failed: "+error.message,true);return}
  const available=(data||[]).filter(x=>x.is_available);restaurantMenuOptions=available;
  const lineHost=$("restaurantTicketLines");if(lineHost){const selects=[...lineHost.querySelectorAll(".kitchen-menu-select")];selects.forEach(sel=>{const prior=sel.value;sel.replaceChildren();sel.add(new Option(available.length?"Choose a dish":"Add an available menu item first",""));available.forEach(x=>sel.add(new Option(x.name+" · "+money(x.price),x.id)));if(available.some(x=>x.id===prior))sel.value=prior});if(!selects.length)addRestaurantKitchenLine()}
  say("restaurantMenuMessage",(data?.length||0)+" menu item(s), "+available.length+" available.");
