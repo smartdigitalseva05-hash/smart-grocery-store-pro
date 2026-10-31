@@ -35,13 +35,15 @@ These code paths are committed but still require browser/device end-to-end testi
 
 ## Shopkeeper growth roadmap
 
-The shopkeeper benefits page explains common local-store problems and maps them to platform workflows. Current workspace capabilities include product/price/stock management, incoming order management, order status updates and the COD workflow. The following customer-growth tools are roadmap items and must not be marketed as live until implemented and acceptance-tested:
-- Shopkeeper QR code generator
-- WhatsApp product and offer sharing tools
-- Customer repeat-order flow
-- Sales analytics and best-seller reporting
-- Configurable low-stock notifications
-- Shopkeeper Growth Score with transparent, explainable metrics
+The shopkeeper benefits page explains common local-store problems and maps them to platform workflows. Current workspace capabilities include product/price/stock management, incoming order management, order status updates and the COD workflow. The following customer-growth tools are now present in the shopkeeper/customer code paths and must remain labelled as built but testing-pending until real-account browser/device acceptance testing is complete:
+- Shop-specific QR catalogue and downloadable QR image (QR library requires internet access).
+- WhatsApp message composer and share handoff (the shopkeeper manually reviews and sends; no bulk automation).
+- Customer repeat-order flow that restores only currently available items and caps quantities to current stock.
+- Sales analytics for the latest 100 accessible orders, including a best-selling-products ranking; these are operational summaries, not audited accounts or profit calculations.
+- Configurable low-stock threshold alerts shown in the shopkeeper dashboard.
+- Transparent four-part Shopkeeper Growth Score; it measures operational readiness, not business profitability.
+
+Real shopkeeper and customer accounts are still required for end-to-end acceptance testing. Do not describe these tools as fully production-verified until that testing passes.
 
 ## Specialized business workspaces
 
