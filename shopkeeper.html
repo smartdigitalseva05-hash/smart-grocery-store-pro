@@ -141,6 +141,28 @@ a{color:#8ce2b3}
  <div id="electronicsMessage" class="notice" role="status"></div>
  <h2 style="margin-top:22px">IMEI / serial inventory</h2><button id="electronicsRefresh" type="button" class="secondary">Refresh device register</button>
  <div id="electronicsDeviceList" class="products"></div>
+</div><div class="panel hidden" id="medicalManagementPanel">
+ <div class="row"><div><h1>Medical Store · Batch & Expiry</h1><p class="muted">Track medicine batch numbers, stock, MRP, supplier and expiry alerts. This is an inventory aid, not a substitute for required pharmacy, prescription or regulatory systems.</p></div><span class="pill">Batch register</span></div>
+ <form id="medicalBatchForm">
+  <div class="formgrid">
+   <label class="field">Medicine name<input id="medicalMedicineName" maxlength="120" required></label>
+   <label class="field">Brand<input id="medicalBrand" maxlength="80"></label>
+   <label class="field">Batch number<input id="medicalBatchNumber" maxlength="80" required></label>
+   <label class="field">Manufactured on<input id="medicalManufactured" type="date"></label>
+   <label class="field">Expiry date<input id="medicalExpiry" type="date" required></label>
+   <label class="field">Quantity in stock<input id="medicalQuantity" type="number" min="0" step="1" value="0" required></label>
+   <label class="field">Purchase price (₹)<input id="medicalPurchasePrice" type="number" min="0" step="0.01"></label>
+   <label class="field">MRP (₹)<input id="medicalMrp" type="number" min="0" step="0.01"></label>
+   <label class="field">Supplier<input id="medicalSupplier" maxlength="120"></label>
+   <label class="field">Storage location<input id="medicalStorage" maxlength="80" placeholder="Shelf A-2"></label>
+  </div>
+  <label class="field"><input id="medicalPrescriptionRequired" type="checkbox"> Prescription required (record only)</label>
+  <label class="field">Notes<textarea id="medicalNotes" maxlength="500" rows="2"></textarea></label>
+  <button id="medicalBatchAdd" type="submit">Save medicine batch</button>
+ </form>
+ <div id="medicalMessage" class="notice" role="status"></div>
+ <h2 style="margin-top:22px">Batch stock & expiry alerts</h2><button id="medicalRefresh" type="button" class="secondary">Refresh batches</button>
+ <div id="medicalBatchList" class="products"></div>
 </div><div class="panel" id="starter-products"><h1>Quick add from 200 starter products</h1><p class="muted">Choose a starter item to prefill the form. Confirm the real price, stock and photo before saving.</p><div class="formgrid"><label class="field">Search starter products<input id="starterSearch" type="search" placeholder="Search rice, oil, soap…"></label><label class="field">Choose starter product<select id="starterSelect"><option value="">Choose from 200 products…</option></select></label></div><button id="useStarter" type="button" class="secondary">Use starter product</button><span id="starterHint" class="sub" role="status">Templates are not live inventory.</span></div>
 <div class="panel" id="bulk-starter-products"><h1>Bulk add starter products</h1><p class="muted">Select multiple items from the 200-product starter catalogue. They will be saved as <strong>hidden drafts</strong> with zero stock, so customers cannot order them until you confirm price, stock and photos.</p><label class="field">Search starter catalogue<input id="bulkStarterSearch" type="search" placeholder="Search product or category…"></label><div class="starter-tools"><button id="bulkSelectVisible" type="button" class="secondary">Select visible</button><button id="bulkClear" type="button" class="secondary">Clear selection</button><button id="bulkImport" type="button">Add selected as hidden drafts</button></div><div id="bulkStarterCount" class="starter-count" role="status">0 selected</div><div id="bulkStarterList" class="starter-bulk-grid"></div><div id="bulkStarterMessage" class="notice" role="status"></div></div>
 <div class="panel"><h1>Add a product</h1><p class="muted">Products are saved directly to Supabase. Plan limits and shop ownership are enforced by database policies/triggers.</p>
@@ -357,6 +379,25 @@ async function loadElectronicsInventory(){
   actions.append(status,edit);card.append(title,meta,warranty,price,actions);list.append(card);
  });
 }
+async function loadMedicalBatches(){
+ const panel=$("medicalManagementPanel"),list=$("medicalBatchList");if(!panel||!list)return;
+ const active=!!currentShop&&currentShop.business_type==="medical";panel.classList.toggle("hidden",!active);if(!active)return;
+ list.replaceChildren();say("medicalMessage","Loading medicine batches…");
+ const {data,error}=await db.from("medical_inventory_batches").select("id,medicine_name,brand,batch_number,manufactured_on,expiry_date,quantity,purchase_price,mrp,supplier,storage_location,prescription_required,batch_status,notes").eq("shop_id",currentShop.id).order("expiry_date",{ascending:true}).limit(300);
+ if(error){say("medicalMessage","Batch register load failed: "+error.message,true);return}
+ say("medicalMessage",(data?.length||0)+" batch record(s).");
+ if(!data?.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="No medicine batches registered yet.";list.append(empty);return}
+ const today=new Date();today.setHours(0,0,0,0);
+ data.forEach(batch=>{
+  const card=document.createElement("article");card.className="product";const title=document.createElement("div");title.className="product-title";title.textContent=batch.medicine_name+(batch.brand?" · "+batch.brand:"");
+  const exp=new Date(batch.expiry_date+"T00:00:00");const days=Math.ceil((exp-today)/86400000);const expiryLabel=days<0?"EXPIRED "+Math.abs(days)+" day(s) ago":days<=30?"EXPIRING IN "+days+" day(s)":"Expiry "+batch.expiry_date;
+  const meta=document.createElement("div");meta.className="sub";meta.textContent="Batch "+batch.batch_number+" · "+expiryLabel+" · Qty "+batch.quantity+" · "+batch.batch_status.toUpperCase();
+  const details=document.createElement("div");details.className="sub";details.textContent="Mfg: "+(batch.manufactured_on||"—")+" · MRP "+(batch.mrp==null?"—":money(batch.mrp))+" · Buy "+(batch.purchase_price==null?"—":money(batch.purchase_price))+" · Supplier "+(batch.supplier||"—")+" · "+(batch.storage_location||"No location")+(batch.prescription_required?" · Prescription required":"")+(batch.notes?" · "+batch.notes:"");
+  const actions=document.createElement("div");actions.className="product-actions";const qty=document.createElement("button");qty.type="button";qty.className="secondary";qty.textContent="Adjust quantity";qty.disabled=!canManageProducts();qty.addEventListener("click",async()=>{const entered=window.prompt("New stock quantity:",String(batch.quantity));if(entered===null)return;const value=Number(entered);if(!Number.isInteger(value)||value<0){say("medicalMessage","Quantity must be a whole number zero or greater.",true);return}qty.disabled=true;const {error:updateError}=await db.from("medical_inventory_batches").update({quantity:value,updated_at:new Date().toISOString()}).eq("id",batch.id).eq("shop_id",currentShop.id);if(updateError){say("medicalMessage","Quantity update failed: "+updateError.message,true);qty.disabled=!canManageProducts();return}await loadMedicalBatches()});
+  const status=document.createElement("select");["active","quarantined","returned","disposed"].forEach(v=>status.add(new Option(v.toUpperCase(),v)));status.value=batch.batch_status;status.disabled=!canManageProducts();status.addEventListener("change",async()=>{status.disabled=true;const {error:updateError}=await db.from("medical_inventory_batches").update({batch_status:status.value,updated_at:new Date().toISOString()}).eq("id",batch.id).eq("shop_id",currentShop.id);if(updateError){say("medicalMessage","Batch status update failed: "+updateError.message,true);status.value=batch.batch_status}else{batch.batch_status=status.value;say("medicalMessage","Batch status updated.")}status.disabled=!canManageProducts()});
+  actions.append(qty,status);card.append(title,meta,details,actions);list.append(card);
+ });
+}
 async function loadShopData(){
   currentShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!currentShop)return;
   renderBusinessWorkspace(currentShop);
@@ -369,6 +410,7 @@ async function loadShopData(){
   await loadOfficeEmployees();
   await loadOfficeAttendance();
   await loadElectronicsInventory();
+  await loadMedicalBatches();
   const {data:trial,error:trialError}=await db.from("shop_trials").select("status,started_at,ends_at").eq("shop_id",currentShop.id).maybeSingle();
   currentTrial=trialError?null:trial;
   const trialActive=!!currentTrial&&currentTrial.status==="active"&&new Date(currentTrial.ends_at).getTime()>Date.now()&&currentShop.subscription_expires_at===currentTrial.ends_at;
@@ -757,6 +799,9 @@ async function loadShopData(){
  $("officeAttendanceRefresh").addEventListener("click",loadOfficeAttendance);
  $("electronicsDeviceForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||currentShop.business_type!=="electronics"||!canManageProducts()){say("electronicsMessage","An active electronics-store subscription is required.",true);return}const name=$("electronicsDeviceName").value.trim(),brand=$("electronicsBrand").value.trim(),model=$("electronicsModel").value.trim(),imei1=$("electronicsImei1").value.trim(),imei2=$("electronicsImei2").value.trim(),serial=$("electronicsSerial").value.trim(),purchaseDate=$("electronicsPurchaseDate").value||null,warrantyStart=$("electronicsWarrantyStart").value||null,warrantyEnd=$("electronicsWarrantyEnd").value||null,supplier=$("electronicsSupplier").value.trim(),purchasePrice=$("electronicsPurchasePrice").value===""?null:Number($("electronicsPurchasePrice").value),salePrice=$("electronicsSalePrice").value===""?null:Number($("electronicsSalePrice").value);if(!name||(!imei1&&!imei2&&!serial)||(warrantyStart&&warrantyEnd&&warrantyEnd<warrantyStart)||(purchasePrice!==null&&(!Number.isFinite(purchasePrice)||purchasePrice<0))||(salePrice!==null&&(!Number.isFinite(salePrice)||salePrice<0))){say("electronicsMessage","Enter device name and at least one IMEI/serial. Check warranty dates and prices.",true);return}$("electronicsDeviceAdd").disabled=true;const {error}=await db.from("electronics_inventory").insert({shop_id:currentShop.id,device_name:name,brand:brand||null,model:model||null,imei_1:imei1||null,imei_2:imei2||null,serial_number:serial||null,purchase_date:purchaseDate,warranty_start:warrantyStart,warranty_end:warrantyEnd,supplier:supplier||null,purchase_price:purchasePrice,sale_price:salePrice,notes:$("electronicsNotes").value.trim()||null});$("electronicsDeviceAdd").disabled=false;if(error){say("electronicsMessage","Could not save device: "+error.message,true);return}$("electronicsDeviceForm").reset();say("electronicsMessage","Device registered successfully.");await loadElectronicsInventory()});
  $("electronicsRefresh").addEventListener("click",loadElectronicsInventory);
+ $("medicalBatchForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||currentShop.business_type!=="medical"||!canManageProducts()){say("medicalMessage","An active medical-store subscription is required.",true);return}const name=$("medicalMedicineName").value.trim(),brand=$("medicalBrand").value.trim(),batch=$("medicalBatchNumber").value.trim(),mfg=$("medicalManufactured").value||null,expiry=$("medicalExpiry").value,quantity=Number($("medicalQuantity").value),purchase=$("medicalPurchasePrice").value===""?null:Number($("medicalPurchasePrice").value),mrp=$("medicalMrp").value===""?null:Number($("medicalMrp").value);if(!name||!batch||!expiry||!Number.isInteger(quantity)||quantity<0||(mfg&&expiry<mfg)||(purchase!==null&&(!Number.isFinite(purchase)||purchase<0))||(mrp!==null&&(!Number.isFinite(mrp)||mrp<0))){say("medicalMessage","Check medicine name, batch, expiry, quantity and price details.",true);return}$("medicalBatchAdd").disabled=true;const {error}=await db.from("medical_inventory_batches").insert({shop_id:currentShop.id,medicine_name:name,brand:brand||null,batch_number:batch,manufactured_on:mfg,expiry_date:expiry,quantity,purchase_price:purchase,mrp,supplier:$("medicalSupplier").value.trim()||null,storage_location:$("medicalStorage").value.trim()||null,prescription_required:$("medicalPrescriptionRequired").checked,notes:$("medicalNotes").value.trim()||null});$("medicalBatchAdd").disabled=false;if(error){say("medicalMessage","Could not save batch: "+error.message,true);return}$("medicalBatchForm").reset();$("medicalQuantity").value="0";say("medicalMessage","Medicine batch saved.");await loadMedicalBatches()});
+ $("medicalRefresh").addEventListener("click",loadMedicalBatches);
+
 
 
 
