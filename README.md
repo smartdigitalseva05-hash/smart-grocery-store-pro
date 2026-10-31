@@ -90,7 +90,7 @@ Subscription payments are **not ready for live use** until the merchant adds the
 - Inline JavaScript syntax and page element-ID reference checks passed for the six HTML pages.
 - Razorpay Edge Functions are ACTIVE; checkout, verification and webhook now use a separately created server-only Supabase secret-key client for privileged payment-row operations. Full Test Mode end-to-end payment verification is still pending.
 - Current database has one active grocery shop on its one-time 7-day free trial (started 2026-10-31 03:53 UTC; expires 2026-11-07 03:53 UTC), one product and zero customer orders. A live checkout acceptance test still needs a customer account and delivery address.
-- All 11 business types now have active catalogue categories: 4 Grocery, 8 Daily Needs, and 4 each for the other nine types (48 total). Category names are starter defaults and can be refined by the platform Owner.
+- All 11 fixed business categories are preserved: Grocery, Daily Needs, Garments, Jewellery, Restaurant, Hotel, Office / Company, Electronics, Medical, Digital Services, and Other Businesses. Current database check confirms active catalogue categories in all 11 types (48 total: 4 Grocery, 8 Daily Needs, and 4 in each of the other nine types). These 11 business categories must not be removed, renamed, merged, or changed without the user's explicit permission.
 - Supabase Security Advisor reports leaked-password protection is disabled. Enable it in Auth settings before public launch if supported by the project plan.
 - Performance Advisor reports unused-index notices; do not remove indexes without reviewing real query workload.
 
