@@ -6,7 +6,13 @@
 <div class="panel"><h1>🏪 Apply for a Shop</h1><p class="muted">Create your account and submit your shop details. Your shop remains inactive until the Owner reviews and approves it. No subscription or payment is taken on this page.</p><div class="row"><a href="./portal.html">← Back to portal</a><span id="sessionInfo" class="muted"></span></div></div>
 <section id="authPanel" class="panel"><h1>Account access</h1><div class="row"><button id="signupTab" type="button">Create account</button><button id="loginTab" type="button">I already have an account</button></div>
 <form id="authForm"><label class="field" id="nameWrap">Your full name<input id="fullName" maxlength="100" autocomplete="name"></label><label class="field">Email<input id="email" type="email" required autocomplete="username"></label><label class="field">Password<input id="password" type="password" minlength="12" required autocomplete="new-password"></label><button id="authButton" type="submit">Create account</button></form><div id="authMessage" class="notice" role="status"></div><button id="resendConfirmation" type="button" class="hidden">Resend confirmation email</button></section>
-<section id="shopPanel" class="panel hidden"><h1>Shop details</h1><form id="shopForm"><label class="field">Shop name<input id="shopName" maxlength="120" required></label><label class="field">Shop description<textarea id="description" maxlength="1000"></textarea></label><div class="grid"><label class="field">Contact phone<input id="phone" type="tel" maxlength="25" required></label><label class="field">Business email<input id="shopEmail" type="email"></label><label class="field">Address<input id="address" maxlength="250" required></label><label class="field">City / Town<input id="city" maxlength="100" required></label></div><button id="submitButton" type="submit">Submit shop application</button></form><div id="shopMessage" class="notice" role="status"></div></section>
+<section id="shopPanel" class="panel hidden"><h1>Shop details</h1><form id="shopForm"><label class="field">Business type<select id="businessType" required>
+<option value="grocery">Grocery Store</option><option value="daily_needs">Daily Needs Store</option>
+<option value="garments">Garments & Fashion</option><option value="jewellery">Jewellery Store</option>
+<option value="restaurant">Restaurant / Food Outlet</option><option value="hotel">Hotel / Lodging</option>
+<option value="office_company">Office / Company</option><option value="electronics">Electronics / Mobile Store</option>
+<option value="medical">Medical Store</option><option value="digital_services">Digital Seva / Service Centre</option>
+<option value="other">Other Business</option></select></label><label class="field">Shop name<input id="shopName" maxlength="120" required></label><label class="field">Shop description<textarea id="description" maxlength="1000"></textarea></label><div class="grid"><label class="field">Contact phone<input id="phone" type="tel" maxlength="25" required></label><label class="field">Business email<input id="shopEmail" type="email"></label><label class="field">Address<input id="address" maxlength="250" required></label><label class="field">City / Town<input id="city" maxlength="100" required></label></div><button id="submitButton" type="submit">Submit shop application</button></form><div id="shopMessage" class="notice" role="status"></div></section>
 <p class="foot">Your account initially receives customer permissions. Shopkeeper permissions are assigned only after Owner review. Do not send passwords or payment credentials to anyone.</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./password-security.js"></script><script>
@@ -52,11 +58,11 @@
  });
  $("shopForm").addEventListener("submit",async e=>{
   e.preventDefault();if(!user){say("shopMessage","Please sign in again.",true);return}
-  const name=$("shopName").value.trim(),phone=$("phone").value.trim(),address=$("address").value.trim(),city=$("city").value.trim();
+  const name=$("shopName").value.trim(),businessType=$("businessType").value,phone=$("phone").value.trim(),address=$("address").value.trim(),city=$("city").value.trim();
   if(!name||!phone||!address||!city){say("shopMessage","Fill all required shop details.",true);return}
   $("submitButton").disabled=true;say("shopMessage","Submitting application…");
   const slug=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,55)+"-"+crypto.randomUUID().slice(0,8);
-  const {data,error}=await db.from("shops").insert({owner_id:user.id,name,slug,description:$("description").value.trim()||null,phone,email:$("shopEmail").value.trim()||user.email,address,city}).select("id,name,status").single();
+  const {data,error}=await db.from("shops").insert({owner_id:user.id,name,business_type:businessType,slug,description:$("description").value.trim()||null,phone,email:$("shopEmail").value.trim()||user.email,address,city}).select("id,name,status").single();
   $("submitButton").disabled=false;
   if(error){say("shopMessage",error.message,true);return}
   $("shopForm").classList.add("hidden");say("shopMessage","Application submitted for "+data.name+". Status: "+data.status+". Your shop is inactive until Owner approval and a verified subscription. You can close this page now.");
