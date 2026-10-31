@@ -43,6 +43,7 @@ The shopkeeper benefits page explains common local-store problems and maps them 
 - Configurable low-stock threshold alerts shown in the shopkeeper dashboard.
 - Transparent four-part Shopkeeper Growth Score; it measures operational readiness, not business profitability.
 - Grocery-only supplier register, purchase invoice details, atomic purchase recording that increments product stock, and an append-only stock movement record. Purchase and movement writes occur through a validated database function; supplier and history access are shop-scoped with row-level security.
+- Grocery daily expense register with validated categories, date and amount, shop-scoped row-level security, and a current-month recorded-expense summary. It is intentionally not labelled as profit because complete cost-of-goods and payment reconciliation are not yet implemented.
 
 Real shopkeeper and customer accounts are still required for end-to-end acceptance testing. Do not describe these tools as fully production-verified until that testing passes.
 
