@@ -9,6 +9,7 @@
 main{width:min(1100px,100% - 28px);margin:36px auto}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:24px}.brand{font-size:20px;font-weight:750}.sub{color:var(--muted);font-size:13px;margin-top:4px}
 .panel{background:#131e30eF;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 16px 45px #0003}
 h1{font-size:25px;margin:0 0 8px}.muted{color:var(--muted)}.auth{max-width:430px;margin:7vh auto}.field{display:block;width:100%;margin:12px 0 4px;color:var(--muted);font-size:13px}input{width:100%;padding:13px 14px;margin-top:6px;border:1px solid var(--line);border-radius:11px;background:#0b1422;color:var(--text);font:inherit}
+select{width:100%;max-width:360px;padding:11px 12px;margin:8px 0;border:1px solid var(--line);border-radius:10px;background:#0b1422;color:var(--text);font:inherit}
 button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#062033;font-weight:750;font-size:14px;cursor:pointer}button.secondary{background:#24364d;color:var(--text)}button:disabled{opacity:.55;cursor:wait}
 .actions{display:flex;gap:9px;flex-wrap:wrap}.notice{margin-top:14px;color:var(--muted);font-size:13px;min-height:20px}.notice.error{color:var(--bad)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px;margin-top:20px}.metric{padding:18px;background:#0d1727;border:1px solid var(--line);border-radius:15px}.metric span{display:block;color:var(--muted);font-size:13px}.metric strong{display:block;font-size:27px;margin-top:9px;letter-spacing:.2px}
@@ -41,7 +42,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <div class="metric"><span>Active subscriptions</span><strong id="subscriptions_active">—</strong></div>
 <div class="metric"><span>Expired subscriptions</span><strong id="subscriptions_expired">—</strong></div>
 </div><div id="dashboardMessage" class="notice" role="status"></div></div>
-<div class="panel shop-section"><div class="row"><div><h1>Shop approval & status</h1><div class="sub">Only active Super Admin can change a shop's status. Every change is audit-logged.</div></div><button id="shopsRefresh" class="secondary">Refresh shops</button></div><div id="shopsMessage" class="notice" role="status"></div><div id="shopList" class="shop-list"></div></div>
+<div class="panel shop-section"><div class="row"><div><h1>Shop approval & status</h1><div class="sub">Only active Super Admin can change a shop's status. Every change is audit-logged.</div></div><button id="shopsRefresh" class="secondary">Refresh shops</button></div><label class="field" for="businessTypeFilter">Filter by business type<select id="businessTypeFilter"><option value="all">All business types</option><option value="grocery">Grocery</option><option value="daily_needs">Daily Needs</option><option value="garments">Garments</option><option value="jewellery">Jewellery</option><option value="restaurant">Restaurant</option><option value="hotel">Hotel</option><option value="office_company">Office / Company</option><option value="electronics">Electronics</option><option value="medical">Medical</option><option value="digital_services">Digital Seva</option><option value="other">Other</option></select></label><div id="shopsMessage" class="notice" role="status"></div><div id="shopList" class="shop-list"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Shopkeeper management</h1><div class="sub">View shopkeeper accounts, linked shops and control account access. Blocking an account also hides its shops from customers.</div></div><button id="shopkeepersRefresh" class="secondary">Refresh shopkeepers</button></div><div id="shopkeepersMessage" class="notice" role="status"></div><div id="shopkeeperList" class="shop-list"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Catalog management</h1><div class="sub">Create and enable product categories and subcategories.</div></div><button id="catalogRefresh" class="secondary">Refresh catalog</button></div>
 <div class="formgrid"><label class="field">New category<input id="newCategoryName" maxlength="80" placeholder="e.g. Fruits & Vegetables"></label><label class="field">New subcategory parent<select id="subCategoryParent"></select></label><label class="field">New subcategory<input id="newSubCategoryName" maxlength="80" placeholder="e.g. Fresh Fruits"></label></div>
@@ -76,13 +77,16 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  async function loadShops(){
    message("shopsMessage","Loading shops from protected database…");
    const list=$("shopList");list.replaceChildren();
-   const {data,error}=await client.from("shops").select("id,owner_id,name,business_type,city,phone,status,is_active,created_at").order("created_at",{ascending:false});
+   const {data:allShops,error}=await client.from("shops").select("id,owner_id,name,business_type,city,phone,status,is_active,created_at").order("created_at",{ascending:false});
    if(error){message("shopsMessage",error.message,true);return}
-   if(!data?.length){message("shopsMessage","No shops registered yet.");return}
-   const {data:profiles,error:profileError}=await client.from("profiles").select("id,full_name,role,is_active").in("id",data.map(s=>s.owner_id));
+   if(!allShops?.length){message("shopsMessage","No businesses registered yet.");return}
+   const selectedType=$("businessTypeFilter").value;
+   const data=selectedType==="all"?allShops:allShops.filter(s=>s.business_type===selectedType);
+   if(!data.length){message("shopsMessage","No businesses found for this type.");$("shopList").replaceChildren();return}
+   const {data:profiles,error:profileError}=await client.from("profiles").select("id,full_name,role,is_active").in("id",allShops.map(s=>s.owner_id));
    if(profileError){message("shopsMessage","Could not load shop-owner review status: "+profileError.message,true);return}
    const profileMap=new Map((profiles||[]).map(p=>[p.id,p]));
-   message("shopsMessage",data.length+" shop(s) loaded.");
+   message("shopsMessage",data.length+" of "+allShops.length+" business(es) shown.");
    for(const shop of data){
      const card=document.createElement("article");card.className="shop-card";
      const top=document.createElement("div");top.className="shop-meta";
@@ -257,6 +261,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  });
  $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops(),loadShopkeepers()])});
  $("shopsRefresh").addEventListener("click",loadShops);
+ $("businessTypeFilter").addEventListener("change",loadShops);
   $("shopkeepersRefresh").addEventListener("click",loadShopkeepers);
  $("paymentsRefresh").addEventListener("click",loadPayments);
  $("catalogRefresh").addEventListener("click",loadCatalog);
