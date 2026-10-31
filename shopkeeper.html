@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827">
-<title>Smart Grocery Store Pro · Shopkeeper</title>
+<title>Smart Business Pro · Business Workspace</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#131e30;--line:#26364d;--muted:#9fb0c5;--text:#f4f7fb;--accent:#38bdf8;--bad:#fca5a5}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#19314c 0,transparent 34%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
@@ -27,13 +27,14 @@ a{color:#8ce2b3}
 .starter-bulk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:12px;max-height:320px;overflow:auto;padding:4px}.starter-choice{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--line,#dbe5df);border-radius:12px;background:var(--surface,#fff);font-size:13px}.starter-choice input{width:18px;height:18px;accent-color:#0b8f68}.starter-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.starter-tools button{width:auto}.starter-count{font-size:13px;color:var(--muted,#64748b);margin-top:8px}
 </style></head>
 <body><main>
-<header class="top"><div><div class="brand">🛒 Smart Grocery Store Pro</div><div class="sub">Premium shop management · <a href="./showcase.html">Platform overview</a> · <a href="./catalogue.html">200 product ideas</a></div></div><div id="topActions" class="actions hidden"><button id="reload" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
+<header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Premium shop management · <a href="./showcase.html">Platform overview</a> · <a href="./catalogue.html">200 product ideas</a></div></div><div id="topActions" class="actions hidden"><button id="reload" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
 <section id="loginPanel" class="panel auth"><h1>Shopkeeper sign in</h1><p class="muted">Sign in with the shopkeeper account approved by the Owner. <a href="./apply-shop.html" style="color:#7dd3fc">Apply for a shop</a></p><form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><button id="loginButton" type="submit">Sign in</button></form><div id="loginMessage" class="notice" role="status"></div></section>
 <section id="app" class="hidden">
 <div class="panel"><div class="row"><div><h1>My shop</h1><div class="sub">Only shops linked to your signed-in account are shown.</div></div><div style="min-width:220px;flex:1;max-width:360px"><select id="shopSelect" aria-label="Choose shop"></select></div></div><div id="shopInfo" class="notice"></div></div>
+<div class="panel" id="businessWorkspace"><h1 id="workspaceTitle">Business workspace</h1><p class="muted" id="workspaceType"></p><div id="workspaceFeatures" class="products"></div><div class="notice">Your business type is fixed after application to protect your business setup. Contact Super Admin for a correction.</div></div>
 <div class="panel"><h1>Subscription & billing</h1><p class="muted">Choose a plan and billing period, then pay securely using Razorpay Checkout. The server verifies the captured payment before activating your shop.</p><div class="formgrid"><label class="field">Plan<select id="planSelect"><option value="">Loading plans…</option></select></label><label class="field">Billing period<select id="billingCycle"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label></div><div id="planPrice" class="sub"></div><div class="actions" style="margin-top:12px"><button id="subscriptionButton">Pay subscription</button></div><div id="subscriptionMessage" class="notice" role="status"></div></div>
-<div class="panel"><h1>Quick add from 200 starter products</h1><p class="muted">Choose a starter item to prefill the form. Confirm the real price, stock and photo before saving.</p><div class="formgrid"><label class="field">Search starter products<input id="starterSearch" type="search" placeholder="Search rice, oil, soap…"></label><label class="field">Choose starter product<select id="starterSelect"><option value="">Choose from 200 products…</option></select></label></div><button id="useStarter" type="button" class="secondary">Use starter product</button><span id="starterHint" class="sub" role="status">Templates are not live inventory.</span></div>
-<div class="panel"><h1>Bulk add starter products</h1><p class="muted">Select multiple items from the 200-product starter catalogue. They will be saved as <strong>hidden drafts</strong> with zero stock, so customers cannot order them until you confirm price, stock and photos.</p><label class="field">Search starter catalogue<input id="bulkStarterSearch" type="search" placeholder="Search product or category…"></label><div class="starter-tools"><button id="bulkSelectVisible" type="button" class="secondary">Select visible</button><button id="bulkClear" type="button" class="secondary">Clear selection</button><button id="bulkImport" type="button">Add selected as hidden drafts</button></div><div id="bulkStarterCount" class="starter-count" role="status">0 selected</div><div id="bulkStarterList" class="starter-bulk-grid"></div><div id="bulkStarterMessage" class="notice" role="status"></div></div>
+<div class="panel" id="starter-products"><h1>Quick add from 200 starter products</h1><p class="muted">Choose a starter item to prefill the form. Confirm the real price, stock and photo before saving.</p><div class="formgrid"><label class="field">Search starter products<input id="starterSearch" type="search" placeholder="Search rice, oil, soap…"></label><label class="field">Choose starter product<select id="starterSelect"><option value="">Choose from 200 products…</option></select></label></div><button id="useStarter" type="button" class="secondary">Use starter product</button><span id="starterHint" class="sub" role="status">Templates are not live inventory.</span></div>
+<div class="panel" id="bulk-starter-products"><h1>Bulk add starter products</h1><p class="muted">Select multiple items from the 200-product starter catalogue. They will be saved as <strong>hidden drafts</strong> with zero stock, so customers cannot order them until you confirm price, stock and photos.</p><label class="field">Search starter catalogue<input id="bulkStarterSearch" type="search" placeholder="Search product or category…"></label><div class="starter-tools"><button id="bulkSelectVisible" type="button" class="secondary">Select visible</button><button id="bulkClear" type="button" class="secondary">Clear selection</button><button id="bulkImport" type="button">Add selected as hidden drafts</button></div><div id="bulkStarterCount" class="starter-count" role="status">0 selected</div><div id="bulkStarterList" class="starter-bulk-grid"></div><div id="bulkStarterMessage" class="notice" role="status"></div></div>
 <div class="panel"><h1>Add a product</h1><p class="muted">Products are saved directly to Supabase. Plan limits and shop ownership are enforced by database policies/triggers.</p>
 <form id="productForm"><div class="formgrid">
 <label class="field">Product name<input id="pName" maxlength="120" required></label>
@@ -68,7 +69,7 @@ a{color:#8ce2b3}
   const {data:profile,error:pe}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
   if(pe||!profile||profile.role!=="shopkeeper"||!profile.is_active){await db.auth.signOut();showLogin(pe?.message||"This account is not an active shopkeeper account.");return}
   $("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("topActions").classList.remove("hidden");
-  const {data,error:se}=await db.from("shops").select("id,name,city,status,is_active,subscription_expires_at").eq("owner_id",session.user.id).order("created_at",{ascending:false});
+  const {data,error:se}=await db.from("shops").select("id,name,business_type,city,status,is_active,subscription_expires_at").eq("owner_id",session.user.id).order("created_at",{ascending:false});
   if(se){say("shopInfo",se.message,true);return}
   shops=data||[];
   const sel=$("shopSelect");sel.replaceChildren();
@@ -76,8 +77,33 @@ a{color:#8ce2b3}
   if(!shops.length){say("shopInfo","No shop is linked to this account yet. Contact the Owner for approval.");$("productForm").querySelector("button").disabled=true;return}
   currentShop=shops[0];sel.value=currentShop.id;await Promise.all([loadPlans(),loadShopData()]);
  }
- async function loadShopData(){
+ function renderBusinessWorkspace(shop){
+  const types={
+    grocery:{name:"Grocery Store",desc:"Retail inventory workspace",items:["Product catalogue and categories","Stock quantity and availability","Offers, product photos and CSV export","Customer orders and subscription billing"],note:"Grocery inventory and ordering tools are available in this workspace."},
+    daily_needs:{name:"Daily Needs Store",desc:"Daily essentials retail workspace",items:["Daily essentials catalogue","Stock and availability management","Offers, product photos and CSV export","Customer orders and subscription billing"],note:"Daily-needs retail tools use the shared product catalogue."},
+    garments:{name:"Garments & Fashion",desc:"Fashion retail workspace",items:["Item catalogue and categories","Size / colour variants — dedicated module planned","Stock, photos, offers and CSV export","Customer orders and billing"],note:"Basic catalogue works now; size/colour variant inventory is a planned specialist module."},
+    jewellery:{name:"Jewellery Store",desc:"Jewellery retail workspace",items:["Jewellery item catalogue","Purity, weight and live metal-rate calculator — planned","Item-wise stock and customer records — planned","Basic catalogue and order framework"],note:"Do not use generic product prices as final jewellery quotations; specialist weight/purity billing is not enabled yet."},
+    restaurant:{name:"Restaurant / Food Outlet",desc:"Food service workspace",items:["Food menu catalogue","Food item availability and pricing","Table / kitchen order workflow — planned","Dine-in and takeaway billing — planned"],note:"Menu catalogue foundation is available; table, kitchen and restaurant POS modules are not yet enabled."},
+    hotel:{name:"Hotel / Lodging",desc:"Hospitality workspace",items:["Property profile and service catalogue","Room availability calendar — planned","Guest check-in / check-out — planned","Room billing and housekeeping — planned"],note:"Hotel booking and room-management workflows are not yet enabled."},
+    office_company:{name:"Office / Company",desc:"Business operations workspace",items:["Service / asset catalogue foundation","Employee attendance — planned","Tasks, leave and payroll — planned","Client invoices and project reports — planned"],note:"HR, payroll and project-management workflows are not yet enabled."},
+    electronics:{name:"Electronics / Mobile Store",desc:"Electronics retail workspace",items:["Device and accessory catalogue","IMEI / serial and warranty tracking — planned","Stock and product photos","Sales and order framework"],note:"IMEI and warranty-specific tracking is not yet enabled."},
+    medical:{name:"Medical Store",desc:"Pharmacy inventory workspace",items:["Medicine catalogue foundation","Batch and expiry tracking — planned","Prescription workflow — planned","Supplier and pharmacy billing — planned"],note:"Do not use this as a compliant pharmacy system until batch, prescription and regulatory workflows are implemented."},
+    digital_services:{name:"Digital Seva / Service Centre",desc:"Service business workspace",items:["Service catalogue foundation","Application/job status tracking — planned","Document checklist — planned","Receipts and customer records — planned"],note:"Application tracking and document workflows are not yet enabled."},
+    other:{name:"Other Business",desc:"General business workspace",items:["General item/service catalogue","Stock and availability","Product photos and CSV export","Orders and billing framework"],note:"Specialized workflows can be added after confirming this business category."}
+  };
+  const cfg=types[shop.business_type]||types.grocery;
+  $("workspaceTitle").textContent=cfg.name+" workspace";
+  $("workspaceType").textContent=cfg.desc+" · "+shop.name;
+  $("workspaceFeatures").replaceChildren();
+  cfg.items.forEach(item=>{const row=document.createElement("div");row.className="product";row.textContent=item;$("workspaceFeatures").append(row)});
+  const note=document.createElement("div");note.className="notice";note.textContent=cfg.note;$("workspaceFeatures").append(note);
+  const retail=["grocery","daily_needs","garments","jewellery","restaurant","electronics","medical","other"].includes(shop.business_type);
+  ["starter-products","bulk-starter-products"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",!["grocery","daily_needs"].includes(shop.business_type))});
+  $("productForm").querySelector("h1");
+}
+async function loadShopData(){
   currentShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!currentShop)return;
+  renderBusinessWorkspace(currentShop);
   const canManage=canManageProducts();
   say("shopInfo",currentShop.name+" · "+(currentShop.city||"") +" · Status: "+currentShop.status+" · "+(canManage?"Paid subscription active":"Subscription approval/payment required"));
   $("addButton").disabled=!canManage;
