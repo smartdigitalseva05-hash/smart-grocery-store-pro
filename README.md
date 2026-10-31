@@ -20,6 +20,19 @@ Multi-business commerce and operations platform with a grocery customer storefro
 
 Annual prices are 10 months of the monthly price. Pricing is read from the Supabase `subscription_plans` table.
 
+## Shopkeeper growth tools — implementation status
+
+Added to the shopkeeper workspace and customer storefront:
+- Shop-specific QR link and QR image download (QR rendering uses a CDN library).
+- WhatsApp share composer that opens WhatsApp with a prefilled message; the shopkeeper manually reviews and sends it.
+- Recent order analytics (latest 100 accessible orders), paid/collected revenue, delivered count and product count.
+- Configurable low-stock threshold alerts based on current product stock.
+- Transparent operational-readiness score with a four-part breakdown.
+- Customer repeat-order shortcut from My Orders; it restores only currently available items, caps quantities to stock, and requires the customer to review the cart.
+- Shop-specific public catalogue URL via `index.html?shop_id=...`.
+
+These code paths are committed but still require browser/device end-to-end testing with a real shopkeeper account and a customer account. QR generation requires internet access to load its QR library. WhatsApp is a share handoff, not automated bulk messaging. Analytics are limited to the latest 100 accessible orders and do not represent audited accounts or guaranteed profit.
+
 ## Shopkeeper growth roadmap
 
 The shopkeeper benefits page explains common local-store problems and maps them to platform workflows. Current workspace capabilities include product/price/stock management, incoming order management, order status updates and the COD workflow. The following customer-growth tools are roadmap items and must not be marketed as live until implemented and acceptance-tested:
