@@ -3,12 +3,12 @@
 CREATE TABLE IF NOT EXISTS public.shop_credit_ledger (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   shop_id uuid NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
-  customer_name text NOT NULL,
-  customer_phone text,
+  customer_name text NOT NULL CHECK (length(trim(customer_name)) BETWEEN 1 AND 120),
+  customer_phone text CHECK (customer_phone IS NULL OR length(customer_phone) <= 30),
   entry_type text NOT NULL CHECK (entry_type IN ('credit_sale','payment_received','adjustment')),
   amount numeric(12,2) NOT NULL CHECK (amount > 0),
   entry_date date NOT NULL DEFAULT CURRENT_DATE,
-  notes text,
+  notes text CHECK (notes IS NULL OR length(notes) <= 500),
   created_by uuid NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id),
   created_at timestamptz NOT NULL DEFAULT now()
 );
