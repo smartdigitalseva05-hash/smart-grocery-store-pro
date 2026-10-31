@@ -318,13 +318,13 @@ async function loadRestaurantTicketOptions(){
 }
 async function loadRestaurantKitchen(){
  const list=$("restaurantKitchenList");if(!list||!currentShop||currentShop.business_type!=="restaurant")return;
- list.replaceChildren();const {data,error}=await db.from("restaurant_kitchen_tickets").select("id,ticket_number,table_id,guest_name,guest_count,status,notes,created_at,restaurant_kitchen_ticket_items(id,item_name,quantity,unit_price,item_notes)").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(60);
+ list.replaceChildren();const {data,error}=await db.from("restaurant_kitchen_tickets").select("id,ticket_number,source_order_id,table_id,guest_name,guest_count,status,notes,created_at,source_order:orders(order_number),restaurant_kitchen_ticket_items(id,item_name,quantity,unit_price,item_notes)").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(60);
  if(error){say("restaurantTicketMessage","Kitchen board load failed: "+error.message,true);return}
  if(!data?.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="No kitchen tickets yet.";list.append(empty);return}
  data.forEach(ticket=>{
   const card=document.createElement("article");card.className="product";
   const head=document.createElement("div");head.className="row";
-  const title=document.createElement("div");title.className="product-title";title.textContent="Ticket #"+ticket.ticket_number+" · "+(ticket.guest_name||"Guest");
+  const title=document.createElement("div");title.className="product-title";title.textContent="Ticket #"+ticket.ticket_number+" · "+(ticket.guest_name||"Guest")+(ticket.source_order?.order_number?" · Online "+ticket.source_order.order_number:"");
   const status=document.createElement("span");status.className="pill";status.textContent=ticket.status;head.append(title,status);card.append(head);
   const meta=document.createElement("div");meta.className="sub";meta.textContent="Guests: "+ticket.guest_count+" · "+new Date(ticket.created_at).toLocaleString("en-IN")+(ticket.notes?" · "+ticket.notes:"");card.append(meta);
   const lines=document.createElement("div");lines.style.marginTop="8px";let total=0;(ticket.restaurant_kitchen_ticket_items||[]).forEach(line=>{total+=Number(line.unit_price)*line.quantity;const row=document.createElement("div");row.textContent=line.quantity+" × "+line.item_name+" · "+money(line.unit_price*line.quantity)+(line.item_notes?" · "+line.item_notes:"");lines.append(row)});const sum=document.createElement("strong");sum.textContent="Ticket total: "+money(total);lines.append(sum);card.append(lines);
