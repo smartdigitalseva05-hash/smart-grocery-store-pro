@@ -1,0 +1,2 @@
+alter table public.medical_inventory_batches drop constraint if exists medical_inventory_batches_shop_id_batch_number_key;
+alter table public.medical_inventory_batches add constraint medical_inventory_batches_shop_medicine_batch_key unique(shop_id,medicine_name,batch_number);
