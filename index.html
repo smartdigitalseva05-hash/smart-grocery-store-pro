@@ -297,10 +297,29 @@ async function initialize() {
     await loadDeliveryFee();
     await loadCategories();
     await loadProducts();
+    if(requestedShopId && new URLSearchParams(location.search).get("reorder")) await loadRepeatOrder();
 
   } catch (e) {
     showError("Connection error: " + e.message);
   }
+}
+
+async function loadRepeatOrder(){
+ const orderId=new URLSearchParams(location.search).get("reorder");if(!orderId||!currentUser)return;
+ $("status").textContent="Loading your previous order…";
+ const {data,error}=await db.from("orders").select("shop_id,items:order_items(quantity,product:products(id,shop_id,category_id,name,description,price,sale_price,stock,images,is_available,shop:shops!inner(name,city,business_type,status,is_active)))").eq("id",orderId).single();
+ if(error){notify("Previous order could not be loaded: "+error.message,true);return}
+ if(String(data.shop_id)!==String(requestedShopId)){notify("This order does not belong to the selected shop.",true);return}
+ const rebuilt=[];
+ for(const line of (data.items||[])){
+  const p=line.product,qty=Number(line.quantity||0);
+  if(!p||String(p.shop_id)!==String(requestedShopId)||!p.is_available||p.shop?.status!=="active"||p.shop?.is_active!==true||Number(p.stock)<1)continue;
+  rebuilt.push({...p,quantity:Math.min(qty,Number(p.stock),100)});
+ }
+ if(!rebuilt.length){notify("None of the previous items are currently available.",true);return}
+ cart=rebuilt;updateCart();checkoutMode=false;$("checkoutFields").classList.add("hidden");$("checkoutBtn").textContent="Checkout";$("cartModal").classList.remove("hidden");
+ notify(rebuilt.length+" available item(s) added. Review quantities and stock before checkout.");
+ const clean=new URL(location.href);clean.searchParams.delete("reorder");history.replaceState({}, "", clean.href);
 }
 
 function showError(message) {
