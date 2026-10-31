@@ -360,6 +360,7 @@ async function loadHotelReservations(){
 async function loadOfficeEmployees(){
  const panel=$("officeManagementPanel"),list=$("officeEmployeeList"),select=$("officeAttendanceEmployee");if(!panel||!list||!select)return;
  const active=!!currentShop&&currentShop.business_type==="office_company";panel.classList.toggle("hidden",!active);if(!active)return;
+ const today=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);if(!$("officeAttendanceDate").value)$("officeAttendanceDate").value=today;
  list.replaceChildren();select.replaceChildren();say("officeEmployeeMessage","Loading employees…");
  const {data,error}=await db.from("office_employees").select("id,employee_code,full_name,phone,designation,employment_type,joined_on,is_active").eq("shop_id",currentShop.id).order("full_name");
  if(error){say("officeEmployeeMessage","Employee load failed: "+error.message,true);select.add(new Option("Employees unavailable",""));return}
@@ -421,6 +422,7 @@ async function loadMedicalBatches(){
 async function loadDigitalApplications(){
  const panel=$("digitalSevaPanel"),list=$("digitalApplicationList");if(!panel||!list)return;
  const active=!!currentShop&&currentShop.business_type==="digital_services";panel.classList.toggle("hidden",!active);if(!active)return;
+ const today=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);if(!$("digitalAppliedOn").value)$("digitalAppliedOn").value=today;
  list.replaceChildren();say("digitalSevaMessage","Loading applications…");
  const {data,error}=await db.from("digital_service_applications").select("id,application_number,service_name,applicant_name,applicant_phone,reference_number,applied_on,expected_date,application_status,document_checklist,service_fee,amount_paid,receipt_number,notes").eq("shop_id",currentShop.id).order("applied_on",{ascending:false}).limit(300);
  if(error){say("digitalSevaMessage","Application load failed: "+error.message,true);return}
