@@ -823,11 +823,12 @@ $("checkoutBtn").onclick = async () => {
     }));
 
     const {data: orderId, error: orderError} = await db.rpc(
-            "place_order",
+            "place_order_with_notes",
       {
         p_shop_id: cart[0].shop_id,
         p_address_id: addressData.id,
-        p_items: items
+        p_items: items,
+        p_notes: $("notes").value.trim().slice(0, 500)
       }
     );
 
