@@ -14,13 +14,24 @@
  const URL="https://wqlopfftzvsjsxmrmxeq.supabase.co",KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
  const db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
  const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(Number(n||0));
+ let ordersChannel=null,orderPollTimer=null;
  const say=(id,msg,bad=false)=>{$(id).textContent=msg;$(id).classList.toggle("error",bad)};
  function login(msg=""){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("topActions").classList.add("hidden");say("loginMessage",msg)}
  async function boot(){
   const {data:{session},error}=await db.auth.getSession();if(error||!session){login(error?.message||"");return}
   const {data:p,error:pe}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
   if(pe||!p||p.role!=="customer"||!p.is_active){await db.auth.signOut();login(pe?.message||"This account is not an active customer account.");return}
-  $("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("topActions").classList.remove("hidden");await loadOrders();
+  $("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("topActions").classList.remove("hidden");await loadOrders();await subscribeCustomerOrders(session.user.id);
+ }
+
+ async function subscribeCustomerOrders(userId){
+  if(ordersChannel){await db.removeChannel(ordersChannel);ordersChannel=null}
+  if(orderPollTimer){clearInterval(orderPollTimer);orderPollTimer=null}
+  ordersChannel=db.channel("customer-orders-"+userId)
+   .on("postgres_changes",{event:"*",schema:"public",table:"orders",filter:"customer_id=eq."+userId},payload=>loadOrders())
+   .subscribe();
+  // Safety refresh if mobile data or the realtime socket briefly disconnects.
+  orderPollTimer=setInterval(()=>{if(document.visibilityState==="visible")loadOrders()},60000);
  }
  async function loadOrders(){
   const list=$("ordersList");list.replaceChildren();say("ordersMessage","Loading your orders…");
