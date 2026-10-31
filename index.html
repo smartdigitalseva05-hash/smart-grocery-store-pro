@@ -337,11 +337,9 @@ async function loadDeliveryFee() {
 async function loadCategories() {
   if (!db) return;
 
-  const {data, error} = await db
-    .from("categories")
-    .select("id,name")
-    .eq("is_active", true)
-    .order("name");
+  let categoryQuery = db.from("categories").select("id,name").eq("is_active", true);
+  if (selectedBusinessType !== "all") categoryQuery = categoryQuery.eq("business_type", selectedBusinessType);
+  const {data, error} = await categoryQuery.order("name");
 
   if (error) {
     console.warn("Category loading:", error.message);
@@ -473,10 +471,11 @@ $("categories").addEventListener("click", e => {
 });
 
 $("searchInput").addEventListener("input", renderProducts);
-$("businessTypeFilter").addEventListener("change", e => {
+$("businessTypeFilter").addEventListener("change", async e => {
   selectedBusinessType = e.target.value;
   selectedCategory = "all";
   document.querySelectorAll(".cat").forEach((b,i) => b.classList.toggle("active", i === 0));
+  await loadCategories();
   renderProducts();
 });
 $("sortSelect").addEventListener("change", renderProducts);
