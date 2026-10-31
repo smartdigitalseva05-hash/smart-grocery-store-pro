@@ -82,7 +82,7 @@ The three Razorpay Edge Functions are deployed:
 Subscription payments are **not ready for live use** until the merchant adds the three Razorpay secrets in Supabase Edge Function Secrets, registers the webhook, and completes Test Mode end-to-end checks. Follow [PAYMENT_SETUP.md](./PAYMENT_SETUP.md). Never put gateway secrets in frontend code, GitHub, or chat.
 
 ## Database security and automation
-- Row Level Security is enabled on all 33 public application tables (verified from PostgreSQL catalog).
+- Row Level Security is enabled on all 34 public application tables (verified from PostgreSQL catalog).
 - Sensitive authorization and tenant isolation are enforced by database policies and validated RPCs.
 - Supabase Cron runs subscription expiry checks hourly.
 - The frontend uses a Supabase publishable key only; never expose a service-role/secret key in browser code.
