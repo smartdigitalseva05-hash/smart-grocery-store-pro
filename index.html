@@ -338,7 +338,7 @@ async function loadProducts() {
 
   const {data, error} = await db
     .from("products")
-    .select("id,shop_id,category_id,name,description,price,sale_price,stock,images,is_available")
+    .select("id,shop_id,category_id,name,description,price,sale_price,stock,images,is_available,shop:shops(name,city)")
     .eq("is_available", true)
     .gt("stock", 0)
     .order("created_at", {ascending:false});
@@ -402,6 +402,7 @@ function renderProducts() {
            onerror="this.src='https://placehold.co/400x300/e9f8f1/087f5b?text=Grocery'">
       <div class="product-info">
         <h3>${escapeHTML(p.name)}</h3>
+        <div class="small">Store: ${escapeHTML(p.shop?.name || "Local grocery store")}${p.shop?.city ? " · " + escapeHTML(p.shop.city) : ""}</div>
         <div class="small">${escapeHTML(p.description || "Quality grocery product")}</div>
         <div class="price">
           ${money(effectivePrice(p))}
@@ -485,6 +486,7 @@ function updateCart() {
       <div class="cart-line">
         <div>
           <strong>${escapeHTML(p.name)}</strong>
+          <div class="small">Store: ${escapeHTML(p.shop?.name || "Local grocery store")}</div>
           <div class="small">${money(effectivePrice(p))} × ${p.quantity}</div>
         </div>
         <div>
