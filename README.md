@@ -36,7 +36,14 @@ Remaining specialist work includes restaurant POS and customer table reservation
 ## Orders
 Customer checkout currently supports cash on delivery (COD). Shopkeepers can accept pending COD orders, move them through delivery, and mark COD as collected only when delivery is confirmed. Customer online grocery payments are not implemented.
 
-## Free trial\n- One 7-day free trial per Shopkeeper account, enforced by a unique database claim.\n- Trial does not create a fake payment or paid subscription.\n- The trial uses the Basic plan limits (200 products, 500 orders/month).\n- Hourly Supabase Cron expires the trial, deactivates the shop and preserves its stored data.\n- Shopkeeper trial activation and product insert/update/delete passed authenticated database transaction tests; customer-facing product visibility and trial-expiry behavior also passed rollback tests.\n\n## Subscription payments
+## Free trial
+- One 7-day free trial per Shopkeeper account, enforced by a unique database claim.
+- Trial does not create a fake payment or paid subscription.
+- The trial uses the Basic plan limits (200 products, 500 orders/month).
+- Hourly Supabase Cron expires the trial, deactivates the shop and preserves its stored data.
+- Shopkeeper trial activation and product insert/update/delete passed authenticated database transaction tests; customer-facing product visibility and trial-expiry behavior also passed rollback tests.
+
+## Subscription payments
 The three Razorpay Edge Functions are deployed:
 - `razorpay-subscription-checkout`
 - `razorpay-verify-subscription-payment`
@@ -54,7 +61,8 @@ Subscription payments are **not ready for live use** until the merchant adds the
 - GitHub Pages deployment workflow is configured; the latest recorded deployment run succeeded.
 - Inline JavaScript syntax and page element-ID reference checks passed for the six HTML pages.
 - Razorpay Edge Functions are ACTIVE; checkout, verification and webhook now use a separately created server-only Supabase secret-key client for privileged payment-row operations. Full Test Mode end-to-end payment verification is still pending.
-- Current database has one active grocery shop on its one-time 7-day free trial (started 2026-10-31 03:53 UTC; expires 2026-11-07 03:53 UTC). The shop has no products or customer orders yet, so a live customer-order demo still needs a real product and a customer delivery address.
+- Current database has one active grocery shop on its one-time 7-day free trial (started 2026-10-31 03:53 UTC; expires 2026-11-07 03:53 UTC), one product and zero customer orders. A live checkout acceptance test still needs a customer account and delivery address.
+- All 11 business types now have active catalogue categories: 4 Grocery, 8 Daily Needs, and 4 each for the other nine types (48 total). Category names are starter defaults and can be refined by the platform Owner.
 - Supabase Security Advisor reports leaked-password protection is disabled. Enable it in Auth settings before public launch if supported by the project plan.
 - Performance Advisor reports unused-index notices; do not remove indexes without reviewing real query workload.
 
