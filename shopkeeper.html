@@ -347,6 +347,41 @@ async function loadShopData(){
      if(objectPath){const {error:storageError}=await db.storage.from("product-images").remove([objectPath]);if(storageError){say("listMessage","Product deleted, but its old photo could not be removed from storage: "+storageError.message,true);await loadProducts();return}}
      say("listMessage","Product deleted successfully.");await loadProducts();
     });
+    if(currentShop.business_type==="garments"){
+     const variants=document.createElement("div");variants.className="notice";variants.style.marginTop="10px";
+     const variantTitle=document.createElement("strong");variantTitle.textContent="Size & colour variants";variants.append(variantTitle);
+     const variantList=document.createElement("div");variantList.style.marginTop="8px";variants.append(variantList);
+     const addVariant=document.createElement("button");addVariant.type="button";addVariant.className="secondary";addVariant.textContent="Add size / colour variant";addVariant.disabled=!canManageProducts();
+     addVariant.addEventListener("click",async()=>{
+      const sku=window.prompt("Unique SKU for this variant (e.g. TSHIRT-BLK-M):");if(sku===null)return;
+      const size=window.prompt("Size (e.g. S, M, L, XL, Free Size):");if(size===null)return;
+      const color=window.prompt("Colour (e.g. Black, Blue):");if(color===null)return;
+      const priceText=window.prompt("Variant price in ₹:",String(p.sale_price??p.price));if(priceText===null)return;
+      const stockText=window.prompt("Variant stock quantity:","0");if(stockText===null)return;
+      const price=Number(priceText),variantStock=Number(stockText);
+      if(!sku.trim()||!size.trim()||!color.trim()||!Number.isFinite(price)||price<0||!Number.isInteger(variantStock)||variantStock<0){say("listMessage","Enter a SKU, size, colour, valid price and whole-number stock.",true);return}
+      addVariant.disabled=true;
+      const {error}=await db.from("garment_product_variants").insert({shop_id:currentShop.id,product_id:p.id,sku:sku.trim(),size_label:size.trim(),color_name:color.trim(),price,stock:variantStock});
+      addVariant.disabled=false;
+      if(error){say("listMessage",error.message,true);return}
+      say("listMessage","Garment variant saved.");await renderVariants();
+     });
+     variants.append(addVariant);
+     async function renderVariants(){
+      variantList.replaceChildren();
+      const {data,error}=await db.from("garment_product_variants").select("id,sku,size_label,color_name,price,stock,is_available").eq("shop_id",currentShop.id).eq("product_id",p.id).order("size_label");
+      if(error){const err=document.createElement("div");err.textContent="Variants could not load: "+error.message;variantList.append(err);return}
+      if(!data?.length){const empty=document.createElement("div");empty.textContent="No variants added yet.";variantList.append(empty);return}
+      data.forEach(v=>{
+       const row=document.createElement("div");row.className="row";row.style.padding="6px 0";
+       const info=document.createElement("span");info.textContent=v.sku+" · "+v.size_label+" · "+v.color_name+" · "+money(v.price)+" · Stock "+v.stock+(v.is_available?"":" · Hidden");
+       const removeVariant=document.createElement("button");removeVariant.type="button";removeVariant.className="danger";removeVariant.textContent="Delete";removeVariant.disabled=!canManageProducts();
+       removeVariant.addEventListener("click",async()=>{if(!window.confirm("Delete variant "+v.sku+"?"))return;const {error}=await db.from("garment_product_variants").delete().eq("id",v.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await renderVariants()});
+       row.append(info,removeVariant);variantList.append(row);
+      });
+     }
+     card.append(variants);renderVariants();
+    }
     actions.append(stock,edit,toggle,imageEdit,remove);card.append(actions);list.append(card);
   }
  }
