@@ -1,0 +1,1 @@
+alter table public.digital_service_applications drop constraint if exists digital_service_apps_expected_date_valid;
