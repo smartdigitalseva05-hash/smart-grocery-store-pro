@@ -237,8 +237,15 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  async function checkSession(){
    const {data:{session},error}=await client.auth.getSession();
    if(error||!session){showLogin(error?.message||"");return}
+   // Fail closed: never render the Owner dashboard for a non-Owner account.
+   const {data:profile,error:profileError}=await client.from("profiles").select("role,is_active").eq("id",session.user.id).single();
+   if(profileError||!profile||profile.role!=="super_admin"||profile.is_active!==true){
+     await client.auth.signOut();
+     showLogin(profileError?.message||"Access denied. Only an active Super Admin can open the Owner dashboard. Please use the Shopkeeper Login for shop management.");
+     return;
+   }
    loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
-   $("ownerEmail").textContent=session.user.email||"Signed-in account";
+   $("ownerEmail").textContent=session.user.email||"Signed-in Owner";
    await Promise.all([loadSummary(),loadShops(),loadShopkeepers(),loadCatalog(),loadPayments(),loadAuditLogs()]);
  }
  $("loginForm").addEventListener("submit",async e=>{
