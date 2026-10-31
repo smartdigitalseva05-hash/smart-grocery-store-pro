@@ -41,6 +41,8 @@ a{color:#8ce2b3}
 <div class="product" style="margin-top:12px"><strong>Best-selling products</strong><p class="sub">Ranked by units in the latest 100 orders. Cancelled orders are excluded.</p><div id="bestSellerList" class="products"></div><div id="bestSellerMessage" class="notice"></div></div>
 <div class="product" style="margin-top:12px"><div class="row"><div><strong>Low Stock Alerts</strong><div class="sub">Show products at or below your selected threshold.</div></div><label class="field">Alert at or below<input id="lowStockLimit" type="number" min="0" max="10000" value="5"></label></div><div id="lowStockList" class="products"></div></div>
 <div class="product" style="margin-top:12px"><div class="row"><strong>Shopkeeper Growth Score</strong><h2 id="growthScore">—/100</h2></div><div id="growthBreakdown" class="products"></div><div class="sub">An operational readiness indicator based on products, availability, stock and delivered orders. Not a profit guarantee.</div></div>
+
+<div class="panel hidden" id="customerCreditPanel" style="margin-top:14px"><div class="row"><div><h1>Customer Udhaar / Credit Book</h1><p class="muted">Track customer credit sales and payments received. Balance is calculated from the saved ledger.</p></div><button id="creditRefresh" class="secondary" type="button">Refresh</button></div><div class="row"><div><div class="sub">Outstanding customer balance</div><h2 id="creditOutstanding">₹0</h2></div><div><div class="sub">Credit entries this month</div><h2 id="creditMonthSales">₹0</h2></div></div><form id="creditEntryForm" class="formgrid"><label class="field">Customer name<input id="creditCustomerName" maxlength="120" required></label><label class="field">Phone<input id="creditCustomerPhone" maxlength="30" placeholder="Optional"></label><label class="field">Entry type<select id="creditEntryType"><option value="credit_sale">Credit sale / Udhaar given</option><option value="payment_received">Payment received</option><option value="adjustment">Balance adjustment (adds due)</option></select></label><label class="field">Amount (₹)<input id="creditAmount" type="number" min="0.01" max="100000000" step="0.01" required></label><label class="field">Date<input id="creditDate" type="date" required></label><label class="field">Notes<input id="creditNotes" maxlength="500" placeholder="Bill number / details"></label><button id="creditSave" type="submit">Save ledger entry</button></form><div id="creditMessage" class="notice" role="status"></div><h2>Recent customer ledger</h2><div id="creditLedgerList" class="products"></div></div>
 <div class="panel hidden" id="groceryProcurementPanel" style="margin-top:14px">
  <div class="row"><div><h1>Supplier & Purchase Manager</h1><p class="muted">Save supplier contacts, record incoming stock and automatically update product quantities with a permanent movement history.</p></div><button id="groceryProcurementRefresh" class="secondary" type="button">Refresh</button></div>
  <div class="formgrid">
@@ -536,6 +538,9 @@ function bindGrowthTools(){
 }
 
 
+
+async function loadCustomerCredit(){const panel=$("customerCreditPanel");if(!panel||!currentShop){panel?.classList.add("hidden");return}panel.classList.remove("hidden");if(!$("creditDate").value)$("creditDate").value=new Date().toISOString().slice(0,10);const {data,error}=await db.from("shop_credit_ledger").select("id,customer_name,customer_phone,entry_type,amount,entry_date,notes,created_at").eq("shop_id",currentShop.id).order("entry_date",{ascending:false}).order("created_at",{ascending:false}).limit(500);if(error){say("creditMessage","Ledger unavailable: "+error.message,true);return}const rows=data||[],balances=new Map();let monthSales=0;const now=new Date(),month=now.toISOString().slice(0,7);rows.forEach(x=>{const key=(x.customer_phone||x.customer_name.trim().toLowerCase()).toLowerCase();const sign=x.entry_type==="payment_received"?-1:1;balances.set(key,(balances.get(key)||0)+sign*Number(x.amount));if(x.entry_type==="credit_sale"&&x.entry_date?.slice(0,7)===month)monthSales+=Number(x.amount)});const outstanding=[...balances.values()].reduce((a,b)=>a+b,0);$("creditOutstanding").textContent=money(outstanding);$("creditMonthSales").textContent=money(monthSales);const list=$("creditLedgerList");list.replaceChildren();rows.slice(0,60).forEach(x=>{const row=document.createElement("div");row.className="row";const info=document.createElement("span");info.textContent=x.customer_name+(x.customer_phone?" · "+x.customer_phone:"")+" · "+({credit_sale:"Udhaar",payment_received:"Payment received",adjustment:"Adjustment"}[x.entry_type]||x.entry_type)+" · "+x.entry_date+(x.notes?" · "+x.notes:"");const amount=document.createElement("b");amount.textContent=(x.entry_type==="payment_received"?"−":"+")+money(x.amount);row.append(info,amount);list.append(row)});if(!rows.length){const e=document.createElement("p");e.className="sub";e.textContent="No customer credit entries yet.";list.append(e)}say("creditMessage","Showing "+Math.min(rows.length,60)+" of "+rows.length+" latest entries. Customer balances are net ledger totals.");}
+
 async function loadGroceryProcurement(){
  const panel=$("groceryProcurementPanel");if(!panel||!currentShop||currentShop.business_type!=="grocery"){panel?.classList.add("hidden");return}
  panel.classList.remove("hidden");
@@ -595,7 +600,7 @@ async function loadShopData(){
   await loadElectronicsInventory();
   await loadMedicalBatches();
   await loadDigitalApplications();
-  await loadGroceryProcurement();
+  await loadGroceryProcurement();await loadCustomerCredit();
   const {data:trial,error:trialError}=await db.from("shop_trials").select("status,started_at,ends_at").eq("shop_id",currentShop.id).maybeSingle();
   currentTrial=trialError?null:trial;
   const trialActive=!!currentTrial&&currentTrial.status==="active"&&new Date(currentTrial.ends_at).getTime()>Date.now()&&currentShop.subscription_expires_at===currentTrial.ends_at;
@@ -1029,6 +1034,9 @@ async function loadShopData(){
   $("groceryExpenseForm").reset();$("groceryExpenseDate").value=new Date().toISOString().slice(0,10);say("groceryExpenseMessage","Expense saved.");await loadGroceryProcurement();
  });
 
+
+
+ $("creditEntryForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||!canManageProducts()){say("creditMessage","An active shop subscription is required to manage the ledger.",true);return}const name=$("creditCustomerName").value.trim(),phone=$("creditCustomerPhone").value.trim(),type=$("creditEntryType").value,amount=Number($("creditAmount").value),date=$("creditDate").value,notes=$("creditNotes").value.trim();if(name.length<1||!["credit_sale","payment_received","adjustment"].includes(type)||!Number.isFinite(amount)||amount<=0||amount>100000000||!date){say("creditMessage","Check customer, entry type, amount and date.",true);return}$("creditSave").disabled=true;const {error}=await db.from("shop_credit_ledger").insert({shop_id:currentShop.id,customer_name:name,customer_phone:phone||null,entry_type:type,amount,entry_date:date,notes:notes||null});$("creditSave").disabled=false;if(error){say("creditMessage","Entry not saved: "+error.message,true);return}$("creditEntryForm").reset();$("creditDate").value=new Date().toISOString().slice(0,10);say("creditMessage","Ledger entry saved.");await loadCustomerCredit()});$("creditRefresh").addEventListener("click",loadCustomerCredit);
 
  $("shopSelect").addEventListener("change",loadShopData);
  $("ordersRefresh").addEventListener("click",loadOrders);
