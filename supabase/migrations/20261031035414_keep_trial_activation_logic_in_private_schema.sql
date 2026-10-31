@@ -36,5 +36,9 @@ returns jsonb language sql set search_path=pg_catalog,public,private as $$
  select private.start_free_trial(p_shop_id);
 $$;
 grant usage on schema private to authenticated;
+revoke all on function private.start_free_trial(uuid) from public,anon;
+revoke all on function private.is_active_free_trial(uuid) from public,anon;
 grant execute on function private.start_free_trial(uuid) to authenticated;
+grant execute on function private.is_active_free_trial(uuid) to authenticated;
+revoke all on function public.start_free_trial(uuid) from public,anon;
 grant execute on function public.start_free_trial(uuid) to authenticated;

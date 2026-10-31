@@ -16,4 +16,5 @@ begin
  return jsonb_build_object('user_id',p_user_id,'role','shopkeeper','is_active',p_is_active,'updated_at',now());
 end;
 $$;
+revoke all on function public.owner_set_shopkeeper_status(uuid,boolean) from public,anon;
 grant execute on function public.owner_set_shopkeeper_status(uuid,boolean) to authenticated;
