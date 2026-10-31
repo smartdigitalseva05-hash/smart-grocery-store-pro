@@ -76,7 +76,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  async function loadShops(){
    message("shopsMessage","Loading shops from protected database…");
    const list=$("shopList");list.replaceChildren();
-   const {data,error}=await client.from("shops").select("id,owner_id,name,city,phone,status,is_active,created_at").order("created_at",{ascending:false});
+   const {data,error}=await client.from("shops").select("id,owner_id,name,business_type,city,phone,status,is_active,created_at").order("created_at",{ascending:false});
    if(error){message("shopsMessage",error.message,true);return}
    if(!data?.length){message("shopsMessage","No shops registered yet.");return}
    const {data:profiles,error:profileError}=await client.from("profiles").select("id,full_name,role,is_active").in("id",data.map(s=>s.owner_id));
@@ -89,7 +89,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      const info=document.createElement("div");
      const name=document.createElement("div");name.className="shop-name";name.textContent=shop.name||"Unnamed shop";
      const owner=profileMap.get(shop.owner_id);
-     const detail=document.createElement("div");detail.className="sub";detail.textContent=[owner?.full_name||"Shop owner",owner?.role||"unknown role",shop.city,shop.phone].filter(Boolean).join(" · ")||"No city/contact added";
+     const detail=document.createElement("div");detail.className="sub";const businessLabels={grocery:"Grocery",daily_needs:"Daily Needs",garments:"Garments",jewellery:"Jewellery",restaurant:"Restaurant",hotel:"Hotel",office_company:"Office / Company",electronics:"Electronics",medical:"Medical",digital_services:"Digital Seva",other:"Other"};detail.textContent=[businessLabels[shop.business_type]||"Grocery",owner?.full_name||"Shop owner",owner?.role||"unknown role",shop.city,shop.phone].filter(Boolean).join(" · ")||"No city/contact added";
      info.append(name,detail);
      const state=document.createElement("span");state.className="pill";state.textContent=(shop.status||"unknown")+" · "+(shop.is_active?"visible":"not active");
      top.append(info,state);card.append(top);
