@@ -92,6 +92,32 @@ a{color:#8ce2b3}
  <div id="hotelReservationMessage" class="notice" role="status"></div>
  <h2 style="margin-top:22px">Bookings & guest register</h2><button id="hotelRefresh" type="button" class="secondary">Refresh hotel dashboard</button>
  <div id="hotelReservationList" class="products"></div>
+</div><div class="panel hidden" id="officeManagementPanel">
+ <div class="row"><div><h1>Office · Employees & Attendance</h1><p class="muted">Maintain the employee register and daily attendance for this office.</p></div><span class="pill">HR basics</span></div>
+ <h2>Employee register</h2>
+ <form id="officeEmployeeForm" class="formgrid">
+  <label class="field">Employee name<input id="officeEmployeeName" maxlength="120" required></label>
+  <label class="field">Employee code<input id="officeEmployeeCode" maxlength="40" placeholder="EMP-001"></label>
+  <label class="field">Phone<input id="officeEmployeePhone" maxlength="30" inputmode="tel"></label>
+  <label class="field">Designation<input id="officeEmployeeDesignation" maxlength="80" placeholder="Sales executive"></label>
+  <label class="field">Employment type<select id="officeEmployeeType"><option value="full_time">Full time</option><option value="part_time">Part time</option><option value="contract">Contract</option><option value="intern">Intern</option></select></label>
+  <label class="field">Joining date<input id="officeEmployeeJoined" type="date"></label>
+  <div class="actions" style="align-items:end"><button id="officeEmployeeAdd" type="submit">Add employee</button></div>
+ </form>
+ <div id="officeEmployeeMessage" class="notice" role="status"></div><div id="officeEmployeeList" class="products"></div>
+ <h2 style="margin-top:22px">Daily attendance</h2>
+ <form id="officeAttendanceForm" class="formgrid">
+  <label class="field">Employee<select id="officeAttendanceEmployee" required><option value="">Add an employee first</option></select></label>
+  <label class="field">Date<input id="officeAttendanceDate" type="date" required></label>
+  <label class="field">Status<select id="officeAttendanceStatus"><option value="present">Present</option><option value="absent">Absent</option><option value="half_day">Half day</option><option value="leave">Leave</option></select></label>
+  <label class="field">Check-in<input id="officeAttendanceIn" type="time"></label>
+  <label class="field">Check-out<input id="officeAttendanceOut" type="time"></label>
+  <label class="field">Notes<input id="officeAttendanceNotes" maxlength="300"></label>
+  <div class="actions" style="align-items:end"><button id="officeAttendanceSave" type="submit">Save attendance</button></div>
+ </form>
+ <div id="officeAttendanceMessage" class="notice" role="status"></div>
+ <h2 style="margin-top:22px">Recent attendance register</h2><button id="officeAttendanceRefresh" type="button" class="secondary">Refresh attendance</button>
+ <div id="officeAttendanceList" class="products"></div>
 </div><div class="panel" id="starter-products"><h1>Quick add from 200 starter products</h1><p class="muted">Choose a starter item to prefill the form. Confirm the real price, stock and photo before saving.</p><div class="formgrid"><label class="field">Search starter products<input id="starterSearch" type="search" placeholder="Search rice, oil, soap…"></label><label class="field">Choose starter product<select id="starterSelect"><option value="">Choose from 200 products…</option></select></label></div><button id="useStarter" type="button" class="secondary">Use starter product</button><span id="starterHint" class="sub" role="status">Templates are not live inventory.</span></div>
 <div class="panel" id="bulk-starter-products"><h1>Bulk add starter products</h1><p class="muted">Select multiple items from the 200-product starter catalogue. They will be saved as <strong>hidden drafts</strong> with zero stock, so customers cannot order them until you confirm price, stock and photos.</p><label class="field">Search starter catalogue<input id="bulkStarterSearch" type="search" placeholder="Search product or category…"></label><div class="starter-tools"><button id="bulkSelectVisible" type="button" class="secondary">Select visible</button><button id="bulkClear" type="button" class="secondary">Clear selection</button><button id="bulkImport" type="button">Add selected as hidden drafts</button></div><div id="bulkStarterCount" class="starter-count" role="status">0 selected</div><div id="bulkStarterList" class="starter-bulk-grid"></div><div id="bulkStarterMessage" class="notice" role="status"></div></div>
 <div class="panel"><h1>Add a product</h1><p class="muted">Products are saved directly to Supabase. Plan limits and shop ownership are enforced by database policies/triggers.</p>
@@ -266,6 +292,30 @@ async function loadHotelReservations(){
   const controls=document.createElement("div");controls.className="product-actions";const status=document.createElement("select");["booked","checked_in","checked_out","cancelled"].forEach(v=>status.add(new Option(v.replace("_"," ").toUpperCase(),v)));status.value=b.status;status.disabled=!canManageProducts();status.addEventListener("change",async()=>{const next=status.value;status.disabled=true;const {error:updateError}=await db.from("hotel_reservations").update({status:next,updated_at:new Date().toISOString()}).eq("id",b.id).eq("shop_id",currentShop.id);if(updateError){say("hotelReservationMessage","Booking update failed: "+updateError.message,true);status.value=b.status;status.disabled=!canManageProducts();return}b.status=next;pill.textContent=next;if(next==="checked_in"||next==="checked_out"||next==="cancelled"){const roomStatus=next==="checked_in"?"occupied":"available";await db.from("hotel_rooms").update({room_status:roomStatus,updated_at:new Date().toISOString()}).eq("id",b.room_id).eq("shop_id",currentShop.id)}say("hotelReservationMessage","Booking #"+b.booking_number+" updated.");status.disabled=!canManageProducts();await loadHotelRooms()});controls.append(status);card.append(controls);list.append(card);
  });
 }
+async function loadOfficeEmployees(){
+ const panel=$("officeManagementPanel"),list=$("officeEmployeeList"),select=$("officeAttendanceEmployee");if(!panel||!list||!select)return;
+ const active=!!currentShop&&currentShop.business_type==="office_company";panel.classList.toggle("hidden",!active);if(!active)return;
+ list.replaceChildren();select.replaceChildren();say("officeEmployeeMessage","Loading employees…");
+ const {data,error}=await db.from("office_employees").select("id,employee_code,full_name,phone,designation,employment_type,joined_on,is_active").eq("shop_id",currentShop.id).order("full_name");
+ if(error){say("officeEmployeeMessage","Employee load failed: "+error.message,true);select.add(new Option("Employees unavailable",""));return}
+ const activeEmployees=(data||[]).filter(e=>e.is_active);select.add(new Option(activeEmployees.length?"Choose employee":"Add an active employee first",""));activeEmployees.forEach(e=>select.add(new Option((e.employee_code?e.employee_code+" · ":"")+e.full_name,e.id)));
+ say("officeEmployeeMessage",(data?.length||0)+" employee(s) registered.");
+ if(!data?.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="Add your first employee above.";list.append(empty);return}
+ data.forEach(emp=>{
+  const card=document.createElement("article");card.className="product";const title=document.createElement("div");title.className="product-title";title.textContent=(emp.employee_code?emp.employee_code+" · ":"")+emp.full_name;
+  const meta=document.createElement("div");meta.className="sub";meta.textContent=(emp.designation||"No designation")+" · "+emp.employment_type.replace("_"," ")+" · "+(emp.phone||"No phone")+(emp.joined_on?" · Joined "+emp.joined_on:"")+(emp.is_active?"":" · Inactive");
+  const actions=document.createElement("div");actions.className="product-actions";const edit=document.createElement("button");edit.type="button";edit.className="secondary";edit.textContent="Edit";edit.disabled=!canManageProducts();edit.addEventListener("click",async()=>{const name=window.prompt("Employee name:",emp.full_name);if(name===null)return;const designation=window.prompt("Designation:",emp.designation||"");if(designation===null)return;const phone=window.prompt("Phone:",emp.phone||"");if(phone===null)return;const code=window.prompt("Employee code:",emp.employee_code||"");if(code===null)return;if(!name.trim()){say("officeEmployeeMessage","Employee name is required.",true);return}edit.disabled=true;const {error:updateError}=await db.from("office_employees").update({full_name:name.trim(),designation:designation.trim()||null,phone:phone.trim()||null,employee_code:code.trim()||null,updated_at:new Date().toISOString()}).eq("id",emp.id).eq("shop_id",currentShop.id);if(updateError){say("officeEmployeeMessage","Employee update failed: "+updateError.message,true);edit.disabled=false;return}await loadOfficeEmployees()});
+  const toggle=document.createElement("button");toggle.type="button";toggle.className="secondary";toggle.textContent=emp.is_active?"Deactivate":"Reactivate";toggle.disabled=!canManageProducts();toggle.addEventListener("click",async()=>{toggle.disabled=true;const {error:updateError}=await db.from("office_employees").update({is_active:!emp.is_active,updated_at:new Date().toISOString()}).eq("id",emp.id).eq("shop_id",currentShop.id);if(updateError){say("officeEmployeeMessage","Employee status update failed: "+updateError.message,true);toggle.disabled=!canManageProducts();return}await loadOfficeEmployees()});
+  actions.append(edit,toggle);card.append(title,meta,actions);list.append(card);
+ });
+}
+async function loadOfficeAttendance(){
+ const list=$("officeAttendanceList");if(!list||!currentShop||currentShop.business_type!=="office_company")return;list.replaceChildren();
+ const {data,error}=await db.from("office_attendance").select("id,employee_id,work_date,attendance_status,check_in,check_out,notes,office_employees(full_name,employee_code)").eq("shop_id",currentShop.id).order("work_date",{ascending:false}).limit(100);
+ if(error){say("officeAttendanceMessage","Attendance load failed: "+error.message,true);return}
+ if(!data?.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="No attendance records yet.";list.append(empty);return}
+ data.forEach(row=>{const card=document.createElement("article");card.className="product";const emp=row.office_employees||{};const title=document.createElement("div");title.className="product-title";title.textContent=(emp.employee_code?emp.employee_code+" · ":"")+(emp.full_name||"Employee");const meta=document.createElement("div");meta.className="sub";meta.textContent=row.work_date+" · "+row.attendance_status.replace("_"," ")+" · "+(row.check_in||"No check-in")+" – "+(row.check_out||"No check-out")+(row.notes?" · "+row.notes:"");card.append(title,meta);list.append(card)});
+}
 async function loadShopData(){
   currentShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!currentShop)return;
   renderBusinessWorkspace(currentShop);
@@ -275,6 +325,8 @@ async function loadShopData(){
   await loadRestaurantKitchen();
   await loadHotelRooms();
   await loadHotelReservations();
+  await loadOfficeEmployees();
+  await loadOfficeAttendance();
   const {data:trial,error:trialError}=await db.from("shop_trials").select("status,started_at,ends_at").eq("shop_id",currentShop.id).maybeSingle();
   currentTrial=trialError?null:trial;
   const trialActive=!!currentTrial&&currentTrial.status==="active"&&new Date(currentTrial.ends_at).getTime()>Date.now()&&currentShop.subscription_expires_at===currentTrial.ends_at;
@@ -658,6 +710,10 @@ async function loadShopData(){
  $("hotelReservationRoom").addEventListener("change",async()=>{const roomId=$("hotelReservationRoom").value;if(!roomId)return;const {data}=await db.from("hotel_rooms").select("base_rate").eq("id",roomId).eq("shop_id",currentShop.id).maybeSingle();if(data)$("hotelBookingRate").value=data.base_rate});
  $("hotelReservationForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||currentShop.business_type!=="hotel"||!canManageProducts()){say("hotelReservationMessage","An active hotel subscription is required.",true);return}const roomId=$("hotelReservationRoom").value,name=$("hotelGuestName").value.trim(),phone=$("hotelGuestPhone").value.trim(),guests=Number($("hotelGuestCount").value),checkIn=$("hotelCheckIn").value,checkOut=$("hotelCheckOut").value,rate=Number($("hotelBookingRate").value);if(!roomId||!name||!Number.isInteger(guests)||guests<1||guests>20||!checkIn||!checkOut||checkOut<=checkIn||!Number.isFinite(rate)||rate<0){say("hotelReservationMessage","Choose a room and valid guest, date, and rate details. Check-out must be after check-in.",true);return}const {data:room,error:roomError}=await db.from("hotel_rooms").select("capacity,room_status,is_active").eq("id",roomId).eq("shop_id",currentShop.id).single();if(roomError||!room||!room.is_active||room.room_status==="maintenance"||room.room_status==="blocked"){say("hotelReservationMessage","Selected room is not available for booking.",true);return}if(guests>room.capacity){say("hotelReservationMessage","Guest count exceeds the room capacity.",true);return}$("hotelReservationAdd").disabled=true;const {data,error}=await db.from("hotel_reservations").insert({shop_id:currentShop.id,room_id:roomId,guest_name:name,guest_phone:phone||null,guest_count:guests,check_in:checkIn,check_out:checkOut,nightly_rate:rate,notes:$("hotelBookingNotes").value.trim()||null}).select("booking_number").single();$("hotelReservationAdd").disabled=false;if(error){say("hotelReservationMessage","Reservation not saved: "+error.message,true);return}$("hotelReservationForm").reset();$("hotelGuestCount").value="1";say("hotelReservationMessage","Booking #"+data.booking_number+" saved. Overlapping bookings are blocked.");await loadHotelReservations()});
  $("hotelRefresh").addEventListener("click",async()=>{await loadHotelRooms();await loadHotelReservations()});
+ $("officeEmployeeForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||currentShop.business_type!=="office_company"||!canManageProducts()){say("officeEmployeeMessage","An active office subscription is required.",true);return}const name=$("officeEmployeeName").value.trim(),code=$("officeEmployeeCode").value.trim(),phone=$("officeEmployeePhone").value.trim(),designation=$("officeEmployeeDesignation").value.trim(),type=$("officeEmployeeType").value,joined=$("officeEmployeeJoined").value||null;if(!name){say("officeEmployeeMessage","Employee name is required.",true);return}$("officeEmployeeAdd").disabled=true;const {error}=await db.from("office_employees").insert({shop_id:currentShop.id,full_name:name,employee_code:code||null,phone:phone||null,designation:designation||null,employment_type:type,joined_on:joined});$("officeEmployeeAdd").disabled=false;if(error){say("officeEmployeeMessage","Could not add employee: "+error.message,true);return}$("officeEmployeeForm").reset();$("officeEmployeeType").value="full_time";say("officeEmployeeMessage","Employee added.");await loadOfficeEmployees()});
+ $("officeAttendanceForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||currentShop.business_type!=="office_company"||!canManageProducts()){say("officeAttendanceMessage","An active office subscription is required.",true);return}const employee=$("officeAttendanceEmployee").value,date=$("officeAttendanceDate").value,status=$("officeAttendanceStatus").value,checkIn=$("officeAttendanceIn").value||null,checkOut=$("officeAttendanceOut").value||null;if(!employee||!date||(checkIn&&checkOut&&checkOut<=checkIn)){say("officeAttendanceMessage","Choose employee and date. Check-out must be later than check-in.",true);return}$("officeAttendanceSave").disabled=true;const {error}=await db.from("office_attendance").upsert({shop_id:currentShop.id,employee_id:employee,work_date:date,attendance_status:status,check_in:checkIn,check_out:checkOut,notes:$("officeAttendanceNotes").value.trim()||null,updated_at:new Date().toISOString()},{onConflict:"employee_id,work_date"});$("officeAttendanceSave").disabled=false;if(error){say("officeAttendanceMessage","Could not save attendance: "+error.message,true);return}say("officeAttendanceMessage","Attendance saved for "+date+".");await loadOfficeAttendance()});
+ $("officeAttendanceRefresh").addEventListener("click",loadOfficeAttendance);
+
 
  $("shopSelect").addEventListener("change",loadShopData);
  $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
