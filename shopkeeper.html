@@ -477,7 +477,7 @@ async function loadShopData(){
   $("trialButton").classList.toggle("hidden",canManage||!!currentTrial);
   $("trialButton").disabled=canManage||!!currentTrial||!currentShop||currentShop.status==="suspended";
   $("trialButton").textContent="Start 7-Day Free Trial";
-  $("trialStatus").textContent=trialActive?"Your one-time 7-day free trial is active until "+expiry+". No payment was taken.":(currentTrial?"This account has already used its free trial. Choose a subscription to continue.":(canManage?"Your shop is active. You can manage products and orders.":"Eligible grocery shops can start one 7-day free trial. No payment required."));
+  $("trialStatus").textContent=trialActive?"Your one-time 7-day free trial is active until "+expiry+". No payment was taken.":(currentTrial?"This account has already used its free trial. Choose a subscription to continue.":(canManage?"Your shop is active. You can manage products and orders.":"Eligible shops can start one 7-day free trial. No payment required."));
   if(!canManage&&!trialActive)say("subscriptionMessage",currentTrial?"Your one-time free trial has already been used. Choose a paid plan to reactivate.":"Start your free 7-day trial to unlock products, stock and orders.");
   await subscribeShopOrders();
   await Promise.all([loadCategories(),loadProducts(),loadOrders()]);
@@ -496,7 +496,7 @@ async function loadShopData(){
   $("planPrice").textContent="Current database price: "+new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(amount)+" / "+(cycle==="monthly"?"month":"year");
  }
  async function startFreeTrial(){
-  if(!currentShop){say("subscriptionMessage","Select a grocery shop first.",true);return}
+  if(!currentShop){say("subscriptionMessage","Select a shop first.",true);return}
   const button=$("trialButton");button.disabled=true;
   say("subscriptionMessage","Starting your one-time 7-day free trial…");
   try{
