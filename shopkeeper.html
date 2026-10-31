@@ -163,6 +163,26 @@ a{color:#8ce2b3}
  <div id="medicalMessage" class="notice" role="status"></div>
  <h2 style="margin-top:22px">Batch stock & expiry alerts</h2><button id="medicalRefresh" type="button" class="secondary">Refresh batches</button>
  <div id="medicalBatchList" class="products"></div>
+</div><div class="panel hidden" id="digitalSevaPanel">
+ <div class="row"><div><h1>Digital Seva · Application Tracking</h1><p class="muted">Register service applications, maintain document checklists, track progress and record customer fees.</p></div><span class="pill">Service desk</span></div>
+ <form id="digitalApplicationForm">
+  <div class="formgrid">
+   <label class="field">Service name<input id="digitalServiceName" maxlength="120" required placeholder="Income Certificate / ROR / PAN"></label>
+   <label class="field">Applicant name<input id="digitalApplicantName" maxlength="120" required></label>
+   <label class="field">Applicant phone<input id="digitalApplicantPhone" maxlength="30" inputmode="tel" required></label>
+   <label class="field">Reference / acknowledgement number<input id="digitalReference" maxlength="100"></label>
+   <label class="field">Applied on<input id="digitalAppliedOn" type="date" required></label>
+   <label class="field">Expected date<input id="digitalExpectedDate" type="date"></label>
+   <label class="field">Service fee (₹)<input id="digitalServiceFee" type="number" min="0" step="0.01" value="0" required></label>
+   <label class="field">Amount paid (₹)<input id="digitalAmountPaid" type="number" min="0" step="0.01" value="0" required></label>
+  </div>
+  <label class="field">Document checklist (one item per line)<textarea id="digitalDocumentChecklist" maxlength="2000" rows="3" placeholder="Aadhaar copy&#10;Photo&#10;Address proof"></textarea></label>
+  <label class="field">Notes<textarea id="digitalApplicationNotes" maxlength="500" rows="2"></textarea></label>
+  <button id="digitalApplicationAdd" type="submit">Save application</button>
+ </form>
+ <div id="digitalSevaMessage" class="notice" role="status"></div>
+ <h2 style="margin-top:22px">Application register</h2><button id="digitalSevaRefresh" type="button" class="secondary">Refresh applications</button>
+ <div id="digitalApplicationList" class="products"></div>
 </div><div class="panel" id="starter-products"><h1>Quick add from 200 starter products</h1><p class="muted">Choose a starter item to prefill the form. Confirm the real price, stock and photo before saving.</p><div class="formgrid"><label class="field">Search starter products<input id="starterSearch" type="search" placeholder="Search rice, oil, soap…"></label><label class="field">Choose starter product<select id="starterSelect"><option value="">Choose from 200 products…</option></select></label></div><button id="useStarter" type="button" class="secondary">Use starter product</button><span id="starterHint" class="sub" role="status">Templates are not live inventory.</span></div>
 <div class="panel" id="bulk-starter-products"><h1>Bulk add starter products</h1><p class="muted">Select multiple items from the 200-product starter catalogue. They will be saved as <strong>hidden drafts</strong> with zero stock, so customers cannot order them until you confirm price, stock and photos.</p><label class="field">Search starter catalogue<input id="bulkStarterSearch" type="search" placeholder="Search product or category…"></label><div class="starter-tools"><button id="bulkSelectVisible" type="button" class="secondary">Select visible</button><button id="bulkClear" type="button" class="secondary">Clear selection</button><button id="bulkImport" type="button">Add selected as hidden drafts</button></div><div id="bulkStarterCount" class="starter-count" role="status">0 selected</div><div id="bulkStarterList" class="starter-bulk-grid"></div><div id="bulkStarterMessage" class="notice" role="status"></div></div>
 <div class="panel"><h1>Add a product</h1><p class="muted">Products are saved directly to Supabase. Plan limits and shop ownership are enforced by database policies/triggers.</p>
@@ -398,6 +418,25 @@ async function loadMedicalBatches(){
   actions.append(qty,status);card.append(title,meta,details,actions);list.append(card);
  });
 }
+async function loadDigitalApplications(){
+ const panel=$("digitalSevaPanel"),list=$("digitalApplicationList");if(!panel||!list)return;
+ const active=!!currentShop&&currentShop.business_type==="digital_services";panel.classList.toggle("hidden",!active);if(!active)return;
+ list.replaceChildren();say("digitalSevaMessage","Loading applications…");
+ const {data,error}=await db.from("digital_service_applications").select("id,application_number,service_name,applicant_name,applicant_phone,reference_number,applied_on,expected_date,application_status,document_checklist,service_fee,amount_paid,receipt_number,notes").eq("shop_id",currentShop.id).order("applied_on",{ascending:false}).limit(300);
+ if(error){say("digitalSevaMessage","Application load failed: "+error.message,true);return}
+ say("digitalSevaMessage",(data?.length||0)+" application(s) in register.");
+ if(!data?.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="No applications registered yet.";list.append(empty);return}
+ data.forEach(app=>{
+  const card=document.createElement("article");card.className="product";const head=document.createElement("div");head.className="row";const title=document.createElement("div");title.className="product-title";title.textContent="DS-"+app.application_number+" · "+app.service_name;const pill=document.createElement("span");pill.className="pill";pill.textContent=app.application_status.replace("_"," ");head.append(title,pill);card.append(head);
+  const meta=document.createElement("div");meta.className="sub";meta.textContent=app.applicant_name+" · "+app.applicant_phone+" · Applied "+app.applied_on+(app.expected_date?" · Expected "+app.expected_date:"")+(app.reference_number?" · Ref "+app.reference_number:"");card.append(meta);
+  const fee=document.createElement("div");fee.className="sub";const balance=Math.max(0,Number(app.service_fee)-Number(app.amount_paid));fee.textContent="Fee "+money(app.service_fee)+" · Paid "+money(app.amount_paid)+" · Balance "+money(balance)+(app.receipt_number?" · Receipt "+app.receipt_number:"");card.append(fee);
+  if(app.document_checklist){const docs=document.createElement("div");docs.className="sub";docs.textContent="Documents: "+app.document_checklist;card.append(docs)}
+  if(app.notes){const note=document.createElement("div");note.className="sub";note.textContent="Notes: "+app.notes;card.append(note)}
+  const controls=document.createElement("div");controls.className="product-actions";const status=document.createElement("select");["submitted","under_review","approved","rejected","completed","cancelled"].forEach(v=>status.add(new Option(v.replace("_"," ").toUpperCase(),v)));status.value=app.application_status;status.disabled=!canManageProducts();status.addEventListener("change",async()=>{status.disabled=true;const {error:updateError}=await db.from("digital_service_applications").update({application_status:status.value,updated_at:new Date().toISOString()}).eq("id",app.id).eq("shop_id",currentShop.id);if(updateError){say("digitalSevaMessage","Status update failed: "+updateError.message,true);status.value=app.application_status}else{app.application_status=status.value;pill.textContent=status.value.replace("_"," ");say("digitalSevaMessage","Application DS-"+app.application_number+" updated.")}status.disabled=!canManageProducts()});
+  const payment=document.createElement("button");payment.type="button";payment.className="secondary";payment.textContent="Update payment";payment.disabled=!canManageProducts();payment.addEventListener("click",async()=>{const amount=window.prompt("Total service fee (₹):",String(app.service_fee));if(amount===null)return;const paid=window.prompt("Amount received so far (₹):",String(app.amount_paid));if(paid===null)return;const feeValue=Number(amount),paidValue=Number(paid);if(!Number.isFinite(feeValue)||feeValue<0||!Number.isFinite(paidValue)||paidValue<0||paidValue>feeValue){say("digitalSevaMessage","Payment amounts must be valid and paid cannot exceed the fee.",true);return}payment.disabled=true;const {error:updateError}=await db.from("digital_service_applications").update({service_fee:feeValue,amount_paid:paidValue,updated_at:new Date().toISOString()}).eq("id",app.id).eq("shop_id",currentShop.id);if(updateError){say("digitalSevaMessage","Payment update failed: "+updateError.message,true);payment.disabled=false;return}await loadDigitalApplications()});
+  controls.append(status,payment);card.append(controls);list.append(card);
+ });
+}
 async function loadShopData(){
   currentShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!currentShop)return;
   renderBusinessWorkspace(currentShop);
@@ -411,6 +450,7 @@ async function loadShopData(){
   await loadOfficeAttendance();
   await loadElectronicsInventory();
   await loadMedicalBatches();
+  await loadDigitalApplications();
   const {data:trial,error:trialError}=await db.from("shop_trials").select("status,started_at,ends_at").eq("shop_id",currentShop.id).maybeSingle();
   currentTrial=trialError?null:trial;
   const trialActive=!!currentTrial&&currentTrial.status==="active"&&new Date(currentTrial.ends_at).getTime()>Date.now()&&currentShop.subscription_expires_at===currentTrial.ends_at;
@@ -801,6 +841,9 @@ async function loadShopData(){
  $("electronicsRefresh").addEventListener("click",loadElectronicsInventory);
  $("medicalBatchForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||currentShop.business_type!=="medical"||!canManageProducts()){say("medicalMessage","An active medical-store subscription is required.",true);return}const name=$("medicalMedicineName").value.trim(),brand=$("medicalBrand").value.trim(),batch=$("medicalBatchNumber").value.trim(),mfg=$("medicalManufactured").value||null,expiry=$("medicalExpiry").value,quantity=Number($("medicalQuantity").value),purchase=$("medicalPurchasePrice").value===""?null:Number($("medicalPurchasePrice").value),mrp=$("medicalMrp").value===""?null:Number($("medicalMrp").value);if(!name||!batch||!expiry||!Number.isInteger(quantity)||quantity<0||(mfg&&expiry<mfg)||(purchase!==null&&(!Number.isFinite(purchase)||purchase<0))||(mrp!==null&&(!Number.isFinite(mrp)||mrp<0))){say("medicalMessage","Check medicine name, batch, expiry, quantity and price details.",true);return}$("medicalBatchAdd").disabled=true;const {error}=await db.from("medical_inventory_batches").insert({shop_id:currentShop.id,medicine_name:name,brand:brand||null,batch_number:batch,manufactured_on:mfg,expiry_date:expiry,quantity,purchase_price:purchase,mrp,supplier:$("medicalSupplier").value.trim()||null,storage_location:$("medicalStorage").value.trim()||null,prescription_required:$("medicalPrescriptionRequired").checked,notes:$("medicalNotes").value.trim()||null});$("medicalBatchAdd").disabled=false;if(error){say("medicalMessage","Could not save batch: "+error.message,true);return}$("medicalBatchForm").reset();$("medicalQuantity").value="0";say("medicalMessage","Medicine batch saved.");await loadMedicalBatches()});
  $("medicalRefresh").addEventListener("click",loadMedicalBatches);
+ $("digitalApplicationForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||currentShop.business_type!=="digital_services"||!canManageProducts()){say("digitalSevaMessage","An active Digital Seva subscription is required.",true);return}const service=$("digitalServiceName").value.trim(),name=$("digitalApplicantName").value.trim(),phone=$("digitalApplicantPhone").value.trim(),applied=$("digitalAppliedOn").value,expected=$("digitalExpectedDate").value||null,fee=Number($("digitalServiceFee").value),paid=Number($("digitalAmountPaid").value);if(!service||!name||!phone||!applied||(expected&&expected<applied)||!Number.isFinite(fee)||fee<0||!Number.isFinite(paid)||paid<0||paid>fee){say("digitalSevaMessage","Check service, applicant, dates and fee/payment amounts.",true);return}$("digitalApplicationAdd").disabled=true;const {data,error}=await db.from("digital_service_applications").insert({shop_id:currentShop.id,service_name:service,applicant_name:name,applicant_phone:phone,reference_number:$("digitalReference").value.trim()||null,applied_on:applied,expected_date:expected,service_fee:fee,amount_paid:paid,document_checklist:$("digitalDocumentChecklist").value.trim()||null,notes:$("digitalApplicationNotes").value.trim()||null}).select("application_number").single();$("digitalApplicationAdd").disabled=false;if(error){say("digitalSevaMessage","Could not save application: "+error.message,true);return}$("digitalApplicationForm").reset();$("digitalServiceFee").value="0";$("digitalAmountPaid").value="0";say("digitalSevaMessage","Application DS-"+data.application_number+" saved.");await loadDigitalApplications()});
+ $("digitalSevaRefresh").addEventListener("click",loadDigitalApplications);
+
 
 
 
