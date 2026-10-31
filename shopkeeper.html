@@ -65,6 +65,18 @@ a{color:#8ce2b3}
   </form><div id="groceryPurchaseMessage" class="notice" role="status"></div></div>
  </div>
  <div class="product" style="margin-top:12px"><h2>Recent purchase register</h2><div id="groceryPurchaseList" class="products"></div><div id="groceryPurchaseHistoryMessage" class="notice"></div></div>
+ <div class="product" style="margin-top:12px"><h2>Supplier payment / baki hisaab</h2><p class="sub">Supplier ko diye gaye payment record karein. Balance = total purchase − total payment; advance payment negative balance ke roop mein dikhega.</p>
+  <form id="grocerySupplierPaymentForm" class="formgrid">
+   <label class="field">Supplier<select id="groceryPaymentSupplier" required><option value="">Choose supplier…</option></select></label>
+   <label class="field">Payment amount (₹)<input id="groceryPaymentAmount" type="number" min="0.01" max="100000000" step="0.01" required></label>
+   <label class="field">Payment date<input id="groceryPaymentDate" type="date" required></label>
+   <label class="field">Payment method<select id="groceryPaymentMethod"><option value="cash">Cash</option><option value="upi">UPI</option><option value="bank">Bank transfer</option><option value="cheque">Cheque</option><option value="other">Other</option></select></label>
+   <label class="field">Reference number<input id="groceryPaymentReference" maxlength="120" placeholder="UPI / transaction / cheque no."></label>
+   <label class="field">Notes<input id="groceryPaymentNotes" maxlength="500" placeholder="Optional details"></label>
+   <button id="groceryPaymentSave" type="submit">Save supplier payment</button>
+  </form><div id="groceryPaymentMessage" class="notice" role="status"></div>
+  <h3>Recent supplier payments</h3><div id="grocerySupplierPaymentList" class="products"></div>
+ </div>
  <div class="product" style="margin-top:12px"><h2>Daily Expense Register</h2><div class="row"><div><div class="sub">Recorded expenses this month</div><h2 id="groceryExpenseMonthTotal">₹0</h2></div><div class="sub">Based on saved entries for the current calendar month.</div></div>
   <form id="groceryExpenseForm" class="formgrid">
    <label class="field">Expense category<select id="groceryExpenseCategory"><option value="rent">Shop rent</option><option value="electricity">Electricity</option><option value="transport">Transport</option><option value="staff">Staff wages</option><option value="packaging">Packaging</option><option value="maintenance">Maintenance</option><option value="other">Other</option></select></label>
@@ -546,22 +558,31 @@ async function loadGroceryProcurement(){
  panel.classList.remove("hidden");
  if(!$("groceryPurchaseDate").value)$("groceryPurchaseDate").value=new Date().toISOString().slice(0,10);
  if(!$("groceryExpenseDate").value)$("groceryExpenseDate").value=new Date().toISOString().slice(0,10);
- const [sup,prods,purchases,moves,expenses]=await Promise.all([
+ if(!$("groceryPaymentDate").value)$("groceryPaymentDate").value=new Date().toISOString().slice(0,10);
+ const [sup,prods,purchases,moves,expenses,paymentRows]=await Promise.all([
   db.from("grocery_suppliers").select("id,name,phone,company,address,is_active").eq("shop_id",currentShop.id).order("name"),
   db.from("products").select("id,name,stock").eq("shop_id",currentShop.id).order("name"),
   db.from("grocery_stock_purchases").select("id,quantity,unit_cost,total_cost,invoice_number,purchase_date,created_at,product:products(name),supplier:grocery_suppliers(name)").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(30),
   db.from("grocery_stock_movements").select("id,movement_type,quantity_change,stock_before,stock_after,notes,created_at,product:products(name)").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(30),
-  db.from("grocery_expenses").select("id,expense_category,amount,expense_date,description").eq("shop_id",currentShop.id).gte("expense_date",new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().slice(0,10)).order("expense_date",{ascending:false}).limit(500)
+  db.from("grocery_expenses").select("id,expense_category,amount,expense_date,description").eq("shop_id",currentShop.id).gte("expense_date",new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().slice(0,10)).order("expense_date",{ascending:false}).limit(500),
+  db.from("grocery_supplier_payments").select("id,supplier_id,amount,payment_date,payment_method,reference_number,created_at,supplier:grocery_suppliers(name)").eq("shop_id",currentShop.id).order("payment_date",{ascending:false}).order("created_at",{ascending:false}).limit(30)
  ]);
  if(sup.error){say("grocerySupplierMessage","Supplier load failed: "+sup.error.message,true);return}
  if(prods.error){say("groceryPurchaseMessage","Product load failed: "+prods.error.message,true);return}
  const supplierSelect=$("groceryPurchaseSupplier");supplierSelect.replaceChildren(new Option("No supplier selected",""));
+ const paymentSupplierSelect=$("groceryPaymentSupplier");paymentSupplierSelect.replaceChildren(new Option("Choose supplier…",""));
  const supplierList=$("grocerySupplierList");supplierList.replaceChildren();
  (sup.data||[]).forEach(s=>{
-  if(s.is_active)supplierSelect.add(new Option(s.name+(s.company?" · "+s.company:""),s.id));
+  if(s.is_active){supplierSelect.add(new Option(s.name+(s.company?" · "+s.company:""),s.id));paymentSupplierSelect.add(new Option(s.name,s.id));}
   const row=document.createElement("div");row.className="row";const info=document.createElement("span");info.textContent=s.name+" · "+(s.phone||"No phone")+(s.company?" · "+s.company:"");const state=document.createElement("span");state.className="pill";state.textContent=s.is_active?"Active":"Archived";row.append(info,state);supplierList.append(row);
  });
  if(!(sup.data||[]).length){const empty=document.createElement("p");empty.className="sub";empty.textContent="No suppliers saved yet.";supplierList.append(empty)}
+ // Fetch every historical purchase and payment page before calculating supplier balances.
+ const purchaseTotals=new Map(),paidTotals=new Map();
+ let po=0;while(true){const {data,error}=await db.from("grocery_stock_purchases").select("supplier_id,quantity,unit_cost,total_cost").eq("shop_id",currentShop.id).not("supplier_id","is",null).order("id").range(po,po+499);if(error){say("grocerySupplierMessage","Supplier purchase totals unavailable: "+error.message,true);break}const page=data||[];page.forEach(x=>{const amount=Number(x.total_cost??(Number(x.quantity)*Number(x.unit_cost)));purchaseTotals.set(x.supplier_id,(purchaseTotals.get(x.supplier_id)||0)+amount)});if(page.length<500)break;po+=page.length}
+ let payOffset=0;while(true){const {data,error}=await db.from("grocery_supplier_payments").select("supplier_id,amount").eq("shop_id",currentShop.id).order("id").range(payOffset,payOffset+499);if(error){say("groceryPaymentMessage","Supplier payment totals unavailable: "+error.message,true);break}const page=data||[];page.forEach(x=>paidTotals.set(x.supplier_id,(paidTotals.get(x.supplier_id)||0)+Number(x.amount)));if(page.length<500)break;payOffset+=page.length}
+ (sup.data||[]).forEach(s=>{const purchased=purchaseTotals.get(s.id)||0,paid=paidTotals.get(s.id)||0;const balance=purchased-paid;const due=document.createElement("div");due.className="sub";due.textContent="Purchase "+money(purchased)+" · Paid "+money(paid)+" · "+(balance>0?"Due ":"Advance ")+money(Math.abs(balance));supplierList.querySelectorAll(".row").forEach(row=>{if(row.firstChild?.textContent?.startsWith(s.name+" ·"))row.append(due)})});
+ if(paymentRows.error){say("groceryPaymentMessage","Payment history unavailable: "+paymentRows.error.message,true)}else{const list=$("grocerySupplierPaymentList");list.replaceChildren();(paymentRows.data||[]).forEach(p=>{const row=document.createElement("div");row.className="row";const info=document.createElement("span");info.textContent=(p.supplier?.name||"Supplier")+" · "+p.payment_date+" · "+p.payment_method+(p.reference_number?" · "+p.reference_number:"");const amount=document.createElement("b");amount.textContent=money(p.amount);row.append(info,amount);list.append(row)});if(!paymentRows.data?.length){const e=document.createElement("p");e.className="sub";e.textContent="No supplier payments recorded yet.";list.append(e)}say("groceryPaymentMessage","Showing "+(paymentRows.data||[]).length+" recent payments. Balances include all saved purchases and payments.");}
  const productSelect=$("groceryPurchaseProduct");productSelect.replaceChildren(new Option("Choose product…",""));
  (prods.data||[]).forEach(p=>productSelect.add(new Option(p.name+" · Current stock "+p.stock,p.id)));
  if(purchases.error){say("groceryPurchaseHistoryMessage","Purchase history unavailable: "+purchases.error.message,true)}else{
@@ -1021,6 +1042,15 @@ async function loadShopData(){
   $("groceryPurchaseForm").reset();$("groceryPurchaseDate").value=new Date().toISOString().slice(0,10);
   say("groceryPurchaseMessage","Purchase saved. Stock increased by "+qty+". Reference: "+data);
   await Promise.all([loadGroceryProcurement(),loadProducts(),loadGrowthInsights()]);
+ });
+ $("grocerySupplierPaymentForm").addEventListener("submit",async e=>{
+  e.preventDefault();if(!currentShop||currentShop.business_type!=="grocery"||!canManageProducts()){say("groceryPaymentMessage","An active Grocery subscription is required.",true);return}
+  const supplier=$("groceryPaymentSupplier").value,amount=Number($("groceryPaymentAmount").value),date=$("groceryPaymentDate").value,method=$("groceryPaymentMethod").value,reference=$("groceryPaymentReference").value.trim(),notes=$("groceryPaymentNotes").value.trim();
+  if(!supplier||!Number.isFinite(amount)||amount<=0||amount>100000000||!date||!["cash","upi","bank","cheque","other"].includes(method)){say("groceryPaymentMessage","Check supplier, amount, date and payment method.",true);return}
+  $("groceryPaymentSave").disabled=true;
+  const {error}=await db.from("grocery_supplier_payments").insert({shop_id:currentShop.id,supplier_id:supplier,amount,payment_date:date,payment_method:method,reference_number:reference||null,notes:notes||null});
+  $("groceryPaymentSave").disabled=false;if(error){say("groceryPaymentMessage","Payment not saved: "+error.message,true);return}
+  $("grocerySupplierPaymentForm").reset();$("groceryPaymentDate").value=new Date().toISOString().slice(0,10);say("groceryPaymentMessage","Supplier payment saved.");await loadGroceryProcurement();
  });
  $("groceryProcurementRefresh").addEventListener("click",loadGroceryProcurement);
 
