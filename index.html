@@ -96,7 +96,7 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
 <main class="container">
 
 <section class="hero">
-  <h1>Shop Local Businesses in One Place!</h1>
+  <h1 id="storeHeroTitle">Shop Local Businesses in One Place!</h1>
   <p>Discover products and services from independent local shops, restaurants, hotels and businesses on one platform.</p>
   <button class="btn" style="background:white;color:#07543e" onclick="document.getElementById('productsSection').scrollIntoView({behavior:'smooth'})">Shop Now →</button>
 </section>
@@ -223,7 +223,8 @@ let products = [];
 let categories = [];
 let cart = [];
 let selectedCategory = "all";
-let selectedBusinessType = "grocery";
+let selectedBusinessType = new URLSearchParams(location.search).get("shop_id") ? "all" : "grocery";
+const requestedShopId = new URLSearchParams(location.search).get("shop_id");
 let signupMode = false;
 let resetMode = false;
 let checkoutMode = false;
@@ -363,14 +364,9 @@ async function loadProducts() {
 
   $("status").textContent = "Loading products...";
 
-  const {data, error} = await db
-    .from("products")
-    .select("id,shop_id,category_id,name,description,price,sale_price,stock,images,is_available,shop:shops!inner(name,city,business_type,status,is_active)")
-    .eq("shop.status", "active")
-    .eq("shop.is_active", true)
-    .eq("is_available", true)
-    .gt("stock", 0)
-    .order("created_at", {ascending:false});
+  let productQuery = db.from("products").select("id,shop_id,category_id,name,description,price,sale_price,stock,images,is_available,shop:shops!inner(name,city,business_type,status,is_active)").eq("shop.status","active").eq("shop.is_active",true).eq("is_available",true).gt("stock",0);
+  if(requestedShopId) productQuery=productQuery.eq("shop_id",requestedShopId);
+  const {data,error}=await productQuery.order("created_at",{ascending:false});
 
   if (error) {
     showError("Products could not load: " + error.message);
@@ -378,6 +374,8 @@ async function loadProducts() {
   }
 
   products = data || [];
+  if(requestedShopId && products.length) $("storeHeroTitle").textContent="Order from "+(products[0].shop?.name||"Local Shop");
+  else if(requestedShopId) $("storeHeroTitle").textContent="This shop has no available products right now";
   $("status").classList.remove("error");
   $("status").textContent = products.length
     ? "Available products and services from approved local businesses."
