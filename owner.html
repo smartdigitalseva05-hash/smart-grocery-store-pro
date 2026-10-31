@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101827"><title>Smart Grocery Store Pro · Owner</title>
+<meta name="theme-color" content="#101827"><title>Smart Business Pro · Super Admin</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#131e30;--line:#26364d;--muted:#9fb0c5;--text:#f4f7fb;--accent:#7dd3fc;--bad:#fca5a5}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#19314c 0,transparent 34%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
@@ -19,13 +19,13 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">🛒 Smart Grocery Store Pro</div><div class="sub">Private Owner Control Panel</div></div><div id="topActions" class="actions hidden"><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
+<header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Private Super Admin Control Panel</div></div><div id="topActions" class="actions hidden"><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
 <section id="loginPanel" class="panel auth">
-<h1>Owner sign in</h1><p class="muted">Use your existing Supabase Owner account. Access is checked by the database, not by a browser-stored role.</p>
+<h1>Super Admin sign in</h1><p class="muted">Use your existing Supabase Owner account. Access is checked by the database, not by a browser-stored role.</p>
 <form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><div class="actions" style="margin-top:17px"><button id="loginButton" type="submit">Sign in securely</button></div></form><div id="loginMessage" class="notice" role="status"></div>
 </section>
 <section id="dashboard" class="hidden">
-<div class="panel"><div class="row"><div><h1>Owner overview</h1><div id="updated" class="sub">Loading secure summary…</div></div><span class="muted" id="ownerEmail"></span></div>
+<div class="panel"><div class="row"><div><h1>Super Admin overview</h1><div id="updated" class="sub">Loading secure summary…</div></div><span class="muted" id="ownerEmail"></span></div>
 <div class="grid" id="metrics">
 <div class="metric"><span>Customers</span><strong id="customers">—</strong></div>
 <div class="metric"><span>Shopkeepers</span><strong id="shopkeepers">—</strong></div>
