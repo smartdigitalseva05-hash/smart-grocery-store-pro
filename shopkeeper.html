@@ -429,6 +429,58 @@ async function loadShopData(){
      }
      card.append(variants);renderVariants();
     }
+    if(currentShop.business_type==="jewellery"){
+     const panel=document.createElement("div");panel.className="notice";panel.style.marginTop="10px";
+     const heading=document.createElement("strong");heading.textContent="Jewellery specifications";panel.append(heading);
+     const detailBox=document.createElement("div");detailBox.className="sub";detailBox.style.marginTop="7px";detailBox.textContent="Loading item details…";panel.append(detailBox);
+     const controls=document.createElement("div");controls.className="product-actions";controls.style.marginTop="8px";
+     const editDetails=document.createElement("button");editDetails.type="button";editDetails.className="secondary";editDetails.textContent="Add / edit specifications";editDetails.disabled=!canManageProducts();
+     async function loadJewelleryDetails(){
+      const {data:detail,error:detailError}=await db.from("jewellery_product_details").select("id,item_code,metal_type,purity,gross_weight_g,net_weight_g,stone_weight_ct,making_charge,making_charge_type,metal_rate_per_gram,hallmark_number,certificate_reference,rate_recorded_at").eq("shop_id",currentShop.id).eq("product_id",p.id).maybeSingle();
+      detailBox.replaceChildren();
+      if(detailError){detailBox.textContent="Details unavailable: "+detailError.message;return}
+      if(!detail){detailBox.textContent="No jewellery specifications saved yet.";editDetails.textContent="Add specifications";return}
+      const summary=document.createElement("div");
+      summary.textContent=detail.item_code+" · "+detail.metal_type.toUpperCase()+" · "+(detail.purity||"Purity not set")+" · Gross "+detail.gross_weight_g+" g · Net "+detail.net_weight_g+" g · Stone "+detail.stone_weight_ct+" ct · Hallmark "+(detail.hallmark_number||"—");
+      detailBox.append(summary);
+      const rate=document.createElement("div");rate.style.marginTop="5px";rate.textContent="Metal rate: "+(detail.metal_rate_per_gram==null?"Not recorded":money(detail.metal_rate_per_gram)+"/g")+(detail.rate_recorded_at?" · Updated "+new Date(detail.rate_recorded_at).toLocaleString():"");
+      detailBox.append(rate);
+      if(detail.metal_rate_per_gram!=null){
+       const metalValue=Number(detail.net_weight_g)*Number(detail.metal_rate_per_gram);
+       const making=detail.making_charge_type==="percentage"?metalValue*Number(detail.making_charge)/100:detail.making_charge_type==="per_gram"?Number(detail.net_weight_g)*Number(detail.making_charge):Number(detail.making_charge);
+       const estimate=document.createElement("div");estimate.style.marginTop="5px";estimate.textContent="Indicative metal + making estimate: "+money(metalValue+making)+" (excludes stones, taxes and other charges)";detailBox.append(estimate);
+      }
+      const cert=document.createElement("div");cert.style.marginTop="5px";cert.textContent="Certificate: "+(detail.certificate_reference||"Not recorded");detailBox.append(cert);
+      editDetails.textContent="Edit specifications";
+     }
+     editDetails.addEventListener("click",async()=>{
+      const {data:existing,error:readError}=await db.from("jewellery_product_details").select("*").eq("shop_id",currentShop.id).eq("product_id",p.id).maybeSingle();
+      if(readError){say("listMessage","Could not load jewellery details: "+readError.message,true);return}
+      const ask=(label,value)=>window.prompt(label,value==null?"":String(value));
+      const itemCode=ask("Unique item code:",existing?.item_code||"");if(itemCode===null)return;
+      const metal=ask("Metal type (gold, silver, platinum, diamond, other):",existing?.metal_type||"gold");if(metal===null)return;
+      const purity=ask("Purity (e.g. 22K, 18K, 925):",existing?.purity||"");if(purity===null)return;
+      const grossText=ask("Gross weight in grams:",existing?.gross_weight_g??"0");if(grossText===null)return;
+      const netText=ask("Net metal weight in grams:",existing?.net_weight_g??"0");if(netText===null)return;
+      const stoneText=ask("Stone weight in carats:",existing?.stone_weight_ct??"0");if(stoneText===null)return;
+      const rateText=ask("Metal rate per gram in ₹ (blank if not set):",existing?.metal_rate_per_gram??"");if(rateText===null)return;
+      const chargeText=ask("Making charge amount:",existing?.making_charge??"0");if(chargeText===null)return;
+      const chargeType=ask("Making charge type (fixed, per_gram, percentage):",existing?.making_charge_type||"fixed");if(chargeType===null)return;
+      const hallmark=ask("Hallmark number:",existing?.hallmark_number||"");if(hallmark===null)return;
+      const certificate=ask("Certificate reference:",existing?.certificate_reference||"");if(certificate===null)return;
+      const gross=Number(grossText),net=Number(netText),stone=Number(stoneText),rate=rateText.trim()===""?null:Number(rateText),charge=Number(chargeText);
+      if(!itemCode.trim()||!["gold","silver","platinum","diamond","other"].includes(metal.trim().toLowerCase())||!Number.isFinite(gross)||gross<0||!Number.isFinite(net)||net<0||net>gross||!Number.isFinite(stone)||stone<0||(rate!==null&&(!Number.isFinite(rate)||rate<0))||!Number.isFinite(charge)||charge<0||!["fixed","per_gram","percentage"].includes(chargeType.trim().toLowerCase())){
+       say("listMessage","Check item code, metal type, weights, rate and making-charge values. Net weight cannot exceed gross weight.",true);return
+      }
+      const payload={shop_id:currentShop.id,product_id:p.id,item_code:itemCode.trim(),metal_type:metal.trim().toLowerCase(),purity:purity.trim()||null,gross_weight_g:gross,net_weight_g:net,stone_weight_ct:stone,metal_rate_per_gram:rate,rate_recorded_at:rate===null?null:new Date().toISOString(),making_charge:charge,making_charge_type:chargeType.trim().toLowerCase(),hallmark_number:hallmark.trim()||null,certificate_reference:certificate.trim()||null};
+      editDetails.disabled=true;
+      const result=existing?await db.from("jewellery_product_details").update(payload).eq("id",existing.id).eq("shop_id",currentShop.id):await db.from("jewellery_product_details").insert(payload);
+      editDetails.disabled=false;
+      if(result.error){say("listMessage","Could not save jewellery specifications: "+result.error.message,true);return}
+      say("listMessage","Jewellery specifications saved.");await loadJewelleryDetails();
+     });
+     controls.append(editDetails);panel.append(controls);card.append(panel);loadJewelleryDetails();
+    }
     actions.append(stock,edit,toggle,imageEdit,remove);card.append(actions);list.append(card);
   }
  }
