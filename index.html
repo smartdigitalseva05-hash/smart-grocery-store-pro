@@ -85,7 +85,7 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
 <body>
 
 <header>
-  <div class="brand">🛒 Smart <span>Grocery</span></div>
+  <div class="brand">🛍 Smart <span>Market</span></div>
   <div class="header-actions">
     <button class="btn btn-light" id="cartBtn">🛍 Cart (<span id="cartCount">0</span>)</button>
     <a class="btn btn-light" href="./my-orders.html" style="text-decoration:none">My Orders</a>
@@ -96,13 +96,16 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
 <main class="container">
 
 <section class="hero">
-  <h1>Fresh Grocery, Delivered to You!</h1>
-  <p>Shop your daily essentials from local grocery stores. Quality products, simple ordering and convenient shopping.</p>
+  <h1>Shop Local Businesses in One Place!</h1>
+  <p>Discover products and services from independent local shops, restaurants, hotels and businesses on one platform.</p>
   <button class="btn" style="background:white;color:#07543e" onclick="document.getElementById('productsSection').scrollIntoView({behavior:'smooth'})">Shop Now →</button>
 </section>
 
 <div class="search-row">
-  <input id="searchInput" placeholder="🔍 Search grocery products...">
+  <select id="businessTypeFilter" aria-label="Choose business category">
+    <option value="grocery">Grocery</option><option value="daily_needs">Daily Needs</option><option value="garments">Garments</option><option value="jewellery">Jewellery</option><option value="restaurant">Restaurant</option><option value="hotel">Hotel</option><option value="office_company">Office / Company</option><option value="electronics">Electronics</option><option value="medical">Medical</option><option value="digital_services">Digital Services</option><option value="other">Other Businesses</option><option value="all">All Business Categories</option>
+  </select>
+  <input id="searchInput" placeholder="🔍 Search products and services...">
   <select id="sortSelect">
     <option value="default">Sort: Recommended</option>
     <option value="low">Price: Low to High</option>
@@ -120,7 +123,7 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
   </div>
 
   <div class="section-title">
-    <h2>Popular Products</h2>
+    <h2>Popular Products & Services</h2>
     <span class="small" id="productCount">Loading...</span>
   </div>
 
@@ -138,8 +141,8 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
 </main>
 
 <footer>
-  <strong>Smart Grocery Store Pro</strong>
-  <p>Fresh products. Easy shopping. Local stores.</p>
+  <strong>Smart Multi-Business Marketplace</strong>
+  <p>One platform. Independent local businesses. Simple shopping.</p>
   <p>Independent online marketplace. Not affiliated with any government organization.</p>
 </footer>
 
@@ -220,6 +223,7 @@ let products = [];
 let categories = [];
 let cart = [];
 let selectedCategory = "all";
+let selectedBusinessType = "grocery";
 let signupMode = false;
 let resetMode = false;
 let checkoutMode = false;
@@ -363,7 +367,9 @@ async function loadProducts() {
 
   const {data, error} = await db
     .from("products")
-    .select("id,shop_id,category_id,name,description,price,sale_price,stock,images,is_available,shop:shops(name,city)")
+    .select("id,shop_id,category_id,name,description,price,sale_price,stock,images,is_available,shop:shops!inner(name,city,business_type,status,is_active)")
+    .eq("shop.status", "active")
+    .eq("shop.is_active", true)
     .eq("is_available", true)
     .gt("stock", 0)
     .order("created_at", {ascending:false});
@@ -376,8 +382,8 @@ async function loadProducts() {
   products = data || [];
   $("status").classList.remove("error");
   $("status").textContent = products.length
-    ? "Fresh groceries available from our stores."
-    : "No products available yet. Shopkeepers can add products after their dashboard is ready.";
+    ? "Available products and services from approved local businesses."
+    : "No products are currently available in this category.";
 
   renderProducts();
 }
@@ -409,7 +415,8 @@ function renderProducts() {
       (p.name || "").toLowerCase().includes(search) ||
       (p.description || "").toLowerCase().includes(search);
 
-    return matchesCategory && matchesSearch;
+    const matchesBusiness = selectedBusinessType === "all" || p.shop?.business_type === selectedBusinessType;
+    return matchesCategory && matchesSearch && matchesBusiness;
   });
 
   const sort = $("sortSelect").value;
@@ -427,8 +434,8 @@ function renderProducts() {
            onerror="this.src='https://placehold.co/400x300/e9f8f1/087f5b?text=Grocery'">
       <div class="product-info">
         <h3>${escapeHTML(p.name)}</h3>
-        <div class="small">Store: ${escapeHTML(p.shop?.name || "Local grocery store")}${p.shop?.city ? " · " + escapeHTML(p.shop.city) : ""}</div>
-        <div class="small">${escapeHTML(p.description || "Quality grocery product")}</div>
+        <div class="small">Store: ${escapeHTML(p.shop?.name || "Local business")}${p.shop?.city ? " · " + escapeHTML(p.shop.city) : ""}</div>
+        <div class="small">${escapeHTML(p.description || "Quality product or service")}</div>
         <div class="price">
           ${money(effectivePrice(p))}
           ${p.sale_price != null ? `<span class="old">${money(p.price)}</span>` : ""}
@@ -466,6 +473,12 @@ $("categories").addEventListener("click", e => {
 });
 
 $("searchInput").addEventListener("input", renderProducts);
+$("businessTypeFilter").addEventListener("change", e => {
+  selectedBusinessType = e.target.value;
+  selectedCategory = "all";
+  document.querySelectorAll(".cat").forEach((b,i) => b.classList.toggle("active", i === 0));
+  renderProducts();
+});
 $("sortSelect").addEventListener("change", renderProducts);
 
 /* =========================================
