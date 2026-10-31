@@ -19,6 +19,15 @@ Grocery ordering platform with customer ordering, shopkeeper workspace, Owner co
 
 Annual prices are 10 months of the monthly price. Pricing is read from the Supabase `subscription_plans` table.
 
+## Specialized business workspaces
+
+The shopkeeper dashboard now includes these vertical-specific tools:
+- **Garments:** SKU, size and colour variants with per-variant price, stock, availability, edit and delete controls.
+- **Jewellery:** item code, metal type, purity, gross/net weight, stone weight, metal rate, making-charge method, hallmark and certificate details. The displayed metal-plus-making estimate is indicative only and excludes stones, taxes and other charges.
+- **Restaurant:** table register with seating capacity and live table status (available, occupied, reserved, maintenance).
+
+Other planned modules (restaurant kitchen tickets/POS, hotel rooms and bookings, employee attendance, electronics IMEI/warranty, medical batch/expiry and Digital Seva application tracking) are not yet complete. The shared product/order framework is not a substitute for those specialist workflows.
+
 ## Orders
 Customer checkout currently supports cash on delivery (COD). Shopkeepers can accept pending COD orders, move them through delivery, and mark COD as collected only when delivery is confirmed. Customer online grocery payments are not implemented.
 
