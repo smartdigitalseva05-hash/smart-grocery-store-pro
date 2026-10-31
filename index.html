@@ -802,20 +802,35 @@ $("checkoutBtn").onclick = async () => {
   $("checkoutBtn").disabled = true;
 
   try {
-    const {data: addressData, error: addressError} = await db
+    let {data: addressData, error: addressError} = await db
       .from("delivery_addresses")
-      .insert({
-        user_id:currentUser.id,
-        full_address:address,
-        city,
-        pincode,
-        phone,
-        is_default:false
-      })
       .select("id")
-      .single();
+      .eq("user_id", currentUser.id)
+      .eq("full_address", address)
+      .eq("city", city)
+      .eq("pincode", pincode)
+      .eq("phone", phone)
+      .maybeSingle();
 
     if (addressError) throw addressError;
+
+    if (!addressData) {
+      const savedAddress = await db
+        .from("delivery_addresses")
+        .insert({
+          user_id:currentUser.id,
+          full_address:address,
+          city,
+          pincode,
+          phone,
+          is_default:false
+        })
+        .select("id")
+        .single();
+
+      if (savedAddress.error) throw savedAddress.error;
+      addressData = savedAddress.data;
+    }
 
     const items = cart.map(p => ({
       product_id:p.id,
