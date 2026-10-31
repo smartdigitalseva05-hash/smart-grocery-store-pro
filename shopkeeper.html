@@ -125,33 +125,54 @@ async function loadShopData(){
  }
  async function prepareSubscription(){
   if(!currentShop){say("subscriptionMessage","Select a shop first.",true);return}
-  const planId=$("planSelect").value;if(!planId){say("subscriptionMessage","No active plan selected.",true);return}
+  const planId=$("planSelect").value;
+  if(!planId){say("subscriptionMessage","No active plan selected.",true);return}
   if(!window.Razorpay){say("subscriptionMessage","Razorpay Checkout did not load. Check your internet connection and retry.",true);return}
-  $("subscriptionButton").disabled=true;say("subscriptionMessage","Creating a secure Razorpay order…");
-  const {data,error}=await db.functions.invoke("razorpay-subscription-checkout",{body:{shop_id:currentShop.id,plan_id:planId,billing_cycle:$("billingCycle").value}});
-  if(error){$("subscriptionButton").disabled=false;say("subscriptionMessage",data?.error||error.message,true);return}
-  if(!data?.order_id||!data?.key_id){$("subscriptionButton").disabled=false;say("subscriptionMessage","Payment order response is incomplete. Please contact support.",true);return}
-  const options={
-   key:data.key_id,amount:data.amount,currency:data.currency,order_id:data.order_id,
-   name:data.name,description:data.description,prefill:data.prefill||{},
-   theme:{color:"#38bdf8"},
-   handler:async function(response){
-    say("subscriptionMessage","Payment received. Verifying signature and captured status with Razorpay…");
-    $("subscriptionButton").disabled=true;
-    const {data:verified,error:verifyError}=await db.functions.invoke("razorpay-verify-subscription-payment",{body:{
-     payment_id:data.payment_id,razorpay_order_id:response.razorpay_order_id,
-     razorpay_payment_id:response.razorpay_payment_id,razorpay_signature:response.razorpay_signature
+  const button=$("subscriptionButton");
+  button.disabled=true;
+  say("subscriptionMessage","Creating a secure Razorpay order…");
+  try{
+    const {data,error}=await db.functions.invoke("razorpay-subscription-checkout",{body:{
+      shop_id:currentShop.id,plan_id:planId,billing_cycle:$("billingCycle").value
     }});
-    $("subscriptionButton").disabled=false;
-    if(verifyError){say("subscriptionMessage",verified?.error||verifyError.message+" If money was debited, do not pay again; contact support with reference "+data.payment_id,true);return}
-    say("subscriptionMessage","Payment verified successfully. Your subscription is active and shop activation has been applied.");
-    await boot();
-   },
-   modal:{ondismiss:function(){$("subscriptionButton").disabled=false;say("subscriptionMessage","Checkout closed. Your pending order is saved; press Pay subscription to reopen the same order.")}}
-  };
-  try{const checkout=new window.Razorpay(options);checkout.open()}
-  catch(e){$("subscriptionButton").disabled=false;say("subscriptionMessage","Could not open Razorpay Checkout: "+String(e),true)}
- }
+    if(error)throw new Error(data?.error||error.message||"Checkout service is unavailable.");
+    if(!data?.order_id||!data?.key_id||!data?.payment_id)throw new Error(data?.error||"Payment order response is incomplete. Please retry.");
+    const options={
+      key:data.key_id,amount:data.amount,currency:data.currency,order_id:data.order_id,
+      name:data.name,description:data.description,prefill:data.prefill||{},
+      theme:{color:"#38bdf8"},
+      handler:async function(response){
+        button.disabled=true;
+        say("subscriptionMessage","Payment received. Verifying signature and captured status with Razorpay…");
+        try{
+          const {data:verified,error:verifyError}=await db.functions.invoke("razorpay-verify-subscription-payment",{body:{
+            payment_id:data.payment_id,razorpay_order_id:response.razorpay_order_id,
+            razorpay_payment_id:response.razorpay_payment_id,razorpay_signature:response.razorpay_signature
+          }});
+          if(verifyError)throw new Error(verified?.error||verifyError.message+" If money was debited, do not pay again; contact support with reference "+data.payment_id);
+          say("subscriptionMessage","Payment verified successfully. Your subscription is active.");
+          await boot();
+        }catch(e){
+          say("subscriptionMessage",String(e.message||e),true);
+        }finally{button.disabled=false}
+      },
+      modal:{ondismiss:function(){
+        button.disabled=false;
+        say("subscriptionMessage","Checkout closed. Your pending order is saved; tap Pay subscription to reopen it.")
+      }}
+    };
+    const checkout=new window.Razorpay(options);
+    checkout.on("payment.failed",function(response){
+      button.disabled=false;
+      const reason=response?.error?.description||response?.error?.reason||"Payment failed or was cancelled.";
+      say("subscriptionMessage",reason+" You can safely retry.",true);
+    });
+    checkout.open();
+  }catch(e){
+    button.disabled=false;
+    say("subscriptionMessage",String(e.message||e),true);
+  }
+}
  async function loadOrders(){
   const list=$("orderList");list.replaceChildren();
   if(!currentShop){say("ordersMessage","Select a shop first.");return}
