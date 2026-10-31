@@ -28,6 +28,8 @@ Set the webhook secret to the exact same value stored as RAZORPAY_WEBHOOK_SECRET
 
 The webhook verifies the HMAC-SHA256 signature against the original raw request body. It ignores non-captured payment events and checks the order reference, INR currency and expected amount before applying a subscription.
 
+If Razorpay reports a captured payment but subscription activation temporarily fails, retry verification with the **same payment ID and transaction**. The verification endpoint now safely retries the same captured transaction; do not start a second payment for that reference.
+
 ## 3. Deployed Edge Functions
 
 - razorpay-subscription-checkout — requires a signed-in user JWT; creates/reuses a server-side Razorpay order.
