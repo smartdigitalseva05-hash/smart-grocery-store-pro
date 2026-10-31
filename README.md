@@ -45,6 +45,7 @@ The shopkeeper benefits page explains common local-store problems and maps them 
 - Grocery-only supplier register, purchase invoice details, atomic purchase recording that increments product stock, and an append-only stock movement record. Purchase and movement writes occur through a validated database function; supplier and history access are shop-scoped with row-level security.
 - Grocery customer orders now add a `sale` stock-movement record alongside the atomic stock deduction; cancellation of eligible unpaid COD orders restores stock and records an `order_cancelled` movement. Both records reference the originating order for traceability.
 - Grocery daily expense register with validated categories, date and amount, shop-scoped row-level security, and a current-month recorded-expense summary. It is intentionally not labelled as profit because complete cost-of-goods and payment reconciliation are not yet implemented.
+- Grocery supplier payment ledger with cash/UPI/bank/cheque/other methods, payment references and notes; immutable payment entries are shop-scoped under RLS, linked to the supplier in the same shop by a composite foreign key, and supplier due/advance is calculated from all historical purchase and payment rows (not just the recent list).
 
 Real shopkeeper and customer accounts are still required for end-to-end acceptance testing. Do not describe these tools as fully production-verified until that testing passes.
 
@@ -81,7 +82,7 @@ The three Razorpay Edge Functions are deployed:
 Subscription payments are **not ready for live use** until the merchant adds the three Razorpay secrets in Supabase Edge Function Secrets, registers the webhook, and completes Test Mode end-to-end checks. Follow [PAYMENT_SETUP.md](./PAYMENT_SETUP.md). Never put gateway secrets in frontend code, GitHub, or chat.
 
 ## Database security and automation
-- Row Level Security is enabled on all 28 public application tables (verified from PostgreSQL catalog).
+- Row Level Security is enabled on all 33 public application tables (verified from PostgreSQL catalog).
 - Sensitive authorization and tenant isolation are enforced by database policies and validated RPCs.
 - Supabase Cron runs subscription expiry checks hourly.
 - The frontend uses a Supabase publishable key only; never expose a service-role/secret key in browser code.
