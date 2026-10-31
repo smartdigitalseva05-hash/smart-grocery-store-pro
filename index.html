@@ -223,6 +223,7 @@ let selectedCategory = "all";
 let signupMode = false;
 let resetMode = false;
 let checkoutMode = false;
+let deliveryFee = 40;
 
 const $ = id => document.getElementById(id);
 
@@ -288,6 +289,7 @@ async function initialize() {
       if (currentUser) loadProducts();
     });
 
+    await loadDeliveryFee();
     await loadCategories();
     await loadProducts();
 
@@ -302,7 +304,30 @@ function showError(message) {
 }
 
 /* =========================================
-   3. LOAD CATEGORIES
+   3. DELIVERY FEE CONFIGURATION
+========================================= */
+
+async function loadDeliveryFee() {
+  if (!db) return;
+  const {data, error} = await db
+    .from("platform_settings")
+    .select("value")
+    .eq("key", "shipping_fee_default")
+    .maybeSingle();
+
+  if (error) {
+    console.warn("Delivery fee setting could not load; using ₹40 fallback:", error.message);
+    return;
+  }
+
+  const configured = Number(data?.value);
+  if (Number.isFinite(configured) && configured >= 0) {
+    deliveryFee = configured;
+  }
+}
+
+/* =========================================
+   4. LOAD CATEGORIES
 ========================================= */
 
 async function loadCategories() {
@@ -515,10 +540,12 @@ function updateCart() {
     `).join("")
     : '<p class="small">Your cart is empty.</p>';
 
+  const subtotal = cart.reduce((sum,p) => sum+effectivePrice(p)*p.quantity, 0);
+  const shipping = cart.length ? deliveryFee : 0;
   $("cartTotal").textContent =
-    "Subtotal: " + money(cart.reduce(
-      (sum,p) => sum+effectivePrice(p)*p.quantity, 0
-    ));
+    "Subtotal: " + money(subtotal) +
+    " · Delivery: " + money(shipping) +
+    " · Total: " + money(subtotal + shipping);
 }
 
 $("cartItems").addEventListener("click", e => {
