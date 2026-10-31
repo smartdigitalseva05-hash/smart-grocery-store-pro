@@ -27,6 +27,8 @@ The shopkeeper dashboard now includes these vertical-specific tools:
 - **Restaurant:** table register with seating capacity and live table status; menu catalogue with price, category and preparation time; kitchen tickets for table/takeaway orders with item notes, guest count and ticket status (new, preparing, ready, served, cancelled).
 - **Hotel:** room register with room type, floor, guest capacity, nightly rate and room status; guest reservations with dates, phone, guest count, booking status and check-in/check-out; database trigger prevents overlapping active reservations for the same room.
 - **Office / Company:** employee register with code, contact, designation and employment type; date-wise attendance with present, absent, half-day and leave status plus check-in/check-out times.
+- **Electronics:** device register with IMEI 1/2, serial number, brand/model, supplier, purchase/sale price, warranty dates and device lifecycle status; duplicate IMEI/serial values are blocked within each shop.
+- **Medical:** batch-wise medicine inventory with manufacturing/expiry dates, quantity, MRP, supplier, prescription-required flag and expiry alerts. This is inventory support, not a complete compliant pharmacy workflow.
 
 Other planned modules (restaurant kitchen tickets/POS, hotel rooms and bookings, employee attendance, electronics IMEI/warranty, medical batch/expiry and Digital Seva application tracking) are not yet complete. The shared product/order framework is not a substitute for those specialist workflows.
 
