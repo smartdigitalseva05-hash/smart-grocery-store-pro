@@ -399,11 +399,32 @@ async function loadShopData(){
       if(error){const err=document.createElement("div");err.textContent="Variants could not load: "+error.message;variantList.append(err);return}
       if(!data?.length){const empty=document.createElement("div");empty.textContent="No variants added yet.";variantList.append(empty);return}
       data.forEach(v=>{
-       const row=document.createElement("div");row.className="row";row.style.padding="6px 0";
-       const info=document.createElement("span");info.textContent=v.sku+" · "+v.size_label+" · "+v.color_name+" · "+money(v.price)+" · Stock "+v.stock+(v.is_available?"":" · Hidden");
+       const row=document.createElement("div");row.className="product";row.style.marginTop="7px";
+       const info=document.createElement("div");info.className="sub";info.textContent=v.sku+" · "+v.size_label+" · "+v.color_name+" · "+money(v.price)+" · Stock "+v.stock+" · "+(v.is_available?"Available":"Hidden");
+       const controls=document.createElement("div");controls.className="product-actions";
+       const editVariant=document.createElement("button");editVariant.type="button";editVariant.className="secondary";editVariant.textContent="Edit variant";editVariant.disabled=!canManageProducts();
+       editVariant.addEventListener("click",async()=>{
+        const skuText=window.prompt("SKU:",v.sku);if(skuText===null)return;
+        const sizeText=window.prompt("Size:",v.size_label);if(sizeText===null)return;
+        const colorText=window.prompt("Colour:",v.color_name);if(colorText===null)return;
+        const priceText=window.prompt("Variant price (₹):",String(v.price));if(priceText===null)return;
+        const stockText=window.prompt("Variant stock:",String(v.stock));if(stockText===null)return;
+        const price=Number(priceText),variantStock=Number(stockText),sku=skuText.trim(),size=sizeText.trim(),color=colorText.trim();
+        if(!sku||!size||!color||!Number.isFinite(price)||price<0||!Number.isInteger(variantStock)||variantStock<0){say("listMessage","Enter a SKU, size, colour, valid price and whole-number stock.",true);return}
+        editVariant.disabled=true;
+        const {error:updateError}=await db.from("garment_product_variants").update({sku,size_label:size,color_name:color,price,stock:variantStock}).eq("id",v.id).eq("shop_id",currentShop.id);
+        if(updateError){say("listMessage","Variant update failed: "+updateError.message,true);editVariant.disabled=false;return}
+        say("listMessage","Variant details updated.");await renderVariants();
+       });
+       const toggleVariant=document.createElement("button");toggleVariant.type="button";toggleVariant.className="secondary";toggleVariant.textContent=v.is_available?"Hide variant":"Make available";toggleVariant.disabled=!canManageProducts();
+       toggleVariant.addEventListener("click",async()=>{
+        const {error:updateError}=await db.from("garment_product_variants").update({is_available:!v.is_available}).eq("id",v.id).eq("shop_id",currentShop.id);
+        if(updateError){say("listMessage","Variant availability update failed: "+updateError.message,true);return}
+        await renderVariants();
+       });
        const removeVariant=document.createElement("button");removeVariant.type="button";removeVariant.className="danger";removeVariant.textContent="Delete";removeVariant.disabled=!canManageProducts();
-       removeVariant.addEventListener("click",async()=>{if(!window.confirm("Delete variant "+v.sku+"?"))return;const {error}=await db.from("garment_product_variants").delete().eq("id",v.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await renderVariants()});
-       row.append(info,removeVariant);variantList.append(row);
+       removeVariant.addEventListener("click",async()=>{if(!window.confirm("Delete variant "+v.sku+"?"))return;const {error:deleteError}=await db.from("garment_product_variants").delete().eq("id",v.id).eq("shop_id",currentShop.id);if(deleteError){say("listMessage",deleteError.message,true);return}say("listMessage","Garment variant deleted.");await renderVariants()});
+       controls.append(editVariant,toggleVariant,removeVariant);row.append(info,controls);variantList.append(row);
       });
      }
      card.append(variants);renderVariants();
