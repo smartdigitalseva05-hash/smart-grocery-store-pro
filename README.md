@@ -4,6 +4,7 @@ Multi-business commerce and operations platform with a grocery customer storefro
 
 ## Workspaces
 - `portal.html` — platform portal and live subscription pricing.
+- `shopkeeper-benefits.html` — shopkeeper problem/solution landing page with a clear distinction between available tools and planned features.
 - `apply-shop.html` — customer signup/login and shop application submission.
 - `index.html` — customer grocery storefront.
 - `my-orders.html` — customer order history and pending unpaid-order cancellation.
@@ -18,6 +19,16 @@ Multi-business commerce and operations platform with a grocery customer storefro
 | Enterprise | ₹299 | ₹2,990 |
 
 Annual prices are 10 months of the monthly price. Pricing is read from the Supabase `subscription_plans` table.
+
+## Shopkeeper growth roadmap
+
+The shopkeeper benefits page explains common local-store problems and maps them to platform workflows. Current workspace capabilities include product/price/stock management, incoming order management, order status updates and the COD workflow. The following customer-growth tools are roadmap items and must not be marketed as live until implemented and acceptance-tested:
+- Shopkeeper QR code generator
+- WhatsApp product and offer sharing tools
+- Customer repeat-order flow
+- Sales analytics and best-seller reporting
+- Configurable low-stock notifications
+- Shopkeeper Growth Score with transparent, explainable metrics
 
 ## Specialized business workspaces
 
