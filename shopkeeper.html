@@ -644,7 +644,7 @@ async function loadShopData(){
  }
  function useStarterProduct(){const v=$("starterSelect").value;if(v===""){say("starterHint","Choose a product first.",true);return}const p=activeStarterProducts()[Number(v)];if(!p)return;$("pName").value=p.name;$("pPrice").value=String(p.price);$("pSale").value="";$("pStock").value="0";$("pOffer").value="";$("pImageUrl").value="";$("pImageFile").value="";$("pDescription").value=p.category+" · Starter catalogue suggestion; verify before publishing.";const o=[...$("pCategory").options].find(x=>x.textContent.trim().toLowerCase()===p.category.toLowerCase());$("pCategory").value=o?o.value:"";$("starterHint").textContent=p.name+" added to form. Set real stock and upload a photo.";say("productMessage","Template filled. Confirm price and stock before saving.");$("pName").focus()}
  async function loadCategories(){
-  const {data,error}=await db.from("categories").select("id,name").eq("is_active",true).order("name");
+  const {data,error}=await db.from("categories").select("id,name").eq("is_active",true).eq("business_type",currentShop.business_type).order("name");
   const sel=$("pCategory");sel.replaceChildren();const none=document.createElement("option");none.value="";none.textContent="No category";sel.append(none);
   if(error){say("productMessage","Category load: "+error.message,true);return}
   for(const c of data||[]){const o=document.createElement("option");o.value=c.id;o.textContent=c.name;sel.append(o)}
@@ -837,7 +837,7 @@ async function loadShopData(){
   $("productForm").reset();$("pStock").value="0";say("productMessage","Product saved successfully.");await loadProducts();
  });
  $("bulkStarterSearch").addEventListener("input",renderBulkStarterList);
- $("bulkSelectVisible").addEventListener("click",()=>{const q=$("bulkStarterSearch").value.trim().toLowerCase();STARTER_PRODUCTS.forEach((p,i)=>{if(!q||(p.name+" "+p.category).toLowerCase().includes(q))bulkStarterSelection.add(i)});renderBulkStarterList()});
+ $("bulkSelectVisible").addEventListener("click",()=>{const q=$("bulkStarterSearch").value.trim().toLowerCase();activeStarterProducts().forEach((p,i)=>{if(!q||(p.name+" "+p.category).toLowerCase().includes(q))bulkStarterSelection.add(i)});renderBulkStarterList()});
  $("bulkClear").addEventListener("click",()=>{bulkStarterSelection.clear();renderBulkStarterList()});
  $("bulkImport").addEventListener("click",importSelectedStarterProducts);
  renderBulkStarterList();
