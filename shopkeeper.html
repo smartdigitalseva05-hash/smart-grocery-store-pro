@@ -41,7 +41,30 @@ a{color:#8ce2b3}
 <div class="product" style="margin-top:12px"><strong>Best-selling products</strong><p class="sub">Ranked by units in the latest 100 orders. Cancelled orders are excluded.</p><div id="bestSellerList" class="products"></div><div id="bestSellerMessage" class="notice"></div></div>
 <div class="product" style="margin-top:12px"><div class="row"><div><strong>Low Stock Alerts</strong><div class="sub">Show products at or below your selected threshold.</div></div><label class="field">Alert at or below<input id="lowStockLimit" type="number" min="0" max="10000" value="5"></label></div><div id="lowStockList" class="products"></div></div>
 <div class="product" style="margin-top:12px"><div class="row"><strong>Shopkeeper Growth Score</strong><h2 id="growthScore">—/100</h2></div><div id="growthBreakdown" class="products"></div><div class="sub">An operational readiness indicator based on products, availability, stock and delivered orders. Not a profit guarantee.</div></div>
-</section><div class="panel hidden" id="restaurantTablesPanel"><div class="row"><div><h1>Restaurant · Table Manager</h1><p class="muted">Add dining tables and update their live floor status.</p></div><span class="pill">Restaurant module</span></div><form id="restaurantTableForm" class="formgrid"><label class="field">Table number / code<input id="restaurantTableCode" maxlength="40" placeholder="T-01" required></label><label class="field">Seating capacity<input id="restaurantTableCapacity" type="number" min="1" max="100" value="2" required></label><div class="actions" style="align-items:end"><button id="restaurantTableAdd" type="submit">Add table</button></div></form><div id="restaurantTablesMessage" class="notice" role="status"></div><div id="restaurantTablesList" class="products"></div></div>
+<div class="panel hidden" id="groceryProcurementPanel" style="margin-top:14px">
+ <div class="row"><div><h1>Supplier & Purchase Manager</h1><p class="muted">Save supplier contacts, record incoming stock and automatically update product quantities with a permanent movement history.</p></div><button id="groceryProcurementRefresh" class="secondary" type="button">Refresh</button></div>
+ <div class="formgrid">
+  <div class="product"><h2>Supplier register</h2><form id="grocerySupplierForm" class="formgrid">
+   <label class="field">Supplier name<input id="grocerySupplierName" maxlength="120" required placeholder="Supplier / wholesaler name"></label>
+   <label class="field">Phone<input id="grocerySupplierPhone" maxlength="30" placeholder="Contact number"></label>
+   <label class="field">Company / market<input id="grocerySupplierCompany" maxlength="120" placeholder="Company or market"></label>
+   <label class="field">Address<input id="grocerySupplierAddress" maxlength="250" placeholder="Supplier address"></label>
+   <button id="grocerySupplierAdd" type="submit">Save supplier</button>
+  </form><div id="grocerySupplierMessage" class="notice" role="status"></div><div id="grocerySupplierList" class="products"></div></div>
+  <div class="product"><h2>Record stock purchase</h2><form id="groceryPurchaseForm" class="formgrid">
+   <label class="field">Product<select id="groceryPurchaseProduct" required><option value="">Load products…</option></select></label>
+   <label class="field">Supplier<select id="groceryPurchaseSupplier"><option value="">No supplier selected</option></select></label>
+   <label class="field">Quantity received<input id="groceryPurchaseQty" type="number" min="1" max="1000000" step="1" required></label>
+   <label class="field">Purchase cost per unit (₹)<input id="groceryPurchaseCost" type="number" min="0" max="100000000" step="0.01" required></label>
+   <label class="field">Invoice number<input id="groceryPurchaseInvoice" maxlength="100" placeholder="Optional invoice / bill no."></label>
+   <label class="field">Purchase date<input id="groceryPurchaseDate" type="date" required></label>
+   <label class="field">Notes<input id="groceryPurchaseNotes" maxlength="500" placeholder="Optional"></label>
+   <button id="groceryPurchaseSave" type="submit">Save purchase & update stock</button>
+  </form><div id="groceryPurchaseMessage" class="notice" role="status"></div></div>
+ </div>
+ <div class="product" style="margin-top:12px"><h2>Recent purchase register</h2><div id="groceryPurchaseList" class="products"></div><div id="groceryPurchaseHistoryMessage" class="notice"></div></div>
+ <div class="product" style="margin-top:12px"><h2>Stock movement history</h2><p class="sub">Auditable purchase entries and quantity changes for this shop.</p><div id="groceryMovementList" class="products"></div><div id="groceryMovementMessage" class="notice"></div></div>
+</div></section><div class="panel hidden" id="restaurantTablesPanel"><div class="row"><div><h1>Restaurant · Table Manager</h1><p class="muted">Add dining tables and update their live floor status.</p></div><span class="pill">Restaurant module</span></div><form id="restaurantTableForm" class="formgrid"><label class="field">Table number / code<input id="restaurantTableCode" maxlength="40" placeholder="T-01" required></label><label class="field">Seating capacity<input id="restaurantTableCapacity" type="number" min="1" max="100" value="2" required></label><div class="actions" style="align-items:end"><button id="restaurantTableAdd" type="submit">Add table</button></div></form><div id="restaurantTablesMessage" class="notice" role="status"></div><div id="restaurantTablesList" class="products"></div></div>
 <div class="panel hidden" id="restaurantKitchenPanel">
  <div class="row"><div><h1>Restaurant · Menu & Kitchen</h1><p class="muted">Create menu items, send table or takeaway tickets to the kitchen, and update preparation status.</p></div><span class="pill">Kitchen workflow</span></div>
  <h2>Menu item setup</h2>
@@ -260,6 +283,7 @@ a{color:#8ce2b3}
   cfg.items.forEach(item=>{const row=document.createElement("div");row.className="product";row.textContent=item;$("workspaceFeatures").append(row)});
   const note=document.createElement("div");note.className="notice";note.textContent=cfg.note;$("workspaceFeatures").append(note);
   const retail=["grocery","daily_needs","garments","jewellery","restaurant","electronics","medical","other"].includes(shop.business_type);
+  $("groceryProcurementPanel").classList.toggle("hidden",shop.business_type!=="grocery");
   ["starter-products","bulk-starter-products"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",!["grocery","daily_needs"].includes(shop.business_type))});
    const dailyMode=shop.business_type==="daily_needs";$("starter-products").querySelector("h1").textContent=dailyMode?"Quick add Daily Needs essentials":"Quick add from 200 grocery starter products";$("starter-products").querySelector("p").textContent=dailyMode?"Choose daily-use household, personal-care, cleaning and convenience items. Suggested prices are examples; confirm your actual price and stock.":"Choose a starter item to prefill the form. Confirm the real price, stock and photo before saving.";$("starterSearch").placeholder=dailyMode?"Search soap, cleaning, stationery…":"Search rice, oil, soap…";$("starterSelect").options[0].textContent=dailyMode?"Choose a Daily Needs item…":"Choose from 200 products…";$("bulk-starter-products").querySelector("h1").textContent=dailyMode?"Bulk add Daily Needs essentials":"Bulk add starter products";$("bulk-starter-products").querySelector("p").textContent=dailyMode?"Select daily essentials to create hidden drafts with zero stock. Confirm local price, stock and photos before publishing.":"Select multiple items from the 200-product starter catalogue. They will be saved as hidden drafts with zero stock, so customers cannot order them until you confirm price, stock and photos.";
   $("productForm").querySelector("h1");
@@ -502,6 +526,40 @@ function bindGrowthTools(){
  $("downloadShopQr").addEventListener("click",()=>{const c=$("shopQr").querySelector("canvas");if(!c){say("qrMessage","Generate the QR first.",true);return}const a=document.createElement("a");a.href=c.toDataURL("image/png");a.download="shop-qr.png";a.click()});
 }
 
+
+async function loadGroceryProcurement(){
+ const panel=$("groceryProcurementPanel");if(!panel||!currentShop||currentShop.business_type!=="grocery"){panel?.classList.add("hidden");return}
+ panel.classList.remove("hidden");
+ const [sup,prods,purchases,moves]=await Promise.all([
+  db.from("grocery_suppliers").select("id,name,phone,company,address,is_active").eq("shop_id",currentShop.id).order("name"),
+  db.from("products").select("id,name,stock").eq("shop_id",currentShop.id).order("name"),
+  db.from("grocery_stock_purchases").select("id,quantity,unit_cost,total_cost,invoice_number,purchase_date,created_at,product:products(name),supplier:grocery_suppliers(name)").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(30),
+  db.from("grocery_stock_movements").select("id,movement_type,quantity_change,stock_before,stock_after,notes,created_at,product:products(name)").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(30)
+ ]);
+ if(sup.error){say("grocerySupplierMessage","Supplier load failed: "+sup.error.message,true);return}
+ if(prods.error){say("groceryPurchaseMessage","Product load failed: "+prods.error.message,true);return}
+ const supplierSelect=$("groceryPurchaseSupplier");supplierSelect.replaceChildren(new Option("No supplier selected",""));
+ const supplierList=$("grocerySupplierList");supplierList.replaceChildren();
+ (sup.data||[]).forEach(s=>{
+  if(s.is_active)supplierSelect.add(new Option(s.name+(s.company?" · "+s.company:""),s.id));
+  const row=document.createElement("div");row.className="row";const info=document.createElement("span");info.textContent=s.name+" · "+(s.phone||"No phone")+(s.company?" · "+s.company:"");const state=document.createElement("span");state.className="pill";state.textContent=s.is_active?"Active":"Archived";row.append(info,state);supplierList.append(row);
+ });
+ if(!(sup.data||[]).length){const empty=document.createElement("p");empty.className="sub";empty.textContent="No suppliers saved yet.";supplierList.append(empty)}
+ const productSelect=$("groceryPurchaseProduct");productSelect.replaceChildren(new Option("Choose product…",""));
+ (prods.data||[]).forEach(p=>productSelect.add(new Option(p.name+" · Current stock "+p.stock,p.id)));
+ if(purchases.error){say("groceryPurchaseHistoryMessage","Purchase history unavailable: "+purchases.error.message,true)}else{
+  const list=$("groceryPurchaseList");list.replaceChildren();
+  (purchases.data||[]).forEach(p=>{const row=document.createElement("div");row.className="row";const info=document.createElement("span");info.textContent=(p.product?.name||"Product")+" · "+p.quantity+" × "+money(p.unit_cost)+" · "+(p.purchase_date||"");const amount=document.createElement("b");amount.textContent=money(p.total_cost);row.append(info,amount);list.append(row)});
+  say("groceryPurchaseHistoryMessage",(purchases.data||[]).length+" recent purchase record(s).");
+  if(!purchases.data?.length){const e=document.createElement("p");e.className="sub";e.textContent="No stock purchases recorded yet.";list.append(e)}
+ }
+ if(moves.error){say("groceryMovementMessage","Stock history unavailable: "+moves.error.message,true)}else{
+  const list=$("groceryMovementList");list.replaceChildren();
+  (moves.data||[]).forEach(m=>{const row=document.createElement("div");row.className="row";const info=document.createElement("span");info.textContent=(m.product?.name||"Product")+" · "+m.movement_type+" · "+new Date(m.created_at).toLocaleString("en-IN");const qty=document.createElement("b");qty.textContent=(m.quantity_change>0?"+":"")+m.quantity_change+" ("+m.stock_before+" → "+m.stock_after+")";row.append(info,qty);list.append(row)});
+  say("groceryMovementMessage",(moves.data||[]).length+" recent stock movement(s).");
+  if(!moves.data?.length){const e=document.createElement("p");e.className="sub";e.textContent="No stock movements recorded yet.";list.append(e)}
+ }
+}
 async function loadShopData(){
   currentShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!currentShop)return;
   renderBusinessWorkspace(currentShop);
@@ -516,6 +574,7 @@ async function loadShopData(){
   await loadElectronicsInventory();
   await loadMedicalBatches();
   await loadDigitalApplications();
+  await loadGroceryProcurement();
   const {data:trial,error:trialError}=await db.from("shop_trials").select("status,started_at,ends_at").eq("shop_id",currentShop.id).maybeSingle();
   currentTrial=trialError?null:trial;
   const trialActive=!!currentTrial&&currentTrial.status==="active"&&new Date(currentTrial.ends_at).getTime()>Date.now()&&currentShop.subscription_expires_at===currentTrial.ends_at;
@@ -914,6 +973,30 @@ async function loadShopData(){
 
 
 
+
+
+ $("grocerySupplierForm").addEventListener("submit",async e=>{
+  e.preventDefault();if(!currentShop||currentShop.business_type!=="grocery"||!canManageProducts()){say("grocerySupplierMessage","An active Grocery subscription is required.",true);return}
+  const name=$("grocerySupplierName").value.trim(),phone=$("grocerySupplierPhone").value.trim(),company=$("grocerySupplierCompany").value.trim(),address=$("grocerySupplierAddress").value.trim();
+  if(name.length<2){say("grocerySupplierMessage","Enter a valid supplier name.",true);return}
+  $("grocerySupplierAdd").disabled=true;
+  const {error}=await db.from("grocery_suppliers").insert({shop_id:currentShop.id,name,phone:phone||null,company:company||null,address:address||null});
+  $("grocerySupplierAdd").disabled=false;if(error){say("grocerySupplierMessage","Could not save supplier: "+error.message,true);return}
+  $("grocerySupplierForm").reset();say("grocerySupplierMessage","Supplier saved.");await loadGroceryProcurement();
+ });
+ $("groceryPurchaseForm").addEventListener("submit",async e=>{
+  e.preventDefault();if(!currentShop||currentShop.business_type!=="grocery"||!canManageProducts()){say("groceryPurchaseMessage","An active Grocery subscription is required.",true);return}
+  const product=$("groceryPurchaseProduct").value,supplier=$("groceryPurchaseSupplier").value||null,qty=Number($("groceryPurchaseQty").value),cost=Number($("groceryPurchaseCost").value),date=$("groceryPurchaseDate").value,invoice=$("groceryPurchaseInvoice").value.trim(),notes=$("groceryPurchaseNotes").value.trim();
+  if(!product||!Number.isInteger(qty)||qty<1||qty>1000000||!Number.isFinite(cost)||cost<0||!date){say("groceryPurchaseMessage","Check product, quantity, purchase cost and date.",true);return}
+  $("groceryPurchaseSave").disabled=true;say("groceryPurchaseMessage","Recording purchase and updating stock…");
+  const {data,error}=await db.rpc("grocery_record_purchase",{p_shop_id:currentShop.id,p_product_id:product,p_supplier_id:supplier,p_quantity:qty,p_unit_cost:cost,p_invoice_number:invoice||null,p_purchase_date:date,p_notes:notes||null});
+  $("groceryPurchaseSave").disabled=false;
+  if(error){say("groceryPurchaseMessage","Purchase not saved: "+error.message,true);return}
+  $("groceryPurchaseForm").reset();$("groceryPurchaseDate").value=new Date().toISOString().slice(0,10);
+  say("groceryPurchaseMessage","Purchase saved. Stock increased by "+qty+". Reference: "+data);
+  await Promise.all([loadGroceryProcurement(),loadProducts(),loadGrowthInsights()]);
+ });
+ $("groceryProcurementRefresh").addEventListener("click",loadGroceryProcurement);
 
  $("shopSelect").addEventListener("change",loadShopData);
  $("ordersRefresh").addEventListener("click",loadOrders);
