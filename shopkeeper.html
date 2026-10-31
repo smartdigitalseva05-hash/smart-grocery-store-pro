@@ -506,11 +506,11 @@ async function loadGrowthInsights(){
  if(!currentShop)return;
  const [pRes,oRes]=await Promise.all([db.from("products").select("id,name,stock,is_available").eq("shop_id",currentShop.id),db.from("orders").select("id,total,status,payment_status,created_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100)]);
  if(pRes.error){say("analyticsMessage",pRes.error.message,true);return}if(oRes.error){say("analyticsMessage",oRes.error.message,true);return}
- const ps=pRes.data||[],os=oRes.data||[],done=os.filter(o=>o.status==="delivered"),paid=os.filter(o=>o.payment_status==="paid"||o.status==="delivered");
+ const ps=pRes.data||[],os=oRes.data||[],done=os.filter(o=>o.status==="delivered"),paid=os.filter(o=>o.payment_status==="paid"&&o.status!=="cancelled"&&o.status!=="refunded");
  $("metricOrders").textContent=os.length;$("metricRevenue").textContent=money(paid.reduce((a,o)=>a+Number(o.total||0),0));$("metricDelivered").textContent=done.length;$("metricProducts").textContent=ps.length;
  say("analyticsMessage",os.length===100?"Latest 100 orders only.":"All currently available recent orders.");
  const best=$( "bestSellerList" );best.replaceChildren();
- const validOrderIds=os.filter(o=>o.status!=="cancelled").map(o=>o.id);
+ const validOrderIds=os.filter(o=>o.status!=="cancelled"&&o.status!=="refunded").map(o=>o.id);
  if(!validOrderIds.length){say("bestSellerMessage","No completed or active order items to rank yet.");}
  else{
   const {data:itemRows,error:itemError}=await db.from("order_items").select("quantity,product:products(name)").in("order_id",validOrderIds);
