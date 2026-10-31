@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#087f5b">
-<title>Smart Grocery Store Pro</title>
+<title>Smart Business Pro | Local Multi-Business Marketplace</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -399,7 +399,7 @@ function imageOf(product) {
     if (first?.url) return first.url;
   }
 
-  return "https://placehold.co/400x300/e9f8f1/087f5b?text=Grocery";
+  return "https://placehold.co/400x300/e9f8f1/087f5b?text=Local+Business";
 }
 
 function renderProducts() {
@@ -541,7 +541,7 @@ function updateCart() {
       <div class="cart-line">
         <div>
           <strong>${escapeHTML(p.name)}</strong>
-          <div class="small">Store: ${escapeHTML(p.shop?.name || "Local grocery store")}</div>
+          <div class="small">Store: ${escapeHTML(p.shop?.name || "Local business")}</div>
           <div class="small">${money(effectivePrice(p))} × ${p.quantity}</div>
         </div>
         <div>
