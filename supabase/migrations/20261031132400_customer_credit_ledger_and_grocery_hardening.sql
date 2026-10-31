@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.shop_credit_ledger (
   amount numeric(12,2) NOT NULL CHECK (amount > 0),
   entry_date date NOT NULL DEFAULT CURRENT_DATE,
   notes text CHECK (notes IS NULL OR length(notes) <= 500),
-  created_by uuid NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id),
+  created_by uuid NOT NULL DEFAULT auth.uid(),
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS shop_credit_ledger_shop_date_idx
