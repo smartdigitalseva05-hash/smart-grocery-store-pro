@@ -44,3 +44,6 @@ create policy grocery_supplier_payments_insert
 
 revoke all on public.grocery_supplier_payments from anon;
 grant select, insert on public.grocery_supplier_payments to authenticated;
+
+create index if not exists grocery_supplier_payments_created_by_idx
+  on public.grocery_supplier_payments (created_by);
