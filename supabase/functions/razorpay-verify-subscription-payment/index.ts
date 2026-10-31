@@ -48,13 +48,14 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
       typeof body.razorpay_signature !== "string" || !/^[a-f0-9]{64}$/i.test(body.razorpay_signature))
     return reply(400, { error: "Invalid payment verification fields." });
   const { data: payment, error: paymentError } = await userClient.from("payments")
-    .select("id,user_id,amount,currency,status,verified,gateway,gateway_order_id,gateway_payload")
+    .select("id,user_id,amount,currency,status,verified,gateway,gateway_order_id,gateway_transaction_id,gateway_payload")
     .eq("id", body.payment_id).eq("user_id", userData.user.id).single();
   if (paymentError || !payment) return reply(404, { error: "Payment record not found for this account." });
   if (payment.verified) return reply(200, { verified: true, message: "Payment already applied." });
-  if (payment.gateway !== "razorpay" || payment.status !== "pending" || payment.currency !== "INR" ||
-      payment.gateway_order_id !== body.razorpay_order_id)
-    return reply(409, { error: "Payment does not match the pending Razorpay order." });
+  if (payment.gateway !== "razorpay" || !["pending", "success"].includes(payment.status) || payment.currency !== "INR" ||
+      payment.gateway_order_id !== body.razorpay_order_id ||
+      (payment.status === "success" && payment.gateway_transaction_id !== body.razorpay_payment_id))
+    return reply(409, { error: "Payment does not match the pending or recoverable Razorpay transaction." });
   const keyId = Deno.env.get("RAZORPAY_KEY_ID") || "";
   const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET") || "";
   if (!keyId || !keySecret) return reply(503, { error: "Razorpay API credentials are not configured." });
@@ -77,10 +78,19 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   const admin = createAdminClient();
   const payload = { ...(payment.gateway_payload || {}), razorpay_order_id: payment.gateway_order_id,
     razorpay_payment_id: body.razorpay_payment_id, captured: true, signature_verified: true, api_status_verified: true };
-  const { error: updateError } = await admin.from("payments").update({ status: "success",
+  const { data: saved, error: updateError } = await admin.from("payments").update({ status: "success",
     gateway_transaction_id: body.razorpay_payment_id, gateway_payload: payload })
-    .eq("id", payment.id).eq("status", "pending").eq("verified", false);
+    .eq("id", payment.id).eq("status", payment.status).eq("verified", false)
+    .select("id,status,verified,gateway_transaction_id").maybeSingle();
   if (updateError) return reply(500, { error: "Could not save verified payment. Contact support with reference " + payment.id });
+  if (!saved) {
+    const { data: latest, error: latestError } = await admin.from("payments")
+      .select("status,verified,gateway_transaction_id").eq("id", payment.id).maybeSingle();
+    if (latestError) return reply(500, { error: "Could not confirm saved payment state. Contact support with reference " + payment.id });
+    if (latest?.verified) return reply(200, { verified: true, payment_id: payment.id, message: "Payment already applied." });
+    if (!latest || latest.status !== "success" || latest.gateway_transaction_id !== body.razorpay_payment_id)
+      return reply(409, { error: "Payment state changed during verification. Refresh and retry the same transaction." });
+  }
   const { error: activateError } = await admin.rpc("verify_payment_and_activate", { p_payment_id: payment.id });
   if (activateError) return reply(500, { error: "Payment was captured but subscription activation needs support review. Reference " + payment.id });
   return reply(200, { verified: true, payment_id: payment.id, message: "Payment verified and subscription applied." });
