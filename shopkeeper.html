@@ -106,7 +106,7 @@ async function loadShopData(){
   renderBusinessWorkspace(currentShop);
   const {data:trial,error:trialError}=await db.from("shop_trials").select("status,started_at,ends_at").eq("shop_id",currentShop.id).maybeSingle();
   currentTrial=trialError?null:trial;
-  const trialActive=!!currentTrial&&currentTrial.status==="active"&&new Date(currentTrial.ends_at).getTime()>Date.now();
+  const trialActive=!!currentTrial&&currentTrial.status==="active"&&new Date(currentTrial.ends_at).getTime()>Date.now()&&currentShop.subscription_expires_at===currentTrial.ends_at;
   const canManage=canManageProducts();
   const expiry=currentShop.subscription_expires_at?new Date(currentShop.subscription_expires_at).toLocaleString("en-IN"):"";
   say("shopInfo",currentShop.name+" · "+(currentShop.city||"")+" · Status: "+currentShop.status+" · "+(trialActive?"7-day free trial active until "+expiry:(canManage?"Subscription active until "+expiry:"Subscription inactive")));
