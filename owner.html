@@ -42,6 +42,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <div class="metric"><span>Expired subscriptions</span><strong id="subscriptions_expired">—</strong></div>
 </div><div id="dashboardMessage" class="notice" role="status"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Shop approval & status</h1><div class="sub">Only active Super Admin can change a shop's status. Every change is audit-logged.</div></div><button id="shopsRefresh" class="secondary">Refresh shops</button></div><div id="shopsMessage" class="notice" role="status"></div><div id="shopList" class="shop-list"></div></div>
+<div class="panel shop-section"><div class="row"><div><h1>Shopkeeper management</h1><div class="sub">View shopkeeper accounts, linked shops and control account access. Blocking an account also hides its shops from customers.</div></div><button id="shopkeepersRefresh" class="secondary">Refresh shopkeepers</button></div><div id="shopkeepersMessage" class="notice" role="status"></div><div id="shopkeeperList" class="shop-list"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Catalog management</h1><div class="sub">Create and enable product categories and subcategories.</div></div><button id="catalogRefresh" class="secondary">Refresh catalog</button></div>
 <div class="formgrid"><label class="field">New category<input id="newCategoryName" maxlength="80" placeholder="e.g. Fruits & Vegetables"></label><label class="field">New subcategory parent<select id="subCategoryParent"></select></label><label class="field">New subcategory<input id="newSubCategoryName" maxlength="80" placeholder="e.g. Fresh Fruits"></label></div>
 <div class="shop-actions"><button id="addCategoryButton" class="safe" type="button">Add category</button><button id="addSubCategoryButton" class="secondary" type="button">Add subcategory</button></div>
@@ -125,6 +126,44 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      card.append(actions);list.append(card);
    }
  }
+ async function loadShopkeepers(){
+   const list=$("shopkeeperList");list.replaceChildren();message("shopkeepersMessage","Loading shopkeeper accounts…");
+   const {data:profiles,error}=await client.from("profiles").select("id,full_name,role,is_active,created_at").eq("role","shopkeeper").order("created_at",{ascending:false});
+   if(error){message("shopkeepersMessage",error.message,true);return}
+   if(!profiles?.length){message("shopkeepersMessage","No approved shopkeeper accounts yet.");return}
+   const {data:shops,error:shopError}=await client.from("shops").select("id,owner_id,name,city,status,is_active,subscription_expires_at").in("owner_id",profiles.map(p=>p.id)).order("created_at",{ascending:false});
+   if(shopError){message("shopkeepersMessage","Could not load linked shops: "+shopError.message,true);return}
+   const byOwner=new Map();
+   for(const shop of shops||[]){if(!byOwner.has(shop.owner_id))byOwner.set(shop.owner_id,[]);byOwner.get(shop.owner_id).push(shop)}
+   message("shopkeepersMessage",profiles.length+" shopkeeper account(s) loaded.");
+   for(const profile of profiles){
+     const card=document.createElement("article");card.className="shop-card";
+     const top=document.createElement("div");top.className="shop-meta";
+     const info=document.createElement("div");
+     const name=document.createElement("div");name.className="shop-name";name.textContent=profile.full_name||"Shopkeeper";
+     const linked=byOwner.get(profile.id)||[];
+     const details=document.createElement("div");details.className="sub";
+     details.textContent=(profile.is_active?"Account active":"Account blocked")+" · "+linked.length+" linked shop(s) · Joined "+new Date(profile.created_at).toLocaleDateString();
+     info.append(name,details);
+     const state=document.createElement("span");state.className="pill";state.textContent=profile.is_active?"ACTIVE":"BLOCKED";
+     top.append(info,state);card.append(top);
+     const shopDetails=document.createElement("div");shopDetails.className="sub";shopDetails.style.marginTop="10px";
+     shopDetails.textContent=linked.length?linked.map(s=>s.name+" ("+s.city+") · "+s.status+" · "+(s.is_active?"Shop active":"Shop inactive")+(s.subscription_expires_at?" · Expires "+new Date(s.subscription_expires_at).toLocaleDateString():"")).join("\n"):"No shop linked";
+     shopDetails.style.whiteSpace="pre-wrap";card.append(shopDetails);
+     const actions=document.createElement("div");actions.className="shop-actions";
+     const btn=document.createElement("button");btn.type="button";btn.className=profile.is_active?"danger":"safe";btn.textContent=profile.is_active?"Block account":"Activate account";
+     btn.addEventListener("click",async()=>{
+       const nextActive=!profile.is_active;
+       const prompt=nextActive?"Reactivate this shopkeeper account? Its shops may become visible again if their shop status and subscription are still active.":"Block this shopkeeper account? The account will lose shop management access and its shops will be hidden from customers.";
+       if(!window.confirm(prompt))return;
+       btn.disabled=true;message("shopkeepersMessage",nextActive?"Reactivating shopkeeper…":"Blocking shopkeeper…");
+       const {error:rpcError}=await client.rpc("owner_set_shopkeeper_status",{p_user_id:profile.id,p_is_active:nextActive});
+       if(rpcError){message("shopkeepersMessage",rpcError.message,true);btn.disabled=false;return}
+       await Promise.all([loadShopkeepers(),loadSummary(),loadShops(),loadAuditLogs()]);
+     });
+     actions.append(btn);card.append(actions);list.append(card);
+   }
+ }
  async function loadCatalog(){
    const list=$("catalogList");list.replaceChildren();message("catalogMessage","Loading catalog…");
    const {data:cats,error:catError}=await client.from("categories").select("id,name,slug,is_active").order("name");
@@ -200,7 +239,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    if(error||!session){showLogin(error?.message||"");return}
    loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
    $("ownerEmail").textContent=session.user.email||"Signed-in account";
-   await Promise.all([loadSummary(),loadShops(),loadCatalog(),loadPayments(),loadAuditLogs()]);
+   await Promise.all([loadSummary(),loadShops(),loadShopkeepers(),loadCatalog(),loadPayments(),loadAuditLogs()]);
  }
  $("loginForm").addEventListener("submit",async e=>{
    e.preventDefault();$("loginButton").disabled=true;message("loginMessage","Signing in…");
@@ -209,8 +248,9 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    if(error){message("loginMessage",error.message,true);return}
    await checkSession();
  });
- $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops()])});
+ $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops(),loadShopkeepers()])});
  $("shopsRefresh").addEventListener("click",loadShops);
+  $("shopkeepersRefresh").addEventListener("click",loadShopkeepers);
  $("paymentsRefresh").addEventListener("click",loadPayments);
  $("catalogRefresh").addEventListener("click",loadCatalog);
  $("addCategoryButton").addEventListener("click",async()=>{
