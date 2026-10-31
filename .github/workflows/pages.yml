@@ -79,6 +79,17 @@ jobs:
           mkdir -p .pages-site
           cp index.html portal.html showcase.html catalogue.html demo-store.html apply-shop.html owner.html shopkeeper.html shopkeeper-benefits.html my-orders.html password-security.js .pages-site/
 
+      - name: Verify published artifact contains every website page
+        run: |
+          required=('index.html' 'portal.html' 'showcase.html' 'catalogue.html' 'demo-store.html' 'apply-shop.html' 'owner.html' 'shopkeeper.html' 'shopkeeper-benefits.html' 'my-orders.html' 'password-security.js')
+          for file in "${required[@]}"; do
+            if [ ! -f ".pages-site/$file" ]; then
+              echo "Missing published artifact file: $file"
+              exit 1
+            fi
+          done
+          echo "All required website pages and security script are present in the published artifact."
+
       - name: Upload website files
         uses: actions/upload-pages-artifact@v3
         with:
