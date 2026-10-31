@@ -1,6 +1,6 @@
 # Smart Grocery Store Pro
 
-Grocery ordering platform with customer ordering, shopkeeper workspace, Owner controls, subscriptions and order tracking. First release is restricted to grocery stores.
+Multi-business commerce and operations platform with a grocery customer storefront, shopkeeper workspaces, Owner controls, subscriptions, order tracking and specialist modules for garments, jewellery, restaurants, hotels, offices, electronics, medical inventory and Digital Seva.
 
 ## Workspaces
 - `portal.html` — platform portal and live subscription pricing.
@@ -31,7 +31,7 @@ The shopkeeper dashboard now includes these vertical-specific tools:
 - **Medical:** batch-wise medicine inventory with manufacturing/expiry dates, quantity, MRP, supplier, prescription-required flag and expiry alerts. This is inventory support, not a complete compliant pharmacy workflow.
 - **Digital Seva:** application register with service/applicant details, phone, reference number, applied/expected dates, document checklist, status progression and fee/payment balance tracking.
 
-Other planned modules (restaurant kitchen tickets/POS, hotel rooms and bookings, employee attendance, electronics IMEI/warranty, medical batch/expiry and Digital Seva application tracking) are not yet complete. The shared product/order framework is not a substitute for those specialist workflows.
+Remaining specialist work includes restaurant POS and customer table reservations; hotel online guest booking, payment and housekeeping; office payroll, leave and task workflows; electronics repair jobs and warranty claims; medical prescription/dispensing and regulatory workflows; and Digital Seva document uploads plus official portal integrations. The implemented modules provide operational foundations; full end-to-end acceptance testing for every business type is still pending.
 
 ## Orders
 Customer checkout currently supports cash on delivery (COD). Shopkeepers can accept pending COD orders, move them through delivery, and mark COD as collected only when delivery is confirmed. Customer online grocery payments are not implemented.
@@ -45,7 +45,7 @@ The three Razorpay Edge Functions are deployed:
 Subscription payments are **not ready for live use** until the merchant adds the three Razorpay secrets in Supabase Edge Function Secrets, registers the webhook, and completes Test Mode end-to-end checks. Follow [PAYMENT_SETUP.md](./PAYMENT_SETUP.md). Never put gateway secrets in frontend code, GitHub, or chat.
 
 ## Database security and automation
-- Row Level Security is enabled on all 14 public application tables.
+- Row Level Security is enabled on all 28 public application tables (verified from PostgreSQL catalog).
 - Sensitive authorization and tenant isolation are enforced by database policies and validated RPCs.
 - Supabase Cron runs subscription expiry checks hourly.
 - The frontend uses a Supabase publishable key only; never expose a service-role/secret key in browser code.
