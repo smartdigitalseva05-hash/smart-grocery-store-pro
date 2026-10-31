@@ -448,33 +448,51 @@ $("sortSelect").addEventListener("change", renderProducts);
 ========================================= */
 
 $("productGrid").addEventListener("click", e => {
-  const btn = e.target.closest(".addBtn");
+  const btn = e.target.closest("button.addBtn");
   if (!btn) return;
-  addToCart(btn.dataset.id);
+  e.preventDefault();
+  const productId = String(btn.dataset.id || "").trim();
+  if (!productId) {
+    notify("Product ID missing. Please refresh the store.", true);
+    return;
+  }
+  addToCart(productId);
 });
 
 function addToCart(id) {
-  const product = products.find(p => p.id === id);
-  if (!product) return;
-
-  if (cart.length && cart[0].shop_id !== product.shop_id) {
-    notify("Please order products from one shop at a time.");
+  const product = products.find(p => String(p.id) === String(id));
+  if (!product) {
+    notify("Product not found. Please refresh the store and try again.", true);
     return;
   }
 
-  const existing = cart.find(x => x.id === id);
-  const quantity = existing ? existing.quantity + 1 : 1;
-
-  if (quantity > product.stock || quantity > 100) {
-    notify("Maximum available stock reached.");
+  if (!product.is_available || Number(product.stock) < 1) {
+    notify("This product is currently out of stock.", true);
     return;
   }
 
-  if (existing) existing.quantity++;
-  else cart.push({...product, quantity:1});
+  if (cart.length && String(cart[0].shop_id) !== String(product.shop_id)) {
+    notify("Your cart already has items from another shop. Remove them first to order from this shop.", true);
+    return;
+  }
+
+  const existing = cart.find(x => String(x.id) === String(id));
+  const quantity = existing ? Number(existing.quantity) + 1 : 1;
+  const availableStock = Number(product.stock);
+
+  if (!Number.isFinite(availableStock) || quantity > availableStock || quantity > 100) {
+    notify("Maximum available stock reached.", true);
+    return;
+  }
+
+  if (existing) {
+    existing.quantity = quantity;
+  } else {
+    cart.push({...product, quantity:1});
+  }
 
   updateCart();
-  notify("Product added to cart!");
+  notify(product.name + " added to cart!");
 }
 
 function updateCart() {
