@@ -63,6 +63,15 @@ a{color:#8ce2b3}
   </form><div id="groceryPurchaseMessage" class="notice" role="status"></div></div>
  </div>
  <div class="product" style="margin-top:12px"><h2>Recent purchase register</h2><div id="groceryPurchaseList" class="products"></div><div id="groceryPurchaseHistoryMessage" class="notice"></div></div>
+ <div class="product" style="margin-top:12px"><h2>Daily Expense Register</h2><div class="row"><div><div class="sub">Recorded expenses this month</div><h2 id="groceryExpenseMonthTotal">₹0</h2></div><div class="sub">Based on saved entries for the current calendar month.</div></div>
+  <form id="groceryExpenseForm" class="formgrid">
+   <label class="field">Expense category<select id="groceryExpenseCategory"><option value="rent">Shop rent</option><option value="electricity">Electricity</option><option value="transport">Transport</option><option value="staff">Staff wages</option><option value="packaging">Packaging</option><option value="maintenance">Maintenance</option><option value="other">Other</option></select></label>
+   <label class="field">Amount (₹)<input id="groceryExpenseAmount" type="number" min="0.01" max="100000000" step="0.01" required></label>
+   <label class="field">Expense date<input id="groceryExpenseDate" type="date" required></label>
+   <label class="field">Description<input id="groceryExpenseDescription" maxlength="500" placeholder="Optional details"></label>
+   <button id="groceryExpenseSave" type="submit">Save expense</button>
+  </form><div id="groceryExpenseMessage" class="notice"></div><div id="groceryExpenseList" class="products"></div>
+ </div>
  <div class="product" style="margin-top:12px"><h2>Stock movement history</h2><p class="sub">Auditable purchase entries and quantity changes for this shop.</p><div id="groceryMovementList" class="products"></div><div id="groceryMovementMessage" class="notice"></div></div>
 </div></section><div class="panel hidden" id="restaurantTablesPanel"><div class="row"><div><h1>Restaurant · Table Manager</h1><p class="muted">Add dining tables and update their live floor status.</p></div><span class="pill">Restaurant module</span></div><form id="restaurantTableForm" class="formgrid"><label class="field">Table number / code<input id="restaurantTableCode" maxlength="40" placeholder="T-01" required></label><label class="field">Seating capacity<input id="restaurantTableCapacity" type="number" min="1" max="100" value="2" required></label><div class="actions" style="align-items:end"><button id="restaurantTableAdd" type="submit">Add table</button></div></form><div id="restaurantTablesMessage" class="notice" role="status"></div><div id="restaurantTablesList" class="products"></div></div>
 <div class="panel hidden" id="restaurantKitchenPanel">
@@ -531,11 +540,13 @@ async function loadGroceryProcurement(){
  const panel=$("groceryProcurementPanel");if(!panel||!currentShop||currentShop.business_type!=="grocery"){panel?.classList.add("hidden");return}
  panel.classList.remove("hidden");
  if(!$("groceryPurchaseDate").value)$("groceryPurchaseDate").value=new Date().toISOString().slice(0,10);
- const [sup,prods,purchases,moves]=await Promise.all([
+ if(!$("groceryExpenseDate").value)$("groceryExpenseDate").value=new Date().toISOString().slice(0,10);
+ const [sup,prods,purchases,moves,expenses]=await Promise.all([
   db.from("grocery_suppliers").select("id,name,phone,company,address,is_active").eq("shop_id",currentShop.id).order("name"),
   db.from("products").select("id,name,stock").eq("shop_id",currentShop.id).order("name"),
   db.from("grocery_stock_purchases").select("id,quantity,unit_cost,total_cost,invoice_number,purchase_date,created_at,product:products(name),supplier:grocery_suppliers(name)").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(30),
-  db.from("grocery_stock_movements").select("id,movement_type,quantity_change,stock_before,stock_after,notes,created_at,product:products(name)").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(30)
+  db.from("grocery_stock_movements").select("id,movement_type,quantity_change,stock_before,stock_after,notes,created_at,product:products(name)").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(30),
+  db.from("grocery_expenses").select("id,expense_category,amount,expense_date,description").eq("shop_id",currentShop.id).gte("expense_date",new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().slice(0,10)).order("expense_date",{ascending:false}).limit(500)
  ]);
  if(sup.error){say("grocerySupplierMessage","Supplier load failed: "+sup.error.message,true);return}
  if(prods.error){say("groceryPurchaseMessage","Product load failed: "+prods.error.message,true);return}
@@ -559,6 +570,15 @@ async function loadGroceryProcurement(){
   (moves.data||[]).forEach(m=>{const row=document.createElement("div");row.className="row";const info=document.createElement("span");info.textContent=(m.product?.name||"Product")+" · "+m.movement_type+" · "+new Date(m.created_at).toLocaleString("en-IN");const qty=document.createElement("b");qty.textContent=(m.quantity_change>0?"+":"")+m.quantity_change+" ("+m.stock_before+" → "+m.stock_after+")";row.append(info,qty);list.append(row)});
   say("groceryMovementMessage",(moves.data||[]).length+" recent stock movement(s).");
   if(!moves.data?.length){const e=document.createElement("p");e.className="sub";e.textContent="No stock movements recorded yet.";list.append(e)}
+ }
+
+ if(expenses.error){say("groceryExpenseMessage","Expense register unavailable: "+expenses.error.message,true)}else{
+  const rows=expenses.data||[],total=rows.reduce((sum,x)=>sum+Number(x.amount||0),0);
+  $("groceryExpenseMonthTotal").textContent=money(total);
+  const list=$("groceryExpenseList");list.replaceChildren();
+  rows.slice(0,20).forEach(x=>{const row=document.createElement("div");row.className="row";const info=document.createElement("span");info.textContent=x.expense_category.replace("_"," ")+" · "+x.expense_date+(x.description?" · "+x.description:"");const amount=document.createElement("b");amount.textContent=money(x.amount);row.append(info,amount);list.append(row)});
+  say("groceryExpenseMessage",rows.length===500?"Showing first 500 expense entries this month.":"Showing "+rows.length+" expense entry/entries this month.");
+  if(!rows.length){const e=document.createElement("p");e.className="sub";e.textContent="No expenses recorded for this month yet.";list.append(e)}
  }
 }
 async function loadShopData(){
@@ -998,6 +1018,17 @@ async function loadShopData(){
   await Promise.all([loadGroceryProcurement(),loadProducts(),loadGrowthInsights()]);
  });
  $("groceryProcurementRefresh").addEventListener("click",loadGroceryProcurement);
+
+ $("groceryExpenseForm").addEventListener("submit",async e=>{
+  e.preventDefault();if(!currentShop||currentShop.business_type!=="grocery"||!canManageProducts()){say("groceryExpenseMessage","An active Grocery subscription is required.",true);return}
+  const category=$("groceryExpenseCategory").value,amount=Number($("groceryExpenseAmount").value),date=$("groceryExpenseDate").value,description=$("groceryExpenseDescription").value.trim();
+  if(!["rent","electricity","transport","staff","packaging","maintenance","other"].includes(category)||!Number.isFinite(amount)||amount<=0||amount>100000000||!date){say("groceryExpenseMessage","Enter a valid category, amount and date.",true);return}
+  $("groceryExpenseSave").disabled=true;
+  const {error}=await db.from("grocery_expenses").insert({shop_id:currentShop.id,expense_category:category,amount,expense_date:date,description:description||null});
+  $("groceryExpenseSave").disabled=false;if(error){say("groceryExpenseMessage","Expense not saved: "+error.message,true);return}
+  $("groceryExpenseForm").reset();$("groceryExpenseDate").value=new Date().toISOString().slice(0,10);say("groceryExpenseMessage","Expense saved.");await loadGroceryProcurement();
+ });
+
 
  $("shopSelect").addEventListener("change",loadShopData);
  $("ordersRefresh").addEventListener("click",loadOrders);
