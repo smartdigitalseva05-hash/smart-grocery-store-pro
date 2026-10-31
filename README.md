@@ -100,5 +100,5 @@ The existing `index.html` is intentionally preserved. Do not replace it without 
 
 ## Customer credit ledger
 - Added a shop-scoped customer Udhaar ledger for credit sales, received payments and balance adjustments, with customer name/phone, date and notes.
-- Shopkeepers can review recent entries, current-month credit sales and an estimated outstanding balance. The dashboard loads up to the latest 500 entries; reconcile older ledgers before treating the displayed balance as a full-accounting statement.
+- Shopkeepers can review recent entries, current-month credit sales and an estimated outstanding balance. The dashboard paginates through all saved entries to calculate the displayed balance, while showing the latest 60 entries for quick review. Reconcile opening balances before treating it as a full-accounting statement.
 - Row-level security restricts ledger rows to the owning shop. Feature is built but requires multi-account acceptance testing before production use.
