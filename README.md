@@ -1,6 +1,6 @@
 # Smart Grocery Store Pro
 
-Multi-vendor grocery ordering platform with customer ordering, shopkeeper workspaces, Owner controls, subscriptions and order tracking.
+Grocery ordering platform with customer ordering, shopkeeper workspace, Owner controls, subscriptions and order tracking. First release is restricted to grocery stores.
 
 ## Workspaces
 - `portal.html` — platform portal and live subscription pricing.
@@ -39,9 +39,9 @@ Subscription payments are **not ready for live use** until the merchant adds the
 ## Deployment and verification status
 - GitHub Pages deployment workflow is configured; the latest recorded deployment run succeeded.
 - Inline JavaScript syntax and page element-ID reference checks passed for the six HTML pages.
-- Razorpay Edge Function deployment status is ACTIVE for all three functions.
-- Full real-world end-to-end testing is still pending because there are currently no registered shops, products, orders or payment records in the database.
-- Supabase Security Advisor currently reports leaked-password protection as disabled. Enable it in Auth settings if the project plan supports it.
+- Razorpay Edge Functions are ACTIVE; checkout, verification and webhook now use a separately created server-only Supabase secret-key client for privileged payment-row operations. Full Test Mode end-to-end payment verification is still pending.
+- Current database has one inactive grocery shop; there are no paid subscriptions, active customer catalogue listings, or customer orders yet. End-to-end pilot testing is still pending.
+- Supabase Security Advisor reports leaked-password protection is disabled. Enable it in Auth settings before public launch if supported by the project plan.
 - Performance Advisor reports unused-index notices; do not remove indexes without reviewing real query workload.
 
 ## Important
