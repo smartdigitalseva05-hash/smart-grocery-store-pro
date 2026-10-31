@@ -530,6 +530,7 @@ function bindGrowthTools(){
 async function loadGroceryProcurement(){
  const panel=$("groceryProcurementPanel");if(!panel||!currentShop||currentShop.business_type!=="grocery"){panel?.classList.add("hidden");return}
  panel.classList.remove("hidden");
+ if(!$("groceryPurchaseDate").value)$("groceryPurchaseDate").value=new Date().toISOString().slice(0,10);
  const [sup,prods,purchases,moves]=await Promise.all([
   db.from("grocery_suppliers").select("id,name,phone,company,address,is_active").eq("shop_id",currentShop.id).order("name"),
   db.from("products").select("id,name,stock").eq("shop_id",currentShop.id).order("name"),
