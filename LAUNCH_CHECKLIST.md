@@ -19,6 +19,7 @@ Last verified: 2026-11-01
 - Digital Seva customer requests use a SECURITY INVOKER public endpoint backed by a private authorization-checked function. Anonymous users cannot read application records or directly set fees/statuses.
 - Hotel booking requests are converted into reservations atomically; existing room/date overlap checks remain in force.
 - Office leave approvals block overlapping approved leave. Payroll net pay is calculated in the database and paid records cannot be reopened. Office tasks support assignment, priority, due dates and guarded completion.
+- Super Admin dashboard summary, shop approval and shopkeeper-account controls were exercised with temporary records in a rolled-back test transaction.
 - Electronics repair job updates use guarded status transitions and preserve customer-submitted details.
 - Hotel housekeeping tasks use guarded status transitions and record completion time.
 
