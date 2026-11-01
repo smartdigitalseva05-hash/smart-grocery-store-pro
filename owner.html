@@ -53,6 +53,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  <a class="metric" href="#ownerShopkeeperControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">👥 Shopkeeper accounts</strong><span>Review linked shopkeeper accounts and access</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerCustomerControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧑‍🤝‍🧑 Customer directory</strong><span>Search customer accounts using privacy-safe profile fields</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerOrderControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧾 Global orders</strong><span>Search order records across businesses (read-only)</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
+ <a class="metric" href="#ownerGlobalProductControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">📦 Global products & stock</strong><span>Search product inventory across businesses (read-only)</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerCatalogControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">📦 Product categories</strong><span>Manage product categories and subcategories</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerPaymentControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">💳 Payments & subscriptions</strong><span>Review trusted payment verification records</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerAuditControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🛡️ Security & audit logs</strong><span>Inspect recorded security and admin activity</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
@@ -83,6 +84,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <div id="ownerShopkeeperControl" class="panel shop-section"><div class="row"><div><h1>Shopkeeper management</h1><div class="sub">View shopkeeper accounts, linked shops and control account access. Blocking an account also hides its shops from customers.</div></div><button id="shopkeepersRefresh" class="secondary">Refresh shopkeepers</button></div><div id="shopkeepersMessage" class="notice" role="status"></div><div id="shopkeeperList" class="shop-list"></div></div>
 <div id="ownerCustomerControl" class="panel shop-section"><div class="row"><div><h1>Customer directory</h1><div class="sub">Owner-only, read-only customer account lookup. Only profile name, account status and join date are shown; contact details and sensitive records are not exposed here.</div></div><button id="customersRefresh" class="secondary" type="button">Refresh customers</button></div><label class="field" for="customerGlobalSearch">Search customer accounts<input id="customerGlobalSearch" type="search" placeholder="Search customer name or account status…"></label><div id="customersMessage" class="notice" role="status"></div><div id="customerList" class="shop-list"></div></div>
 <div id="ownerOrderControl" class="panel shop-section"><div class="row"><div><h1>Global order console</h1><div class="sub">Owner-only, read-only order overview. Status changes stay disabled until a dedicated audited Owner RPC is available.</div></div><button id="ordersRefresh" class="secondary" type="button">Refresh orders</button></div><label class="field" for="orderGlobalSearch">Search all orders<input id="orderGlobalSearch" type="search" placeholder="Order number, shop, customer or status…"></label><div id="ordersMessage" class="notice" role="status"></div><div id="ownerOrderList" class="shop-list"></div></div>
+<div id="ownerGlobalProductControl" class="panel shop-section"><div class="row"><div><h1>Global product console</h1><div class="sub">Owner-only, read-only cross-business product and stock overview. Product edits, deletion and bulk changes remain disabled until audited server-side controls are ready.</div></div><button id="globalProductsRefresh" class="secondary" type="button">Refresh products</button></div><label class="field" for="globalProductSearch">Search products across all businesses<input id="globalProductSearch" type="search" placeholder="Product, business, stock or availability…"></label><div id="globalProductsMessage" class="notice" role="status"></div><div id="globalProductList" class="shop-list"></div></div>
 <div id="ownerCatalogControl" class="panel shop-section"><div class="row"><div><h1>Catalog management</h1><div class="sub">Create and enable product categories and subcategories.</div></div><button id="catalogRefresh" class="secondary">Refresh catalog</button></div>
 <div class="formgrid"><label class="field">New category<input id="newCategoryName" maxlength="80" placeholder="e.g. Fruits & Vegetables"></label><label class="field">New subcategory parent<select id="subCategoryParent"></select></label><label class="field">New subcategory<input id="newSubCategoryName" maxlength="80" placeholder="e.g. Fresh Fruits"></label></div>
 <div class="shop-actions"><button id="addCategoryButton" class="safe" type="button">Add category</button><button id="addSubCategoryButton" class="secondary" type="button">Add subcategory</button></div>
@@ -284,6 +286,32 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      actions.append(btn);card.append(actions);list.append(card);
    }
  }
+ let globalProducts=[],globalProductRows=[];
+ function renderGlobalProducts(){
+   const list=$("globalProductList");list.replaceChildren();
+   const q=$("globalProductSearch").value.trim().toLowerCase();
+   const filtered=globalProductRows.filter(row=>[row.product.name,row.shop,row.product.stock,row.product.is_available?"available":"unavailable"].join(" ").toLowerCase().includes(q));
+   message("globalProductsMessage",filtered.length+" of "+globalProducts.length+" recent products shown (maximum 200). Read-only inventory view.");
+   if(!filtered.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="No matching products found.";list.append(empty);return}
+   for(const row of filtered){
+     const p=row.product;const card=document.createElement("article");card.className="shop-card";
+     const top=document.createElement("div");top.className="shop-meta";const info=document.createElement("div");
+     const title=document.createElement("div");title.className="shop-name";title.textContent=p.name||"Unnamed product";
+     const detail=document.createElement("div");detail.className="sub";detail.textContent=(row.shop||"Business")+" · Stock: "+Number(p.stock||0)+" · "+(p.is_available?"Available":"Unavailable");
+     const price=document.createElement("div");price.className="sub";price.style.marginTop="7px";price.textContent=money(p.sale_price??p.price)+" · "+(p.sale_price!=null&&Number(p.sale_price)<Number(p.price)?"Offer price":"Listed price");
+     info.append(title,detail,price);const state=document.createElement("span");state.className="pill";state.textContent=p.is_available?"AVAILABLE":"HIDDEN";top.append(info,state);card.append(top);list.append(card);
+   }
+ }
+ async function loadGlobalProducts(){
+   const list=$("globalProductList");list.replaceChildren();message("globalProductsMessage","Loading products securely…");
+   const {data,error}=await client.from("products").select("id,shop_id,name,price,sale_price,stock,is_available,created_at").order("created_at",{ascending:false}).limit(200);
+   if(error){message("globalProductsMessage",error.message,true);return}
+   globalProducts=data||[];const shopIds=[...new Set(globalProducts.map(p=>p.shop_id).filter(Boolean))];
+   const {data:shops,error:shopError}=shopIds.length?await client.from("shops").select("id,name").in("id",shopIds):{data:[],error:null};
+   if(shopError){message("globalProductsMessage","Products loaded but business names could not be read: "+shopError.message,true);return}
+   const shopMap=new Map((shops||[]).map(s=>[s.id,s.name]));
+   globalProductRows=globalProducts.map(product=>({product,shop:shopMap.get(product.shop_id)}));renderGlobalProducts();
+ }
  let ownerOrders=[],ownerOrderRows=[];
  function renderOwnerOrders(){
    const list=$("ownerOrderList");list.replaceChildren();
@@ -416,7 +444,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    }
    loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
    $("ownerEmail").textContent=session.user.email||"Signed-in Owner";
-   await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers(),loadCustomers(),loadOwnerOrders(),loadCatalog(),loadPayments(),loadAuditLogs()]);
+   await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers(),loadCustomers(),loadOwnerOrders(),loadGlobalProducts(),loadCatalog(),loadPayments(),loadAuditLogs()]);
  }
  $("loginForm").addEventListener("submit",async e=>{
    e.preventDefault();$("loginButton").disabled=true;message("loginMessage","Signing in…");
@@ -434,6 +462,8 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  $("customersRefresh").addEventListener("click",loadCustomers);
  $("ordersRefresh").addEventListener("click",loadOwnerOrders);
  $("orderGlobalSearch").addEventListener("input",renderOwnerOrders);
+ $("globalProductsRefresh").addEventListener("click",loadGlobalProducts);
+ $("globalProductSearch").addEventListener("input",renderGlobalProducts);
  $("customerGlobalSearch").addEventListener("input",renderCustomers);
  $("paymentsRefresh").addEventListener("click",loadPayments);
  $("catalogRefresh").addEventListener("click",loadCatalog);
@@ -506,7 +536,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
     {label:"Security & audit logs",context:"Security Center",id:"ownerAuditControl",status:"Available",keywords:"security audit activity logs"},
     {label:"Customer directory (read-only)",context:"Customer Control",id:"ownerCustomerControl",status:"Available",keywords:"customers customer accounts profiles search"},
     {label:"Global orders (read-only)",context:"Order Control",id:"ownerOrderControl",status:"Available",keywords:"orders order number status delivery fulfilment search"},
-    {label:"Global product search & inventory controls",context:"Global Product Control",status:"Pending",keywords:"products inventory stock global edit delete"},
+    {label:"Global products & stock (read-only)",context:"Global Product Control",id:"ownerGlobalProductControl",status:"Available",keywords:"products inventory stock global search"},
     {label:"Platform-wide settings",context:"Platform Settings",status:"Pending",keywords:"settings configuration platform features"},
     {label:"Unified admin reports",context:"Reports & Analytics",status:"Pending",keywords:"reports analytics sales revenue charts"}
    ];
