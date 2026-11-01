@@ -277,3 +277,23 @@ A module is complete only when:
 - Added a security verification gate covering role-based access, cross-shop IDOR/BOLA, auth/session security, secret scanning, injection/XSS/CSRF, file uploads, payment replay/concurrency, backup restore and Supabase Security Advisor.
 - This commit records the architecture and acceptance criteria only. It does **not** mean these controls have all been implemented or tested. The Security & Protection Module remains **In Progress**; each control must be implemented and verified before being marked Completed.
 - Existing `index.html`, database schema, and business/customer records were not changed by this documentation update.
+
+
+## Owner-approved 10-feature Security Shield checklist (2026-11-01)
+
+All ten are mandatory. No feature may be omitted. Each stays **In Progress** until implementation and evidence-backed verification are complete.
+
+| # | Security feature | Status | Required evidence before Completed |
+|---|---|---|---|
+| 1 | Zero-Trust Security | **In Progress** | Server-side authorization on every protected request; role, session, ownership and cross-shop isolation tests. |
+| 2 | Super Admin Lock | **Pending** | MFA, step-up re-authentication, server-side Owner role checks and session revocation tests. |
+| 3 | Database Fortress | **In Progress** | Full RLS/grant/policy/RPC/view/Storage audit and role-based tenant-isolation tests. |
+| 4 | Anti-Brute-Force | **Pending** | Verified rate limits, progressive delays/lockout, abuse detection and recovery tests. |
+| 5 | Secret Vault | **In Progress** | Secret scanning of current files and Git history; confirm secrets server-side only; rotate any exposed credentials. |
+| 6 | Attack Protection | **Pending** | Server-side validation and negative tests for XSS, SQL injection, CSRF, IDOR/BOLA, unsafe uploads and redirects. |
+| 7 | Real-Time Alerts | **Pending** | Verified alert generation, delivery, access controls and sensitive-event coverage. |
+| 8 | Backup & Recovery | **Pending** | Encrypted backup configuration, retention/access review and successful restore drill. |
+| 9 | Audit Trail | **In Progress** | Verify coverage, integrity, access restrictions, retention and safe log contents. |
+| 10 | Payment Shield | **In Progress** | Test invalid signatures, amount/currency/order mismatch, duplicates, replay and concurrent webhook delivery. |
+
+**Important:** The checklist and architecture requirements are recorded in `SECURITY_ARCHITECTURE.md`. This is documentation, not proof that all ten controls are implemented. Overall Security Shield remains **In Progress**. No claim of 100% hack-proof protection is permitted.
