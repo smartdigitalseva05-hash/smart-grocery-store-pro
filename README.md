@@ -60,8 +60,9 @@ The shopkeeper dashboard now includes these vertical-specific tools:
 - **Electronics:** device register with IMEI 1/2, serial number, brand/model, supplier, purchase/sale price, warranty dates and device lifecycle status; duplicate IMEI/serial values are blocked within each shop.
 - **Medical:** batch-wise medicine inventory with manufacturing/expiry dates, quantity, MRP, supplier, prescription-required flag and expiry alerts. This is inventory support, not a complete compliant pharmacy workflow.
 - **Digital Seva:** application register with service/applicant details, phone, reference number, applied/expected dates, document checklist, status progression and fee/payment balance tracking.
+- **Restaurant customer reservations:** shareable customer booking page, pending reservation requests, shopkeeper confirmation, table assignment, capacity validation and overlapping confirmed-table booking protection. Requests are not confirmed until the restaurant assigns a table; no deposit/payment is collected in this workflow.
 
-Remaining specialist work includes restaurant POS and customer table reservations; hotel online guest booking, payment and housekeeping; office payroll, leave and task workflows; electronics repair jobs and warranty claims; medical prescription/dispensing and regulatory workflows; and Digital Seva document uploads plus official portal integrations. The implemented modules provide operational foundations; full end-to-end acceptance testing for every business type is still pending.
+Remaining specialist work includes restaurant POS, tax invoices and payment settlement; hotel online guest booking, payment and housekeeping; office payroll, leave and task workflows; electronics repair jobs and warranty claims; medical prescription/dispensing and regulatory workflows; and Digital Seva document uploads plus official portal integrations. The implemented modules provide operational foundations; full end-to-end acceptance testing for every business type is still pending.
 
 ## Orders
 Customer checkout currently supports cash on delivery (COD). Shopkeepers can accept pending COD orders, move them through delivery, and mark COD as collected only when delivery is confirmed. Customer online grocery payments are not implemented.
@@ -88,10 +89,10 @@ Subscription payments are **not ready for live use** until the merchant adds the
 - The frontend uses a Supabase publishable key only; never expose a service-role/secret key in browser code.
 
 ## Deployment and verification status
-- GitHub Pages deployment workflow is configured; the latest recorded deployment run succeeded.
+- GitHub Pages deployment workflow is configured; the latest recorded deployment run succeeded. The public restaurant reservation page is now included in the deployment artifact and syntax checks.
 - Inline JavaScript syntax and page element-ID reference checks passed for the six HTML pages.
 - Razorpay Edge Functions are ACTIVE; checkout, verification and webhook now use a separately created server-only Supabase secret-key client for privileged payment-row operations. Full Test Mode end-to-end payment verification is still pending.
-- Current database has one active grocery shop on its one-time 7-day free trial (started 2026-10-31 03:53 UTC; expires 2026-11-07 03:53 UTC), one product and zero customer orders. A live checkout acceptance test still needs a customer account and delivery address.
+- Current database has one active grocery shop on its one-time 7-day free trial (started 2026-10-31 03:53 UTC; expires 2026-11-07 03:53 UTC), one product and zero customer orders. A live checkout acceptance test still needs a customer account and delivery address. No active restaurant shop exists yet, so the restaurant reservation flow is code- and database-verified but still needs a real restaurant account for end-to-end browser acceptance testing.
 - All 11 fixed business categories are preserved: Grocery, Daily Needs, Garments, Jewellery, Restaurant, Hotel, Office / Company, Electronics, Medical, Digital Services, and Other Businesses. Current database check confirms active catalogue categories in all 11 types (48 total: 4 Grocery, 8 Daily Needs, and 4 in each of the other nine types). These 11 business categories must not be removed, renamed, merged, or changed without the user's explicit permission.
 - Supabase Security Advisor reports leaked-password protection is disabled. Enable it in Auth settings before public launch if supported by the project plan.
 - Performance Advisor reports unused-index notices; do not remove indexes without reviewing real query workload.
