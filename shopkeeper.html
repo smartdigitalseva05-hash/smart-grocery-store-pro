@@ -350,13 +350,13 @@ async function loadRestaurantReservations(){
  const bookingUrl=new URL("./restaurant-booking.html",window.location.href);bookingUrl.searchParams.set("shop_id",currentShop.id);$("restaurantBookingUrl").value=bookingUrl.href;
  list.replaceChildren();say("restaurantReservationMessage","Loading customer reservation requests…");
  const [reservationResult,tableResult]=await Promise.all([
-  db.from("restaurant_reservations").select("id,table_id,customer_name,customer_phone,party_size,reservation_at,duration_minutes,status,customer_notes,created_at").eq("shop_id",currentShop.id).order("reservation_at",{ascending:true}).limit(100),
+  db.from("restaurant_reservations").select("id,table_id,customer_name,customer_phone,party_size,reservation_at,duration_minutes,status,customer_notes,created_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100),
   db.from("restaurant_tables").select("id,table_code,capacity,is_enabled,table_status").eq("shop_id",currentShop.id).eq("is_enabled",true).order("table_code")
  ]);
  if(reservationResult.error){say("restaurantReservationMessage","Reservation requests could not load: "+reservationResult.error.message,true);return}
  if(tableResult.error){say("restaurantReservationMessage","Table list could not load: "+tableResult.error.message,true);return}
  const tables=tableResult.data||[],tableById=new Map(tables.map(t=>[t.id,t])),rows=reservationResult.data||[];
- say("restaurantReservationMessage",rows.length+" reservation request(s) shown · newest 100 by requested time.");
+ say("restaurantReservationMessage",rows.length+" latest reservation request(s) shown.");
  if(!rows.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="No customer reservation requests yet. Share the booking link above to receive requests.";list.append(empty);return}
  rows.forEach(r=>{
   const card=document.createElement("article");card.className="product";
