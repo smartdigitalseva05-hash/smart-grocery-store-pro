@@ -75,3 +75,11 @@
 - Never put service-role keys, Razorpay secrets, tokens or passwords in GitHub or frontend code.
 - Keep all five features In Progress until implementation and automated/API verification evidence is recorded in PROJECT_STATUS.md.
 - No claim of 100% hack-proof security.
+
+
+## Follow-up audit evidence — 2026-11-01
+- Project reports ACTIVE_HEALTHY and the owning organization is on the Free tier. Do not assume a backup schedule or PITR entitlement from this; confirm actual backup/restore availability in the dashboard and conduct a restore drill.
+- Read-only catalog inspection confirms RLS enabled for `profiles`, `shops`, `audit_logs`, and `payments`; policy counts are 2, 5, 2, and 1 respectively. These are structural checks only, not a proof that policy predicates are correct.
+- `audit_logs` currently has admin SELECT and admin INSERT policies. Verify that only trusted server-side paths can create audit events, that sensitive events are covered, and that users cannot alter/delete records.
+- MFA enforcement configuration and successful backup restoration remain unverified. The Security Advisor still flags leaked-password protection as disabled.
+- No production settings, data, schema, Edge Functions, secrets, or HTML pages were modified during this read-only follow-up.
