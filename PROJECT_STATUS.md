@@ -29,9 +29,12 @@ The immediate goal is to make all 11 business categories work as real category-b
 - Category names/basic descriptions are present in the category listing.
 - Category options/filters were previously found in the shop registration, customer storefront, owner panel, and showcase pages.
 - Portal category-card update was committed in `portal.html` (commit: `15a8fc5c786a7a4f667643a94dba372b898f2921`).
+- Shop registration form already contains all 11 business type options and stores the selected value in `shops.business_type`.
+- Shopkeeper workspace already contains category-specific workspace definitions and specialized workflows for several categories; these should be completed/reviewed rather than rebuilt.
+- Fixed a registration-flow blocker: an account with one existing shop was previously prevented from submitting another shop application. `apply-shop.html` now shows existing application count but keeps the registration form available, matching the multi-shop selector in the shopkeeper workspace (commit: `a8e3cf082b931f8b01942c749a6f863ace0b1591`).
 
 ### Not yet confirmed as complete
-- Separate working registration flow for each category.
+- Category-aware registration for all 11 types exists as a shared form; confirm each type is persisted and correctly routed. Separate per-category forms are not required unless the product design calls for them.
 - Category-specific shop dashboard and permissions.
 - Category-wise product add/edit/delete.
 - Category-wise order management and order status.
