@@ -244,3 +244,15 @@ A module is complete only when:
 - Source commits: `9d2602e29755d2aa79aa78f50ac4e79cb4940325` and `1c6229ddfe6dfe01266fe4a55dd809eddc0e770f`.
 - Customer Directory implementation: **In Progress** pending static validation, deployment and confirmation that the Owner RLS query succeeds. Customer account mutation controls remain **Pending**.
 - Owner All-in-One overall status: **In Progress**. Global Order controls, global Product controls, Platform Settings and reports remain **Pending**.
+
+
+## Owner All-in-One Control — Global Order Console (2026-11-01)
+
+- Added an Owner-only **Global Order Console** linked from the Command Center and searchable from All-in-One Control.
+- Reads the latest 200 order rows visible through the existing Owner RLS policy; displays order number, business name, customer display name, status, total, payment method/status and creation time.
+- Search filters the already-loaded rows locally (no database request on every keystroke).
+- Privacy scope: does not display shipping addresses, order notes, phone numbers or full customer profile records.
+- **Read-only**: no order status changes, refunds, cancellations or fulfilment mutations were added. These remain pending until a dedicated server-side Owner RPC with transition validation and audit logging is implemented.
+- Order console source commits: `0d40fa0057534617aac75a20ae6abca1da88d3af`, `45b2ee4c5922ed70caf4359dab6a334202134e9a`.
+- Customer directory and Order Console are **In Progress** pending final static validation, deployment and authenticated Owner query confirmation. No customer/order data was modified.
+- Global product management, platform settings, reports, customer account mutations and order status mutations remain **Pending**.
