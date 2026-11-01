@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Digital Service Request | Smart Business Pro</title>
+<style>
+:root{color-scheme:light;--ink:#172033;--muted:#65718a;--line:#dce3ef;--brand:#2459d3;--bg:#f4f7fc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:650px;margin:28px auto;padding:18px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 12px 32px #1a2b4b0d}
+h1{font-size:26px;line-height:1.2;margin:0 0 8px}.muted{color:var(--muted)}.notice{padding:12px 14px;background:#eef4ff;border-radius:12px;margin:16px 0;font-size:14px}
+label{display:block;font-weight:650;margin:14px 0 6px}input,select,textarea{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;background:#fff;color:var(--ink)}
+button{width:100%;border:0;border-radius:11px;background:var(--brand);color:#fff;padding:14px;font:inherit;font-weight:700;margin-top:18px;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
+#message{margin-top:14px;white-space:pre-wrap}.error{color:#b42318}.success{color:#067647}.small{font-size:13px;color:var(--muted)}
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+<body><main><section class="card">
+<p class="small">SMART BUSINESS PRO · DIGITAL SERVICE CENTRE</p><h1>Request a Digital Service</h1><p class="muted" id="shopInfo">Loading service-centre details…</p>
+<div class="notice">This is an independent service request, not a government website or approval. Do not enter Aadhaar/PAN numbers, passwords, OTPs or bank details here. The service centre will explain the required documents and a safe handover method after contacting you.</div>
+<form id="requestForm">
+<label for="serviceName">Service required</label><select id="serviceName" required>
+<option value="">Choose a service</option><option>ROR Copy</option><option>Income Certificate</option><option>Caste Certificate</option><option>Resident Certificate</option><option>PAN Card Service</option><option>e-Shram Card Service</option><option>Character Certificate</option><option>e-Pauti / Malguzari Pauti</option><option>Other Digital Service</option>
+</select>
+<label for="applicantName">Applicant name</label><input id="applicantName" maxlength="120" autocomplete="name" required>
+<label for="applicantPhone">Mobile number</label><input id="applicantPhone" type="tel" inputmode="tel" maxlength="20" pattern="[0-9+() -]{7,20}" autocomplete="tel" required>
+<label for="documents">Documents you can provide (names only)</label><textarea id="documents" maxlength="2000" rows="3" placeholder="Example: photo, address proof, application form"></textarea>
+<label for="notes">Additional note (optional)</label><textarea id="notes" maxlength="500" rows="2"></textarea>
+<button id="submitButton" type="submit" disabled>Send service request</button></form>
+<div id="message" role="status" aria-live="polite"></div>
+<p class="small">Service fees, processing time and final eligibility will be explained by the service centre. Government approvals are decided only by the relevant authority.</p>
+</section></main>
+<script>
+(()=>{
+ "use strict";
+ const SUPABASE_URL="https://wqlopfftzvsjsxmrmxeq.supabase.co";
+ const SUPABASE_KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
+ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),$=id=>document.getElementById(id);
+ const shopId=new URLSearchParams(location.search).get("shop_id");let shop=null,customerId=null;
+ function message(text,bad=false){$("message").textContent=text;$("message").className=bad?"error":""}
+ async function boot(){
+  if(!shopId||!/^[0-9a-f-]{36}$/i.test(shopId)){$("shopInfo").textContent="This request link is incomplete or invalid.";message("Ask the service centre for its correct request link.",true);return}
+  const [{data,error},{data:sessionData}]=await Promise.all([db.from("shops").select("id,name,city").eq("id",shopId).maybeSingle(),db.auth.getSession()]);
+  if(error||!data){$("shopInfo").textContent="This service centre is not currently accepting requests.";message(error?.message||"The service centre is unavailable or its subscription is inactive.",true);return}
+  shop=data;customerId=sessionData?.session?.user?.id||null;$("shopInfo").textContent=shop.name+(shop.city?" · "+shop.city:"");$("submitButton").disabled=false;
+ }
+ $("requestForm").addEventListener("submit",async e=>{
+  e.preventDefault();if(!shop)return;
+  const service=$("serviceName").value,name=$("applicantName").value.trim(),phone=$("applicantPhone").value.trim(),documents=$("documents").value.trim(),notes=$("notes").value.trim();
+  if(!service||!name||!/^[0-9+() -]{7,20}$/.test(phone)||phone.replace(/\D/g,"").length<7){message("Choose a service and enter a valid applicant name and mobile number.",true);return}
+  $("submitButton").disabled=true;message("Sending your request…");const id=crypto.randomUUID();
+  const {error}=await db.from("digital_service_applications").insert({id,shop_id:shop.id,customer_id:customerId,service_name:service,applicant_name:name,applicant_phone:phone,document_checklist:documents||null,notes:notes||null});
+  $("submitButton").disabled=false;if(error){message("Your service request could not be sent: "+error.message,true);return}
+  $("requestForm").reset();message("Service request sent to "+shop.name+".\nReference: DS-"+id.slice(0,8).toUpperCase()+"\nThe service centre will contact you about documents, fees and processing steps.");$("message").className="success";
+ });
+ boot().catch(error=>message("Could not load the request page: "+error.message,true));
+})();
+</script></body></html>
