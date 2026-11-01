@@ -33,6 +33,12 @@ The immediate goal is to make all 11 business categories work as real category-b
 - Shopkeeper workspace already contains category-specific workspace definitions and specialized workflows for several categories; these should be completed/reviewed rather than rebuilt.
 - Fixed a registration-flow blocker: an account with one existing shop was previously prevented from submitting another shop application. `apply-shop.html` now shows existing application count but keeps the registration form available, matching the multi-shop selector in the shopkeeper workspace (commit: `a8e3cf082b931f8b01942c749a6f863ace0b1591`).
 
+### Database mapping note (2026-11-01)
+- The `shops.business_type` field stores the business category key (for example, `grocery`); the shop registration form offers all 11 keys.
+- The public `categories` table is a product/menu/service category catalogue (examples: Staples, Men's Wear, Main Course, Prescription Medicines), not the master list of the 11 business types. Do not confuse these two levels.
+- Current shop data query shows 1 registered shop and it is `grocery`. The other 10 business types have no registered shop rows yet, so their real shop flows cannot be verified from live shop data.
+- Next category-module implementation task: formalize and enforce a single 11-key business-type mapping across registration, owner filters, shopkeeper workspace routing, and customer discovery, while keeping product categories scoped to the relevant shop/business type.
+
 ### Not yet confirmed as complete
 - Category-aware registration for all 11 types exists as a shared form; confirm each type is persisted and correctly routed. Separate per-category forms are not required unless the product design calls for them.
 - Category-specific shop dashboard and permissions.
