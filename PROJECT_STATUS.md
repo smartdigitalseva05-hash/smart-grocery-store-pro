@@ -297,3 +297,28 @@ All ten are mandatory. No feature may be omitted. Each stays **In Progress** unt
 | 10 | Payment Shield | **In Progress** | Test invalid signatures, amount/currency/order mismatch, duplicates, replay and concurrent webhook delivery. |
 
 **Important:** The checklist and architecture requirements are recorded in `SECURITY_ARCHITECTURE.md`. This is documentation, not proof that all ten controls are implemented. Overall Security Shield remains **In Progress**. No claim of 100% hack-proof protection is permitted.
+
+
+## Next 5 Security Shield Features — implementation audit started (2026-11-01)
+
+The next five owner-approved features have moved from **Pending** to **In Progress** because their implementation/configuration audit has started. This is not a claim that the controls are already active or complete.
+
+| # | Feature | Status | Current evidence / next required work |
+|---|---|---|---|
+| 2 | Super Admin Lock | **In Progress** | MFA/step-up requirements reviewed. Still verify Owner MFA enrollment/enforcement, AAL2 checks on sensitive server-side actions, re-authentication, and session revocation. No Auth setting or Owner access rule was changed. |
+| 4 | Anti-Brute-Force | **In Progress** | Inspected active Razorpay Edge Function entrypoints; no app-level rate-limit implementation was evident in the inspected handlers. Verify Supabase Auth rate-limit settings and implement/test per-account/IP limits, progressive delays, abuse detection and safe recovery. |
+| 6 | Attack Protection | **In Progress** | Reviewed the three active Razorpay Edge Functions. They validate JSON shape and payment identifiers, and the webhook verifies the raw-body HMAC-SHA256 signature. Follow-up: restrict wildcard CORS to approved origins where browser calls are needed, enforce request-size limits, audit all other inputs/outputs, CSP/CSRF applicability, upload rules, redirects and negative XSS/SQLi/IDOR tests. |
+| 7 | Real-Time Alerts | **In Progress** | Alert requirements mapped to suspicious sign-ins, repeated failures, privilege changes, payment anomalies and sensitive Owner actions. No end-to-end alert delivery has been verified yet; implement destinations, access control, deduplication and delivery tests. |
+| 8 | Backup & Recovery | **In Progress** | Backup/restore evidence has not yet been retrieved. Verify project backup availability, encryption, retention, access restrictions and recovery objectives; perform and record a restore drill before completion. |
+
+### Current read-only evidence (2026-11-01)
+- Supabase Security Advisor currently reports one warning: **Leaked Password Protection Disabled**. Remediation: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+- Supabase reports three active Razorpay Edge Functions: checkout and payment verification have JWT verification enabled; the webhook has JWT verification disabled and performs raw-body HMAC-SHA256 signature verification in its handler.
+- The inspected checkout and verification handlers authenticate the user and validate payment identifiers/amount/status with Razorpay checks. Their CORS configuration currently allows wildcard origin; this should be narrowed to the actual approved browser origins after confirming all legitimate callers.
+- The inspected function code did not show an application-level rate limiter, security-alert delivery pipeline, or backup/restore workflow. Absence in these three files is not proof that no platform-level controls exist; platform settings and other project components still need inspection.
+- No production database records, schema, Auth settings, Edge Function deployments, secrets, or existing HTML pages were changed during this audit.
+
+### Safety gate
+- Keep all five features **In Progress** until their actual controls are configured/implemented and relevant automated/API tests pass.
+- Do not deploy untested rate limiting, MFA gates, CORS restrictions, alert pipelines or recovery changes that could lock out legitimate users or disrupt payments.
+- Preserve index.html, existing business flows and database records unless a reviewed change is necessary.
