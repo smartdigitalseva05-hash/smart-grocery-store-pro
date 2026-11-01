@@ -1,0 +1,1 @@
+create index if not exists electronics_service_jobs_shop_inventory_idx on public.electronics_service_jobs(shop_id,inventory_id);
