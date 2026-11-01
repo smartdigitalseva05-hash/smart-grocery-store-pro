@@ -75,3 +75,5 @@ This file documents applied database changes; it is not a replacement for the Su
 - Migration `20261101110000_tighten_restaurant_reservation_customer_input` is applied. Anonymous customers can no longer set reservation status or duration; the database supplies pending/90-minute defaults. Phone format validation and reservation completion behavior were tightened.
 
 - Migration `20261101110500_index_restaurant_reservation_foreign_keys` is applied. Added indexes for customer and table foreign keys and the shopkeeper's newest-first reservation query; replaced an unused reservation-time index.
+
+- Migration `20261101110400_move_privileged_rpc_implementations_to_private` is applied. Four SECURITY DEFINER RPC implementations were moved out of the exposed `public` schema into `private`, pinned to an empty search path, and wrapped by public SECURITY INVOKER functions with authenticated-only grants. Security Advisor no longer reports exposed SECURITY DEFINER RPC warnings.
