@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Request a Hotel Room | Smart Business Pro</title>
+<style>
+:root{color-scheme:light;--ink:#172033;--muted:#65718a;--line:#dce3ef;--brand:#2459d3;--bg:#f4f7fc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:650px;margin:28px auto;padding:18px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 12px 32px #1a2b4b0d}
+h1{font-size:26px;line-height:1.2;margin:0 0 8px}.muted{color:var(--muted)}.notice{padding:12px 14px;background:#eef4ff;border-radius:12px;margin:16px 0;font-size:14px}
+label{display:block;font-weight:650;margin:14px 0 6px}input,select,textarea{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;background:#fff;color:var(--ink)}
+button{width:100%;border:0;border-radius:11px;background:var(--brand);color:#fff;padding:14px;font:inherit;font-weight:700;margin-top:18px;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
+#message{margin-top:14px;white-space:pre-wrap}.error{color:#b42318}.success{color:#067647}.small{font-size:13px;color:var(--muted)}
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+<body><main><section class="card">
+<p class="small">SMART BUSINESS PRO · HOTEL BOOKING</p><h1>Request a Hotel Room</h1><p class="muted" id="shopInfo">Loading hotel details…</p>
+<div class="notice">Choose a room type and dates to send a booking request. Your room is <strong>not confirmed</strong> until the hotel assigns an available room and confirms your request. No payment is taken on this page.</div>
+<form id="bookingForm">
+<label for="roomType">Preferred room type</label><select id="roomType" required disabled><option value="">Loading room types…</option></select>
+<label for="guestName">Guest name</label><input id="guestName" maxlength="120" autocomplete="name" required>
+<label for="guestPhone">Mobile number</label><input id="guestPhone" type="tel" inputmode="tel" maxlength="20" pattern="[0-9+() -]{7,20}" autocomplete="tel" required placeholder="Enter a contact number">
+<label for="guestCount">Number of guests</label><input id="guestCount" type="number" min="1" max="20" value="1" required>
+<label for="checkIn">Check-in date</label><input id="checkIn" type="date" required>
+<label for="checkOut">Check-out date</label><input id="checkOut" type="date" required>
+<label for="notes">Special request (optional)</label><textarea id="notes" maxlength="500" rows="3" placeholder="Arrival time or other request"></textarea>
+<button id="submitButton" type="submit" disabled>Send booking request</button></form>
+<div id="message" role="status" aria-live="polite"></div>
+<p class="small">Room availability and final rate are confirmed by the hotel. Please do not travel until you receive confirmation.</p>
+</section></main>
+<script>
+(()=>{
+ "use strict";
+ const SUPABASE_URL="https://wqlopfftzvsjsxmrmxeq.supabase.co";
+ const SUPABASE_KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
+ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),$=id=>document.getElementById(id);
+ const shopId=new URLSearchParams(location.search).get("shop_id");let shop=null,customerId=null;
+ function message(text,bad=false){$("message").textContent=text;$("message").className=bad?"error":""}
+ function localDate(date){return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+ function setDateBounds(){const today=new Date();$("checkIn").min=localDate(today);$("checkIn").max=localDate(new Date(today.getTime()+90*86400000));$("checkOut").min=localDate(new Date(today.getTime()+86400000));$("checkOut").max=localDate(new Date(today.getTime()+90*86400000))}
+ async function boot(){
+  if(!shopId||!/^[0-9a-f-]{36}$/i.test(shopId)){$("shopInfo").textContent="This booking link is incomplete or invalid.";message("Ask the hotel for its correct booking link.",true);return}
+  const [{data,error},{data:sessionData}]=await Promise.all([db.from("shops").select("id,name,city").eq("id",shopId).maybeSingle(),db.auth.getSession()]);
+  if(error||!data){$("shopInfo").textContent="This hotel is not currently accepting online requests.";message(error?.message||"The hotel is unavailable or its subscription is inactive.",true);return}
+  shop=data;customerId=sessionData?.session?.user?.id||null;$("shopInfo").textContent=shop.name+(shop.city?" · "+shop.city:"");
+  const {data:rooms,error:roomError}=await db.from("hotel_rooms").select("id,room_type,capacity,base_rate,room_status,is_active").eq("shop_id",shop.id).eq("is_active",true).order("base_rate");
+  if(roomError){message("Room types could not load: "+roomError.message,true);return}
+  const choices=new Map();(rooms||[]).filter(r=>r.room_status!=="maintenance"&&r.room_status!=="blocked").forEach(r=>{const key=r.room_type.trim();if(!choices.has(key))choices.set(key,{type:key,capacity:r.capacity,rate:Number(r.base_rate)});else{const item=choices.get(key);item.capacity=Math.max(item.capacity,r.capacity);item.rate=Math.min(item.rate,Number(r.base_rate))}});
+  const select=$("roomType");select.replaceChildren();select.add(new Option(choices.size?"Choose a room type":"No bookable room types are listed",""));choices.forEach(item=>select.add(new Option(item.type+" · up to "+item.capacity+" guests · from ₹"+item.rate+"/night",item.type)));
+  if(!choices.size){message("This hotel has not listed any active rooms yet.",true);return}
+  setDateBounds();$("checkIn").addEventListener("change",()=>{const d=$("checkIn").value;if(d){const next=new Date(d+"T00:00:00");next.setDate(next.getDate()+1);$("checkOut").min=localDate(next);if($("checkOut").value< $("checkOut").min)$("checkOut").value=$("checkOut").min}});
+  select.disabled=false;$("submitButton").disabled=false;
+ }
+ $("bookingForm").addEventListener("submit",async e=>{
+  e.preventDefault();if(!shop)return;
+  const type=$("roomType").value,name=$("guestName").value.trim(),phone=$("guestPhone").value.trim(),guests=Number($("guestCount").value),checkIn=$("checkIn").value,checkOut=$("checkOut").value,notes=$("notes").value.trim();
+  if(!type||!name||!/^[0-9+() -]{7,20}$/.test(phone)||phone.replace(/\D/g,"").length<7||!Number.isInteger(guests)||guests<1||guests>20||!checkIn||!checkOut||checkOut<=checkIn){message("Please enter a room type, valid guest details, and check-out after check-in.",true);return}
+  const today=localDate(new Date()),max=localDate(new Date(Date.now()+90*86400000));if(checkIn<today||checkOut>max){message("Choose dates from today and within the next 90 days.",true);return}
+  $("submitButton").disabled=true;message("Sending your booking request…");const id=crypto.randomUUID();
+  const {error}=await db.from("hotel_booking_requests").insert({id,shop_id:shop.id,customer_id:customerId,requested_room_type:type,guest_name:name,guest_phone:phone,guest_count:guests,check_in:checkIn,check_out:checkOut,notes:notes||null});
+  $("submitButton").disabled=false;if(error){message("Your booking request could not be sent: "+error.message,true);return}
+  $("bookingForm").reset();$("guestCount").value="1";setDateBounds();message("Booking request sent to "+shop.name+".\nReference: "+id.slice(0,8).toUpperCase()+"\nThe hotel will check room availability and contact you to confirm.");$("message").className="success";
+ });
+ boot().catch(error=>message("Could not load the booking page: "+error.message,true));
+})();
+</script></body></html>
