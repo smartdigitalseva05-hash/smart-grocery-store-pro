@@ -65,7 +65,7 @@ The shopkeeper dashboard now includes these vertical-specific tools:
 - **Hotel housekeeping:** room cleaning, linen-change, inspection and maintenance task register with staff assignment, due dates and guarded completion status.
 - **Office HR:** monthly salary on employee records, leave requests with overlap-safe approval, and a manual payroll register. Net pay is calculated in the database; the register does not calculate statutory TDS, PF, ESI, gratuity or overtime.
 
-Remaining specialist work includes restaurant POS, tax invoices and payment settlement; hotel online payment collection and automatic room-status/housekeeping synchronization; office task and project workflows; electronics warranty-claim automation; medical prescription/dispensing and regulatory workflows; and Digital Seva document uploads plus official portal integrations. The implemented modules provide operational foundations; full end-to-end acceptance testing for every business type is still pending.
+Remaining specialist work includes restaurant POS, tax invoices and payment settlement; hotel online payment collection and automatic room-status/housekeeping synchronization; advanced office project reporting; electronics warranty-claim automation; medical prescription/dispensing and regulatory workflows; and Digital Seva document uploads plus official portal integrations. The implemented modules provide operational foundations; full end-to-end acceptance testing for every business type is still pending.
 
 ## Orders
 Customer checkout currently supports cash on delivery (COD). Shopkeepers can accept pending COD orders, move them through delivery, and mark COD as collected only when delivery is confirmed. Customer online grocery payments are not implemented.
@@ -86,7 +86,7 @@ The three Razorpay Edge Functions are deployed:
 Subscription payments are **not ready for live use** until the merchant adds the three Razorpay secrets in Supabase Edge Function Secrets, registers the webhook, and completes Test Mode end-to-end checks. Follow [PAYMENT_SETUP.md](./PAYMENT_SETUP.md). Never put gateway secrets in frontend code, GitHub, or chat.
 
 ## Database security and automation
-- Row Level Security is enabled on all 40 public application tables (verified from PostgreSQL catalog).
+- Row Level Security is enabled on all 41 public application tables (verified from PostgreSQL catalog).
 - Sensitive authorization and tenant isolation are enforced by database policies and validated RPCs.
 - Supabase Cron runs subscription expiry checks hourly.
 - The frontend uses a Supabase publishable key only; never expose a service-role/secret key in browser code.
