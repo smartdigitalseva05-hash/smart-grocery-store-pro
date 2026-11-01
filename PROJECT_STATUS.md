@@ -46,14 +46,14 @@ The immediate goal is to make all 11 business categories work as real category-b
 ### Read-only audit findings (2026-11-01)
 - Supabase Security Advisor reports **1 warning**: leaked-password protection is disabled. Remediation: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
 - Database inspection found **40 public tables**; all 40 currently have RLS enabled and at least one RLS policy. This is a positive baseline, not proof that every policy is correct.
-- Three Razorpay Edge Functions are active. Checkout and payment verification require JWT; the Razorpay webhook has JWT verification disabled, which is expected only if the handler independently verifies Razorpay's webhook signature.
+- Three Razorpay Edge Functions are active. Checkout and payment verification require JWT. The public webhook has JWT verification disabled but its inspected handler validates the raw-body Razorpay HMAC-SHA256 signature using a constant-time comparison, then checks captured status, INR currency, order match, and exact amount before applying payment. Replay/idempotency behavior still needs dedicated tests.
 - A client-side `password-security.js` checks for passwords of at least 12 characters and queries the Have I Been Pwned range API using the first five SHA-1 hash characters. This client-side check is supplementary and does not replace Supabase Auth protections.
 - No database or Auth settings were changed during this audit.
 
 ### Security work still pending
 1. Enable Supabase Auth leaked-password protection in Auth settings (dashboard setting; not changed by this audit).
 2. Review every RLS policy for cross-shop data leakage, role escalation, public reads/writes, and correct UPDATE `USING` plus `WITH CHECK` rules.
-3. Inspect Razorpay webhook code and confirm HMAC signature verification, replay protection, and idempotency.
+3. Webhook HMAC signature and amount/currency checks are present in code; still test invalid signatures, duplicate delivery, event replay, concurrent delivery, and subscription activation idempotency.
 4. Verify that service-role/secret keys never appear in browser files or Git history; keep secrets only in server-side Edge Function secrets.
 5. Review login/session handling, password reset, owner/shopkeeper role assignment, and account recovery.
 6. Review Storage bucket policies, file upload restrictions, and private customer documents.
