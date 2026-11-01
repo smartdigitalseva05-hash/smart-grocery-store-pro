@@ -16,11 +16,30 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 .hidden{display:none!important}.foot{margin-top:20px;color:var(--muted);font-size:12px}.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .shop-section{margin-top:18px}.shop-list{display:grid;gap:11px;margin-top:14px}.shop-card{background:#0d1727;border:1px solid var(--line);border-radius:14px;padding:15px}.shop-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.shop-name{font-weight:750;font-size:16px}.pill{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:4px 9px;color:var(--muted);font-size:12px}.shop-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.shop-actions button{padding:9px 12px}.shop-actions .danger{background:#7f1d1d;color:#fee2e2}.shop-actions .safe{background:#14532d;color:#dcfce7}.shop-actions .secondary{background:#24364d;color:var(--text)}
 @media(max-width:520px){main{margin:18px auto}.panel{padding:17px}.top{align-items:flex-start}.brand{font-size:17px}}
+
+/* Role-specific quick finder */
+.quick-find-open{background:#1d4ed8!important;color:#fff!important;border:1px solid #60a5fa!important}
+.quick-find-overlay{position:fixed;inset:0;z-index:9999;background:#020617d9;display:none;align-items:flex-start;justify-content:center;padding:9vh 14px 20px;overflow:auto}
+.quick-find-overlay.is-open{display:flex}
+.quick-find-box{width:min(680px,100%);max-height:82vh;overflow:hidden;background:#101d30;border:1px solid #38506e;border-radius:18px;box-shadow:0 24px 80px #0009}
+.quick-find-head{padding:17px;border-bottom:1px solid #2b3d55}
+.quick-find-title{font-weight:800;font-size:17px;margin-bottom:9px}
+.quick-find-input{width:100%;padding:14px;border:1px solid #4b6688;border-radius:11px;background:#071321;color:#fff;font:inherit}
+.quick-find-hint{font-size:12px;color:#9fb0c5;margin-top:8px}
+.quick-find-results{padding:8px;overflow:auto;max-height:58vh}
+.quick-find-result{display:block;width:100%;text-align:left;padding:12px;margin:4px 0;border:1px solid transparent;border-radius:11px;background:#17283e;color:#f4f7fb;box-shadow:none}
+.quick-find-result:hover,.quick-find-result:focus{border-color:#60a5fa;background:#203954;outline:none}
+.quick-find-result strong{display:block;font-size:14px}
+.quick-find-result small{display:block;color:#a9bad0;margin-top:4px;font-weight:400}
+.quick-find-empty{padding:18px;color:#a9bad0;text-align:center}
+.quick-find-close{float:right;background:#24364d!important;color:#fff!important;padding:7px 11px!important}
+.quick-find-target{outline:3px solid #38bdf8!important;outline-offset:4px!important;scroll-margin-top:22px}
+@media(max-width:520px){.quick-find-overlay{padding:5vh 9px}.quick-find-box{max-height:88vh}.quick-find-results{max-height:66vh}}
 </style>
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Private Super Admin Control Panel</div></div><div id="topActions" class="actions hidden"><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
+<header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Private Super Admin Control Panel</div></div><div id="topActions" class="actions hidden"><button id="ownerQuickSearchOpen" type="button" class="secondary quick-find-open" aria-haspopup="dialog" aria-controls="quickFindOverlay">🔎 Find anything <span style="opacity:.8;font-size:12px">Ctrl K</span></button><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
 <section id="loginPanel" class="panel auth">
 <h1>Super Admin sign in</h1><p class="muted">Use your existing Supabase Owner account. Access is checked by the database, not by a browser-stored role.</p>
 <form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><div class="actions" style="margin-top:17px"><button id="loginButton" type="submit">Sign in securely</button></div></form><div id="loginMessage" class="notice" role="status"></div>
@@ -56,7 +75,12 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <div class="panel shop-section"><div class="row"><div><h1>Security & audit activity</h1><div class="sub">Private event history visible only to the active Owner.</div></div><button id="auditRefresh" class="secondary">Refresh activity</button></div><div id="auditMessage" class="notice" role="status"></div><div id="auditList" class="shop-list"></div></div>
 </section>
 <p class="foot">Owner-only control panel. Database RPC checks the active Super Admin role; RLS controls shop visibility and updates. Shop status changes are recorded in audit_logs. Payment verification and subscription activation remain separate controls.</p>
-</main>
+<div id="quickFindOverlay" class="quick-find-overlay" aria-hidden="true">
+ <div class="quick-find-box" role="dialog" aria-modal="true" aria-labelledby="quickFindTitle">
+  <div class="quick-find-head"><button id="quickFindClose" type="button" class="quick-find-close">Close ✕</button><div id="quickFindTitle" class="quick-find-title">🔎 Owner Quick Finder</div><input id="quickFindInput" class="quick-find-input" type="search" autocomplete="off" placeholder="Search tools, pages, orders, products, settings…"><div class="quick-find-hint">Press Ctrl + K to open · Esc to close · Select a result to jump there</div></div>
+  <div id="quickFindResults" class="quick-find-results" aria-live="polite"></div>
+ </div>
+</div></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
@@ -366,4 +390,86 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  checkSession();
 })();
 </script>
-</body></html>
+<script>
+(() => {
+ const root=document.getElementById("dashboard");
+ const openButton=document.getElementById("ownerQuickSearchOpen");
+ if(!root||!openButton)return;
+ const overlay=document.getElementById("quickFindOverlay");
+ const input=document.getElementById("quickFindInput");
+ const results=document.getElementById("quickFindResults");
+ const closeButton=document.getElementById("quickFindClose");
+ let entries=[];
+ const clean=value=>(value||"").replace(/\\s+/g," ").trim();
+ function isVisible(el){
+   if(!el||!el.isConnected)return false;
+   for(let node=el;node&&node!==document.body;node=node.parentElement){
+     if(node.hidden||node.classList.contains("hidden")||getComputedStyle(node).display==="none"||getComputedStyle(node).visibility==="hidden")return false;
+   }
+   return true;
+ }
+ function sectionName(el){
+   const panel=el.closest(".panel,section,article")||el.parentElement;
+   const heading=panel?.querySelector("h1,h2,h3,h4,strong");
+   return clean(heading?.innerText)||clean(panel?.id)||"Workspace";
+ }
+ function buildIndex(){
+   entries=[];
+   const selector="h1,h2,h3,h4,button,a,label,[role='button'],input[placeholder],select[aria-label],textarea[placeholder]";
+   for(const el of root.querySelectorAll(selector)){
+     if(!isVisible(el)||el.closest("#quickFindOverlay"))continue;
+     let label=clean(el.innerText||el.getAttribute("aria-label")||el.getAttribute("placeholder")||el.getAttribute("title")||"");
+     if(el.tagName==="LABEL"&&!label)label=clean(el.textContent);
+     if(!label||label.length<2)continue;
+     const panel=el.closest(".panel,section,article")||el.parentElement;
+     const context=sectionName(el);
+     const target=(el.tagName==="LABEL"&&el.control)?el.control:el;
+     const href=el.tagName==="A"?el.getAttribute("href"):"";
+     entries.push({label:label.slice(0,150),context,target,href,search:(label+" "+context+" "+(el.id||"")).toLowerCase()});
+     if(entries.length>=1800)break;
+   }
+ }
+ function close(){overlay.classList.remove("is-open");overlay.setAttribute("aria-hidden","true");openButton.focus()}
+ function render(query){
+   results.replaceChildren();
+   const q=clean(query).toLowerCase();
+   if(!q){const hint=document.createElement("div");hint.className="quick-find-empty";hint.textContent="Type a feature, page, setting or tool name to find it.";results.append(hint);return}
+   const words=q.split(/\\s+/).filter(Boolean);
+   const ranked=entries.map((entry,index)=>{
+     const score=words.reduce((n,word)=>n+(entry.search.includes(word)?(entry.label.toLowerCase().includes(word)?3:1):0),0);
+     return {entry,index,score};
+   }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||a.index-b.index).slice(0,15);
+   if(!ranked.length){const empty=document.createElement("div");empty.className="quick-find-empty";empty.textContent="No matching tool found. Try a shorter word or another keyword.";results.append(empty);return}
+   for(const item of ranked){
+     const button=document.createElement("button");button.type="button";button.className="quick-find-result";
+     const strong=document.createElement("strong");strong.textContent=item.entry.label;
+     const small=document.createElement("small");small.textContent="📍 "+item.entry.context;
+     button.append(strong,small);
+     button.addEventListener("click",()=>{
+       const target=item.entry.target;
+       close();
+       if(item.entry.href&&item.entry.href!=="#"){target.click();return}
+       target.scrollIntoView({behavior:"smooth",block:"center"});
+       target.classList.add("quick-find-target");
+       if(target.matches("input,select,textarea,button")){try{target.focus({preventScroll:true})}catch{}}
+       window.setTimeout(()=>target.classList.remove("quick-find-target"),2200);
+     });
+     results.append(button);
+   }
+ }
+ function open(){
+   buildIndex();overlay.classList.add("is-open");overlay.setAttribute("aria-hidden","false");
+   input.value="";render("");window.setTimeout(()=>input.focus(),30);
+ }
+ openButton.addEventListener("click",open);
+ closeButton.addEventListener("click",close);
+ input.addEventListener("input",()=>render(input.value));
+ overlay.addEventListener("click",event=>{if(event.target===overlay)close()});
+ document.addEventListener("keydown",event=>{
+   if(event.key==="Escape"&&overlay.classList.contains("is-open"))close();
+   if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="k"){
+     if(!root.classList.contains("hidden")){event.preventDefault();open()}
+   }
+ });
+})();
+</script></body></html>
