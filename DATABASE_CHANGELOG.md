@@ -93,3 +93,5 @@ This file documents applied database changes; it is not a replacement for the Su
 - Migration `20261101111621_index_electronics_service_job_inventory_fk` is applied. Added a composite index for the optional repair-job inventory link to cover its shop-scoped foreign key.
 
 - Migration `20261101111813_digital_services_public_application_intake` is applied. Adds customer-linked public digital-service intake with shop-specific access checks, generated application numbers, private application records and guarded status transitions. The public form does not collect identity numbers, OTPs or document scans.
+
+- Migration `20261101111953_secure_digital_service_public_request_rpc` is applied. Public applicants now submit through a SECURITY INVOKER endpoint backed by a private authorization-checked function; direct anonymous table inserts and public application reads are disabled.
