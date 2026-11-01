@@ -20,8 +20,9 @@
   const {data:{session}}=await db.auth.getSession();user=session?.user||null;
   if(!user){$("authPanel").classList.remove("hidden");$("shopPanel").classList.add("hidden");$("sessionInfo").textContent="";return}
   $("authPanel").classList.add("hidden");$("shopPanel").classList.remove("hidden");$("sessionInfo").textContent="Signed in: "+user.email;
-  const {data:existing}=await db.from("shops").select("id,name,status").eq("owner_id",user.id).limit(1);
-  if(existing?.length){$("shopForm").classList.add("hidden");say("shopMessage","Your shop application already exists: "+existing[0].name+" · "+existing[0].status+". Contact the Owner for review.");}
+  const {data:existing,error:existingError}=await db.from("shops").select("id,name,status,business_type").eq("owner_id",user.id).order("created_at",{ascending:false});
+  if(existingError){say("shopMessage","Could not load your existing business applications: "+existingError.message,true);return}
+  if(existing?.length){say("shopMessage",existing.length+" existing business application(s) found. You can register another business or category using this form. Existing shops and their data will remain unchanged.");}
  }
  $("signupTab").addEventListener("click",()=>setMode("signup"));$("loginTab").addEventListener("click",()=>setMode("login"));
  $("resendConfirmation").addEventListener("click",async()=>{
