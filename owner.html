@@ -51,6 +51,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  <a class="metric" href="#ownerShopsControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🏪 Business approvals & status</strong><span>Approve, activate, deactivate and suspend shops</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerCategoryControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧭 All 11 business categories</strong><span>Category-wise controls and global business search</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerShopkeeperControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">👥 Shopkeeper accounts</strong><span>Review linked shopkeeper accounts and access</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
+ <a class="metric" href="#ownerCustomerControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧑‍🤝‍🧑 Customer directory</strong><span>Search customer accounts using privacy-safe profile fields</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerCatalogControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">📦 Product categories</strong><span>Manage product categories and subcategories</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerPaymentControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">💳 Payments & subscriptions</strong><span>Review trusted payment verification records</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerAuditControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🛡️ Security & audit logs</strong><span>Inspect recorded security and admin activity</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
@@ -79,6 +80,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <div class="grid" id="businessTotals"><div class="metric"><span>Total businesses</span><strong id="businessTotalCount">0</strong></div><div class="metric"><span>Active businesses</span><strong id="businessActiveCount">0</strong></div><div class="metric"><span>Categories</span><strong id="businessCategoryCount">11</strong></div><div class="metric"><span>Search results</span><strong id="businessResultCount">0</strong></div></div>
 <div id="businessCategoryButtons" class="actions" style="margin-top:16px"></div><div id="businessWebsitesMessage" class="notice" role="status"></div><div id="businessWebsiteList" class="shop-list"></div></div>
 <div id="ownerShopkeeperControl" class="panel shop-section"><div class="row"><div><h1>Shopkeeper management</h1><div class="sub">View shopkeeper accounts, linked shops and control account access. Blocking an account also hides its shops from customers.</div></div><button id="shopkeepersRefresh" class="secondary">Refresh shopkeepers</button></div><div id="shopkeepersMessage" class="notice" role="status"></div><div id="shopkeeperList" class="shop-list"></div></div>
+<div id="ownerCustomerControl" class="panel shop-section"><div class="row"><div><h1>Customer directory</h1><div class="sub">Owner-only, read-only customer account lookup. Only profile name, account status and join date are shown; contact details and sensitive records are not exposed here.</div></div><button id="customersRefresh" class="secondary" type="button">Refresh customers</button></div><label class="field" for="customerGlobalSearch">Search customer accounts<input id="customerGlobalSearch" type="search" placeholder="Search customer name or account status…"></label><div id="customersMessage" class="notice" role="status"></div><div id="customerList" class="shop-list"></div></div>
 <div id="ownerCatalogControl" class="panel shop-section"><div class="row"><div><h1>Catalog management</h1><div class="sub">Create and enable product categories and subcategories.</div></div><button id="catalogRefresh" class="secondary">Refresh catalog</button></div>
 <div class="formgrid"><label class="field">New category<input id="newCategoryName" maxlength="80" placeholder="e.g. Fruits & Vegetables"></label><label class="field">New subcategory parent<select id="subCategoryParent"></select></label><label class="field">New subcategory<input id="newSubCategoryName" maxlength="80" placeholder="e.g. Fresh Fruits"></label></div>
 <div class="shop-actions"><button id="addCategoryButton" class="safe" type="button">Add category</button><button id="addSubCategoryButton" class="secondary" type="button">Add subcategory</button></div>
@@ -280,6 +282,30 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      actions.append(btn);card.append(actions);list.append(card);
    }
  }
+ let customerDirectory=[];
+ function renderCustomers(){
+   const list=$("customerList");list.replaceChildren();
+   const q=$("customerGlobalSearch").value.trim().toLowerCase();
+   const filtered=customerDirectory.filter(p=>[p.full_name,p.is_active?"active":"blocked"].join(" ").toLowerCase().includes(q));
+   message("customersMessage",filtered.length+" of "+customerDirectory.length+" customer account(s) shown. Read-only directory.");
+   if(!filtered.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="No customer accounts match this search.";list.append(empty);return}
+   for(const profile of filtered){
+     const card=document.createElement("article");card.className="shop-card";
+     const top=document.createElement("div");top.className="shop-meta";
+     const info=document.createElement("div");
+     const title=document.createElement("div");title.className="shop-name";title.textContent=profile.full_name||"Customer";
+     const detail=document.createElement("div");detail.className="sub";detail.textContent="Joined "+new Date(profile.created_at).toLocaleDateString()+" · Customer account";
+     info.append(title,detail);
+     const state=document.createElement("span");state.className="pill";state.textContent=profile.is_active?"ACTIVE":"BLOCKED";
+     top.append(info,state);card.append(top);list.append(card);
+   }
+ }
+ async function loadCustomers(){
+   message("customersMessage","Loading customer directory securely…");
+   const {data,error}=await client.from("profiles").select("id,full_name,is_active,created_at").eq("role","customer").order("created_at",{ascending:false}).limit(500);
+   if(error){message("customersMessage",error.message,true);return}
+   customerDirectory=data||[];renderCustomers();
+ }
  async function loadCatalog(){
    const list=$("catalogList");list.replaceChildren();message("catalogMessage","Loading catalog…");
    const {data:cats,error:catError}=await client.from("categories").select("id,name,slug,is_active").order("name");
@@ -362,7 +388,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    }
    loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
    $("ownerEmail").textContent=session.user.email||"Signed-in Owner";
-   await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers(),loadCatalog(),loadPayments(),loadAuditLogs()]);
+   await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers(),loadCustomers(),loadCatalog(),loadPayments(),loadAuditLogs()]);
  }
  $("loginForm").addEventListener("submit",async e=>{
    e.preventDefault();$("loginButton").disabled=true;message("loginMessage","Signing in…");
@@ -377,6 +403,8 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  $("businessGlobalSearch").addEventListener("input",renderBusinessWebsites);
  $("businessTypeFilter").addEventListener("change",loadShops);
   $("shopkeepersRefresh").addEventListener("click",loadShopkeepers);
+ $("customersRefresh").addEventListener("click",loadCustomers);
+ $("customerGlobalSearch").addEventListener("input",renderCustomers);
  $("paymentsRefresh").addEventListener("click",loadPayments);
  $("catalogRefresh").addEventListener("click",loadCatalog);
  $("addCategoryButton").addEventListener("click",async()=>{
