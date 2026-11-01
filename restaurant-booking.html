@@ -45,7 +45,7 @@ button{width:100%;border:0;border-radius:11px;background:var(--brand);color:#fff
   if(!name||!/^[0-9+() -]{7,20}$/.test(phone)||phone.replace(/\D/g,"").length<7||!Number.isInteger(party)||party<1||party>50||!localDate||!Number.isFinite(when.getTime())){message("Please enter valid name, phone, guest count and date/time.",true);return}
   if(when.getTime()<now+30*60000||when.getTime()>now+90*86400000){message("Choose a time at least 30 minutes from now and within the next 90 days.",true);return}
   $("submitButton").disabled=true;message("Sending your request…");const id=crypto.randomUUID();
-  const {error}=await db.from("restaurant_reservations").insert({id,shop_id:shop.id,customer_id:customerId,customer_name:name,customer_phone:phone,party_size:party,reservation_at:when.toISOString(),duration_minutes:90,status:"pending",customer_notes:notes||null});
+  const {error}=await db.from("restaurant_reservations").insert({id,shop_id:shop.id,customer_id:customerId,customer_name:name,customer_phone:phone,party_size:party,reservation_at:when.toISOString(),customer_notes:notes||null});
   $("submitButton").disabled=false;if(error){message("Your request could not be sent: "+error.message,true);return}
   $("bookingForm").reset();$("partySize").value="2";setDateBounds();message("Reservation request sent to "+shop.name+".\nReference: "+id.slice(0,8).toUpperCase()+"\nThe restaurant must confirm your table before your visit.");$("message").className="success";$("submitButton").textContent="Send another request";
  });
