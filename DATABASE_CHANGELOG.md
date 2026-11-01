@@ -70,3 +70,6 @@ This file documents applied database changes; it is not a replacement for the Su
 
 
 - Migration `20261101105759_restaurant_customer_reservation_requests` is applied. It adds public customer reservation requests for active restaurant shops, shopkeeper-only request access, capacity-aware table assignment, safe status transitions and transaction-locked overlap prevention. Customer requests remain pending until a shopkeeper confirms a table. Public visitors cannot read reservation records.
+
+
+- Migration `20261101110000_tighten_restaurant_reservation_customer_input` is applied. Anonymous customers can no longer set reservation status or duration; the database supplies pending/90-minute defaults. Phone format validation and reservation completion behavior were tightened.
