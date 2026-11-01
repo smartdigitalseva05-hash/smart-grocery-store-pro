@@ -160,3 +160,39 @@ A module is complete only when:
 - Existing Supabase Owner authorization, RPC checks, RLS policies, subscription verification rules, and audit logging were not bypassed or weakened. No database records/schema or `index.html` were changed.
 - Owner page commit: `9f089400d6a43ec8bad70eb06aaa9ec4f4e67fd9`.
 - Automated validation/deployment for this commit must be checked before calling the updated page live.
+
+
+## Live Work Tracker & Status Rules (2026-11-01)
+
+**Status rule requested by Owner:** Every meaningful task must be recorded here. Never leave unfinished work looking completed. Update this tracker after implementation and verification.
+
+| Work item | Status | Evidence / remaining work |
+|---|---|---|
+| Owner Command Center navigation hub | **Completed** | Present in `owner.html`; six links navigate to existing protected sections. Source commit: `9f089400d6a43ec8bad70eb06aaa9ec4f4e67fd9`. |
+| Owner Command Center deployment | **Completed** | GitHub Pages deployment for commit `5cb669aeedf1644a3bfcda43a1de2083c6ccf471` succeeded (run `41325286042`); this commit includes the Command Center and status documentation. |
+| Owner Command Center full-control coverage | **Pending** | Hub is currently a navigation layer, not a complete all-platform control system. Customer administration, global product CRUD, global order management, platform configuration and further account controls still need verified backend operations and permission checks. |
+| Category Module | **In Progress** | 11 category keys and navigation/configuration exist; full category-specific product/order/customer workflows and data isolation remain to be verified. |
+| Security & Protection Module | **In Progress** | RLS is enabled on all 40 inspected public tables, but policy correctness, leaked-password protection, secret exposure, storage controls and webhook replay/idempotency tests remain pending. |
+| Registration Module | **In Progress** | Multi-shop registration blocker fixed; full category persistence and account/role edge cases remain to be verified. |
+| Shop Dashboard Module | **In Progress** | Category-aware workspace exists; full feature and permission coverage remains to be audited. |
+| Product Module | **Pending** | Complete cross-category add/edit/delete, stock and shop-isolation checks. |
+| Order Module | **Pending** | Complete customer ordering, shopkeeper fulfilment, status transitions and owner oversight. |
+| Customer Module | **Pending** | Complete category/shop discovery, customer account controls and privacy checks. |
+| Owner Module (beyond current hub) | **In Progress** | Existing shop, shopkeeper, catalog, payment and audit sections are available; missing global controls listed above remain pending. |
+| Payment Module | **In Progress** | Razorpay checkout/verification/webhook functions exist; replay, duplicate and concurrency/idempotency tests remain pending. |
+| Automated Testing Module | **In Progress** | Static GitHub Actions validation exists; broader API, authorization, regression and workflow tests remain pending. |
+
+### Required status meanings
+- **Pending:** not started, or required implementation has not yet been done.
+- **In Progress:** implementation or verification is underway.
+- **Completed:** implementation is present and the relevant automated/static/API checks passed; deployment is confirmed when a live page is involved.
+- **Deployment Pending:** code is committed but the latest relevant deployment has not succeeded yet.
+- **Blocked:** work cannot proceed until a stated dependency is resolved.
+
+### Update discipline
+1. Before starting a new task, list it as **Pending** or **In Progress**.
+2. After coding, keep it **In Progress** until verification is complete.
+3. Record the exact checks and commit/run evidence before marking **Completed**.
+4. Keep incomplete sub-features explicitly **Pending**, even when their parent dashboard or module has a visible UI.
+5. Do not mark physical user testing as required; use code review, automated/static tests and server/API checks as the project verification approach.
+6. Keep `index.html` and existing database records safe unless the Owner explicitly requests a change.
