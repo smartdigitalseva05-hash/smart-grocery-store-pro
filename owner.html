@@ -39,7 +39,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Private Super Admin Control Panel</div></div><div id="topActions" class="actions hidden"><button id="ownerQuickSearchOpen" type="button" class="secondary quick-find-open" aria-haspopup="dialog" aria-controls="quickFindOverlay">🔎 Find anything <span style="opacity:.8;font-size:12px">Ctrl K</span></button><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
+<header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Private Super Admin Control Panel</div></div><div id="topActions" class="actions hidden"><button id="ownerQuickSearchOpen" type="button" class="secondary quick-find-open" aria-haspopup="dialog" aria-controls="quickFindOverlay">🎛️ All-in-One Control <span style="opacity:.8;font-size:12px">Search · Ctrl K</span></button><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
 <section id="loginPanel" class="panel auth">
 <h1>Super Admin sign in</h1><p class="muted">Use your existing Supabase Owner account. Access is checked by the database, not by a browser-stored role.</p>
 <form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><div class="actions" style="margin-top:17px"><button id="loginButton" type="submit">Sign in securely</button></div></form><div id="loginMessage" class="notice" role="status"></div>
@@ -89,7 +89,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <p class="foot">Owner-only control panel. Database RPC checks the active Super Admin role; RLS controls shop visibility and updates. Shop status changes are recorded in audit_logs. Payment verification and subscription activation remain separate controls.</p>
 <div id="quickFindOverlay" class="quick-find-overlay" aria-hidden="true">
  <div class="quick-find-box" role="dialog" aria-modal="true" aria-labelledby="quickFindTitle">
-  <div class="quick-find-head"><button id="quickFindClose" type="button" class="quick-find-close">Close ✕</button><div id="quickFindTitle" class="quick-find-title">🔎 Owner Quick Finder</div><input id="quickFindInput" class="quick-find-input" type="search" autocomplete="off" placeholder="Search tools, pages, orders, products, settings…"><div class="quick-find-hint">Press Ctrl + K to open · Esc to close · Select a result to jump there</div></div>
+  <div class="quick-find-head"><button id="quickFindClose" type="button" class="quick-find-close">Close ✕</button><div id="quickFindTitle" class="quick-find-title">🎛️ All-in-One Control & Search</div><input id="quickFindInput" class="quick-find-input" type="search" autocomplete="off" placeholder="Search businesses, users, products, orders, payments, security, settings…"><div class="quick-find-hint">Search all controls in one place · Available tools open directly · Pending tools are clearly marked</div></div>
   <div id="quickFindResults" class="quick-find-results" aria-live="polite"></div>
  </div>
 </div></main>
@@ -437,8 +437,24 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      const context=sectionName(el);
      const target=(el.tagName==="LABEL"&&el.control)?el.control:el;
      const href=el.tagName==="A"?el.getAttribute("href"):"";
-     entries.push({label:label.slice(0,150),context,target,href,search:(label+" "+context+" "+(el.id||"")).toLowerCase()});
+     entries.push({label:label.slice(0,150),context,target,href,status:"Available",search:(label+" "+context+" "+(el.id||"")).toLowerCase()});
      if(entries.length>=1800)break;
+   }
+   const directory=[
+    {label:"Business & all 11 categories",context:"Business Control",id:"ownerCategoryControl",status:"Available",keywords:"shops stores business category grocery daily needs garments jewellery restaurant hotel office electronics medical digital services"},
+    {label:"Shopkeeper accounts",context:"User Control",id:"ownerShopkeeperControl",status:"Available",keywords:"users shopkeepers accounts block activate"},
+    {label:"Product category management",context:"Product Control",id:"ownerCatalogControl",status:"Available",keywords:"products categories subcategories catalog"},
+    {label:"Payments & subscriptions",context:"Payment Control",id:"ownerPaymentControl",status:"Available",keywords:"payments razorpay subscriptions verify"},
+    {label:"Security & audit logs",context:"Security Center",id:"ownerAuditControl",status:"Available",keywords:"security audit activity logs"},
+    {label:"Customer directory & account controls",context:"Customer Control",status:"Pending",keywords:"customers customer accounts profiles"},
+    {label:"Global order management & status controls",context:"Order Control",status:"Pending",keywords:"orders order status delivery fulfilment"},
+    {label:"Global product search & inventory controls",context:"Global Product Control",status:"Pending",keywords:"products inventory stock global edit delete"},
+    {label:"Platform-wide settings",context:"Platform Settings",status:"Pending",keywords:"settings configuration platform features"},
+    {label:"Unified admin reports",context:"Reports & Analytics",status:"Pending",keywords:"reports analytics sales revenue charts"}
+   ];
+   for(const item of directory){
+     const target=item.id?document.getElementById(item.id):null;
+     entries.push({label:item.label,context:item.context,target,href:"",status:item.status,search:(item.label+" "+item.context+" "+(item.keywords||"")).toLowerCase()});
    }
  }
  function close(){overlay.classList.remove("is-open");overlay.setAttribute("aria-hidden","true");openButton.focus()}
@@ -455,9 +471,10 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    for(const item of ranked){
      const button=document.createElement("button");button.type="button";button.className="quick-find-result";
      const strong=document.createElement("strong");strong.textContent=item.entry.label;
-     const small=document.createElement("small");small.textContent="📍 "+item.entry.context;
+     const small=document.createElement("small");small.textContent="📍 "+item.entry.context+" · "+(item.entry.status||"Available");
      button.append(strong,small);
-     button.addEventListener("click",()=>{
+     if(item.entry.status==="Pending"||!item.entry.target){button.disabled=true;button.style.opacity=".65";button.style.cursor="not-allowed"}
+     else button.addEventListener("click",()=>{
        const target=item.entry.target;
        close();
        if(item.entry.href&&item.entry.href!=="#"){target.click();return}
