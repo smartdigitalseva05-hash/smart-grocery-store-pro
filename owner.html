@@ -43,6 +43,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <div class="metric"><span>Expired subscriptions</span><strong id="subscriptions_expired">—</strong></div>
 </div><div id="dashboardMessage" class="notice" role="status"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Shop approval & status</h1><div class="sub">Only active Super Admin can change a shop's status. Every change is audit-logged.</div></div><button id="shopsRefresh" class="secondary">Refresh shops</button></div><label class="field" for="businessTypeFilter">Filter by business type<select id="businessTypeFilter"><option value="all">All business types</option><option value="grocery">Grocery</option><option value="daily_needs">Daily Needs</option><option value="garments">Garments</option><option value="jewellery">Jewellery</option><option value="restaurant">Restaurant</option><option value="hotel">Hotel</option><option value="office_company">Office / Company</option><option value="electronics">Electronics</option><option value="medical">Medical</option><option value="digital_services">Digital Services</option><option value="other">Other Businesses</option></select></label><div id="shopsMessage" class="notice" role="status"></div><div id="shopList" class="shop-list"></div></div>
+<div class="panel shop-section"><div class="row"><div><h1>Business Website Links</h1><div class="sub">Choose a business category to view its registered stores and open each active store website.</div></div><button id="websitesRefresh" class="secondary" type="button">Refresh links</button></div><div id="businessCategoryButtons" class="actions" style="margin-top:16px"></div><div id="businessWebsitesMessage" class="notice" role="status"></div><div id="businessWebsiteList" class="shop-list"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Shopkeeper management</h1><div class="sub">View shopkeeper accounts, linked shops and control account access. Blocking an account also hides its shops from customers.</div></div><button id="shopkeepersRefresh" class="secondary">Refresh shopkeepers</button></div><div id="shopkeepersMessage" class="notice" role="status"></div><div id="shopkeeperList" class="shop-list"></div></div>
 <div class="panel shop-section"><div class="row"><div><h1>Catalog management</h1><div class="sub">Create and enable product categories and subcategories.</div></div><button id="catalogRefresh" class="secondary">Refresh catalog</button></div>
 <div class="formgrid"><label class="field">New category<input id="newCategoryName" maxlength="80" placeholder="e.g. Fruits & Vegetables"></label><label class="field">New subcategory parent<select id="subCategoryParent"></select></label><label class="field">New subcategory<input id="newSubCategoryName" maxlength="80" placeholder="e.g. Fresh Fruits"></label></div>
@@ -127,6 +128,50 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
        });
        actions.append(btn);
      }
+     card.append(actions);list.append(card);
+   }
+ }
+ const BUSINESS_TYPES=[
+  {key:"grocery",label:"🛒 Grocery"},{key:"daily_needs",label:"🧴 Daily Needs"},{key:"garments",label:"👕 Garments"},{key:"jewellery",label:"💎 Jewellery"},{key:"restaurant",label:"🍽️ Restaurant"},{key:"hotel",label:"🏨 Hotel"},{key:"office_company",label:"🏢 Office / Company"},{key:"electronics",label:"💻 Electronics"},{key:"medical",label:"💊 Medical"},{key:"digital_services",label:"🌐 Digital Services"},{key:"other",label:"🏪 Other Businesses"}
+ ];
+ let websiteShops=[],selectedWebsiteType="grocery";
+ async function loadBusinessWebsites(){
+   message("businessWebsitesMessage","Loading registered business categories…");
+   $("businessCategoryButtons").replaceChildren();$("businessWebsiteList").replaceChildren();
+   const {data,error}=await client.from("shops").select("id,name,business_type,city,status,is_active").order("name");
+   if(error){message("businessWebsitesMessage",error.message,true);return}
+   websiteShops=data||[];
+   const extra=[...new Set(websiteShops.map(s=>s.business_type).filter(Boolean))].filter(k=>!BUSINESS_TYPES.some(t=>t.key===k)).map(key=>({key,label:key.replace(/[_-]/g," ").replace(/\\b\\w/g,c=>c.toUpperCase())}));
+   const types=[...BUSINESS_TYPES,...extra];
+   if(!types.some(t=>t.key===selectedWebsiteType))selectedWebsiteType=types[0]?.key||"grocery";
+   for(const type of types){
+     const count=websiteShops.filter(s=>s.business_type===type.key).length;
+     const btn=document.createElement("button");btn.type="button";btn.className=type.key===selectedWebsiteType?"":"secondary";
+     btn.textContent=type.label+" ("+count+")";
+     btn.addEventListener("click",()=>{selectedWebsiteType=type.key;renderBusinessWebsites(types)});
+     $("businessCategoryButtons").append(btn);
+   }
+   renderBusinessWebsites(types);
+ }
+ function renderBusinessWebsites(types){
+   const list=$("businessWebsiteList");list.replaceChildren();
+   const type=types.find(t=>t.key===selectedWebsiteType)||{label:selectedWebsiteType};
+   const shops=websiteShops.filter(s=>s.business_type===selectedWebsiteType);
+   message("businessWebsitesMessage",type.label+" · "+shops.length+" registered store(s).");
+   if(!shops.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="Is category mein abhi koi store registered nahi hai.";list.append(empty);return}
+   for(const shop of shops){
+     const card=document.createElement("article");card.className="shop-card";
+     const top=document.createElement("div");top.className="shop-meta";
+     const info=document.createElement("div");const title=document.createElement("div");title.className="shop-name";title.textContent=shop.name||"Unnamed store";
+     const detail=document.createElement("div");detail.className="sub";detail.textContent=[shop.city,shop.status||"pending"].filter(Boolean).join(" · ");
+     info.append(title,detail);const state=document.createElement("span");state.className="pill";const live=shop.status==="active"&&shop.is_active===true;state.textContent=live?"WEBSITE AVAILABLE":"NOT LIVE";top.append(info,state);card.append(top);
+     const actions=document.createElement("div");actions.className="shop-actions";
+     if(live){
+       const link=document.createElement("a");link.href="./index.html?shop_id="+encodeURIComponent(shop.id);link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open Website ↗";link.style.cssText="display:inline-block;padding:9px 12px;border-radius:10px;background:#14532d;color:#dcfce7;text-decoration:none;font-weight:750";
+       const copy=document.createElement("button");copy.type="button";copy.className="secondary";copy.textContent="Copy Website Link";
+       copy.addEventListener("click",async()=>{const url=new URL(link.href,location.href).href;try{await navigator.clipboard.writeText(url);message("businessWebsitesMessage","Website link copied for "+(shop.name||"store")+".")}catch(e){message("businessWebsitesMessage","Copy not available in this browser. Open the website link and copy it from the address bar.",true)}});
+       actions.append(link,copy);
+     }else{const note=document.createElement("span");note.className="sub";note.textContent="Store website link will work after the shop is activated.";actions.append(note)}
      card.append(actions);list.append(card);
    }
  }
@@ -250,7 +295,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    }
    loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
    $("ownerEmail").textContent=session.user.email||"Signed-in Owner";
-   await Promise.all([loadSummary(),loadShops(),loadShopkeepers(),loadCatalog(),loadPayments(),loadAuditLogs()]);
+   await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers(),loadCatalog(),loadPayments(),loadAuditLogs()]);
  }
  $("loginForm").addEventListener("submit",async e=>{
    e.preventDefault();$("loginButton").disabled=true;message("loginMessage","Signing in…");
@@ -259,8 +304,9 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    if(error){message("loginMessage",error.message,true);return}
    await checkSession();
  });
- $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops(),loadShopkeepers()])});
+ $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers()])});
  $("shopsRefresh").addEventListener("click",loadShops);
+ $("websitesRefresh").addEventListener("click",loadBusinessWebsites);
  $("businessTypeFilter").addEventListener("change",loadShops);
   $("shopkeepersRefresh").addEventListener("click",loadShopkeepers);
  $("paymentsRefresh").addEventListener("click",loadPayments);
