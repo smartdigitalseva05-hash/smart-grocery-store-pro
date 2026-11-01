@@ -256,3 +256,15 @@ A module is complete only when:
 - Order console source commits: `0d40fa0057534617aac75a20ae6abca1da88d3af`, `45b2ee4c5922ed70caf4359dab6a334202134e9a`.
 - Customer directory and Order Console are **In Progress** pending final static validation, deployment and authenticated Owner query confirmation. No customer/order data was modified.
 - Global product management, platform settings, reports, customer account mutations and order status mutations remain **Pending**.
+
+
+## Owner All-in-One Control — Global Product & Stock Console (2026-11-01)
+
+- Added a searchable Owner-only global product overview linked from the Command Center and All-in-One Control.
+- Reads up to 200 newest product records through existing database access rules and displays product name, business name, stock quantity, availability and listed/sale price.
+- Search filters cached results locally; refresh is explicit.
+- Read-only: no product edits, deletion, stock adjustments or bulk actions are exposed. Those remain pending until server-side authorization, validation and audit behavior are confirmed.
+- Does not display product images or descriptions in the global admin overview.
+- Source commit: `b73b1c954cd16271e8d0fb3ab01f4d95d9d5decf`.
+- Customer directory, order console and product console remain **In Progress** pending final validation/deployment and authenticated Owner query verification. No database records or schema were modified.
+- Order status mutation, customer account mutation, product mutation/bulk inventory controls, platform settings and analytics remain **Pending**.
