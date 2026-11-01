@@ -119,4 +119,21 @@ A module is complete only when:
 - Each shop card includes its category, owner and status, a live storefront link when active, and Owner RPC controls for shopkeeper approval (where applicable), activation, setting inactive, and suspension. Activation still relies on the existing verified-subscription server rule; no payment or subscription is fabricated.
 - All changes are in `owner.html`; `index.html` and database records/schema were not changed.
 - Commit: `3f619c473268f410c7c1aacd9da1e7aa15fe2f88`.
-- Static source checks passed for the new panel, global search, counters, category buttons and existing Owner RPC calls. Live browser testing and GitHub Pages deployment confirmation remain pending.
+- Static source checks passed for the new panel, global search, counters, category buttons and existing Owner RPC calls. GitHub Actions static validation now passes for the current commit; the GitHub Pages deployment workflow is being monitored separately.
+
+
+## Automated Verification Policy (2026-11-01)
+
+- Owner instruction: physical/mobile testing by the owner is not a required project gate. Use code review, static validation, automated tests, and server/API checks instead.
+- Do not promise literal zero defects; record exactly which automated checks passed and which external/runtime checks remain.
+- Added `scripts/validate-static.mjs` and `.github/workflows/static-validation.yml`. On every push to main and pull request, GitHub Actions checks required HTML pages, duplicate element IDs, inline JavaScript syntax, and the 11 business category keys across registration, shopkeeper workspace, Owner controls, and portal cards.
+- Static validation passed on commit `e141bb73cb9941c5c76f1b23eca208946ad34e71` (workflow run `41324387456`).
+- The separate `Deploy static website to GitHub Pages` workflow also succeeded on the same commit (run `41324387454`). The GitHub Pages build/deployment run is still being checked; do not mark the live deployment confirmed until it completes successfully.
+- A prior source-only pass compiled the inline JavaScript in 13 HTML/JS files and found no duplicate IDs. This is syntax validation only, not proof that every user journey or database policy works at runtime.
+
+## Current Category Module Gaps (reconfirmed 2026-11-01)
+
+- The 11 category keys are present in registration, shopkeeper workspace configuration, Owner category controls, and portal cards, and the static CI now guards against accidental removal.
+- Category-specific workspace configurations exist, but that alone does not prove every specialized product/order/customer workflow is complete for every business type.
+- The live database previously contained only one registered Grocery shop; the other 10 categories have no live shop records to exercise their data flows against.
+- Continue auditing the real forms, database tables, RLS policies, customer discovery and order handling per category. Keep the Category Module in progress until the actual feature coverage and permissions are verified.
