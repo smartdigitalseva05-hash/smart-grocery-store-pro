@@ -73,3 +73,5 @@ This file documents applied database changes; it is not a replacement for the Su
 
 
 - Migration `20261101110000_tighten_restaurant_reservation_customer_input` is applied. Anonymous customers can no longer set reservation status or duration; the database supplies pending/90-minute defaults. Phone format validation and reservation completion behavior were tightened.
+
+- Migration `20261101110500_index_restaurant_reservation_foreign_keys` is applied. Added indexes for customer and table foreign keys and the shopkeeper's newest-first reservation query; replaced an unused reservation-time index.
