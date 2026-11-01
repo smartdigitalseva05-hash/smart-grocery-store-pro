@@ -31,22 +31,21 @@ button{width:100%;border:0;border-radius:11px;background:var(--brand);color:#fff
  const SUPABASE_URL="https://wqlopfftzvsjsxmrmxeq.supabase.co";
  const SUPABASE_KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
  const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),$=id=>document.getElementById(id);
- const shopId=new URLSearchParams(location.search).get("shop_id");let shop=null,customerId=null;
+ const shopId=new URLSearchParams(location.search).get("shop_id");let shop=null;
  function message(text,bad=false){$("message").textContent=text;$("message").className=bad?"error":""}
  async function boot(){
   if(!shopId||!/^[0-9a-f-]{36}$/i.test(shopId)){$("shopInfo").textContent="This request link is incomplete or invalid.";message("Ask the service centre for its correct request link.",true);return}
-  const [{data,error},{data:sessionData}]=await Promise.all([db.from("shops").select("id,name,city").eq("id",shopId).maybeSingle(),db.auth.getSession()]);
+  const {data,error}=await db.from("shops").select("id,name,city").eq("id",shopId).maybeSingle();
   if(error||!data){$("shopInfo").textContent="This service centre is not currently accepting requests.";message(error?.message||"The service centre is unavailable or its subscription is inactive.",true);return}
-  shop=data;customerId=sessionData?.session?.user?.id||null;$("shopInfo").textContent=shop.name+(shop.city?" · "+shop.city:"");$("submitButton").disabled=false;
+  shop=data;$("shopInfo").textContent=shop.name+(shop.city?" · "+shop.city:"");$("submitButton").disabled=false;
  }
  $("requestForm").addEventListener("submit",async e=>{
   e.preventDefault();if(!shop)return;
   const service=$("serviceName").value,name=$("applicantName").value.trim(),phone=$("applicantPhone").value.trim(),documents=$("documents").value.trim(),notes=$("notes").value.trim();
   if(!service||!name||!/^[0-9+() -]{7,20}$/.test(phone)||phone.replace(/\D/g,"").length<7){message("Choose a service and enter a valid applicant name and mobile number.",true);return}
-  $("submitButton").disabled=true;message("Sending your request…");const id=crypto.randomUUID();
-  const {error}=await db.from("digital_service_applications").insert({id,shop_id:shop.id,customer_id:customerId,service_name:service,applicant_name:name,applicant_phone:phone,document_checklist:documents||null,notes:notes||null});
+  $("submitButton").disabled=true;message("Sending your request…");const {data,error}=await db.rpc("submit_digital_service_application",{p_shop_id:shop.id,p_service_name:service,p_applicant_name:name,p_applicant_phone:phone,p_document_checklist:documents||null,p_notes:notes||null});
   $("submitButton").disabled=false;if(error){message("Your service request could not be sent: "+error.message,true);return}
-  $("requestForm").reset();message("Service request sent to "+shop.name+".\nReference: DS-"+id.slice(0,8).toUpperCase()+"\nThe service centre will contact you about documents, fees and processing steps.");$("message").className="success";
+  $("requestForm").reset();message("Service request sent to "+shop.name+".\nReference: DS-"+data.application_number+"\nThe service centre will contact you about documents, fees and processing steps.");$("message").className="success";
  });
  boot().catch(error=>message("Could not load the request page: "+error.message,true));
 })();
