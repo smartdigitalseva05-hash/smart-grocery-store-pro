@@ -56,14 +56,15 @@ The shopkeeper dashboard now includes these vertical-specific tools:
 - **Jewellery:** item code, metal type, purity, gross/net weight, stone weight, metal rate, making-charge method, hallmark and certificate details. The displayed metal-plus-making estimate is indicative only and excludes stones, taxes and other charges.
 - **Restaurant:** table register with seating capacity and live table status; menu catalogue; multi-item kitchen tickets for table/takeaway orders; online customer order items automatically create kitchen tickets, and order progress synchronizes kitchen status (preparing, ready, served, cancelled).
 - **Hotel:** room register with room type, floor, guest capacity, nightly rate and room status; guest reservations with dates, phone, guest count, booking status and check-in/check-out; database trigger prevents overlapping active reservations for the same room.
-- **Office / Company:** employee register with code, contact, designation and employment type; date-wise attendance with present, absent, half-day and leave status plus check-in/check-out times.
+- **Office / Company:** employee register with monthly salary, date-wise attendance, leave requests with overlap-safe approvals, and a manual payroll register with database-calculated net pay and paid-status tracking. Statutory tax/benefit calculations are not included.
 - **Electronics:** device register with IMEI 1/2, serial number, brand/model, supplier, purchase/sale price, warranty dates and device lifecycle status; duplicate IMEI/serial values are blocked within each shop.
 - **Medical:** batch-wise medicine inventory with manufacturing/expiry dates, quantity, MRP, supplier, prescription-required flag and expiry alerts. This is inventory support, not a complete compliant pharmacy workflow.
 - **Digital Seva:** application register with service/applicant details, phone, reference number, applied/expected dates, document checklist, status progression and fee/payment balance tracking.
 - **Restaurant customer reservations:** shareable customer booking page, pending reservation requests, shopkeeper confirmation, table assignment, capacity validation and overlapping confirmed-table booking protection. Requests are not confirmed until the restaurant assigns a table; no deposit/payment is collected in this workflow.
 - **Hotel guest booking requests:** public room-type and date request form, guest contact details, shopkeeper review, room-capacity validation and atomic conversion into a hotel reservation. Customer requests are not confirmed until the hotel assigns a matching room; no deposit/payment is collected in this workflow.
+- **Office HR:** monthly salary on employee records, leave requests with overlap-safe approval, and a manual payroll register. Net pay is calculated in the database; the register does not calculate statutory TDS, PF, ESI, gratuity or overtime.
 
-Remaining specialist work includes restaurant POS, tax invoices and payment settlement; hotel online payment collection and housekeeping automation; office payroll, leave and task workflows; electronics repair jobs and warranty claims; medical prescription/dispensing and regulatory workflows; and Digital Seva document uploads plus official portal integrations. The implemented modules provide operational foundations; full end-to-end acceptance testing for every business type is still pending.
+Remaining specialist work includes restaurant POS, tax invoices and payment settlement; hotel online payment collection and housekeeping automation; office task and project workflows; electronics repair jobs and warranty claims; medical prescription/dispensing and regulatory workflows; and Digital Seva document uploads plus official portal integrations. The implemented modules provide operational foundations; full end-to-end acceptance testing for every business type is still pending.
 
 ## Orders
 Customer checkout currently supports cash on delivery (COD). Shopkeepers can accept pending COD orders, move them through delivery, and mark COD as collected only when delivery is confirmed. Customer online grocery payments are not implemented.
@@ -84,7 +85,7 @@ The three Razorpay Edge Functions are deployed:
 Subscription payments are **not ready for live use** until the merchant adds the three Razorpay secrets in Supabase Edge Function Secrets, registers the webhook, and completes Test Mode end-to-end checks. Follow [PAYMENT_SETUP.md](./PAYMENT_SETUP.md). Never put gateway secrets in frontend code, GitHub, or chat.
 
 ## Database security and automation
-- Row Level Security is enabled on all 36 public application tables (verified from PostgreSQL catalog).
+- Row Level Security is enabled on all 38 public application tables (verified from PostgreSQL catalog).
 - Sensitive authorization and tenant isolation are enforced by database policies and validated RPCs.
 - Supabase Cron runs subscription expiry checks hourly.
 - The frontend uses a Supabase publishable key only; never expose a service-role/secret key in browser code.
