@@ -99,3 +99,13 @@ A module is complete only when:
 - Safe independent read-only checks may run in parallel; writes to the same file/table must be sequential.
 - Do not call a module complete based only on its visual design.
 - Record each meaningful progress update in this file.
+
+## Super Admin Business Website Links (2026-11-01)
+
+- Added a **Business Website Links** panel to `owner.html` without changing `index.html` or existing database records.
+- The panel displays buttons for all 11 configured business types, with registered-store counts. It also detects additional business_type keys found in registered shops, so new category keys can appear without adding another fixed button manually.
+- Selecting a category lists its registered stores. A store receives an **Open Website** link only when `status = active` and `is_active = true`; the link opens the existing customer storefront filtered to that shop using `index.html?shop_id=<shop UUID>`.
+- Inactive/pending shops are shown as not live, without a misleading working link. Active links can also be copied.
+- Verified from schema and storefront code: `shops` has no dedicated website URL column; the existing customer storefront already supports `shop_id` filtering. Therefore the new links are shop-specific storefront URLs on the platform, not independently hosted custom domains.
+- Owner panel change commit: `abdfd310ef8f852781a1d58edcdcc30523475ff1` (followed by the same-file category label adjustment attempt; see current GitHub file for latest revision).
+- Browser end-to-end testing and live GitHub Pages deployment confirmation are still pending.
