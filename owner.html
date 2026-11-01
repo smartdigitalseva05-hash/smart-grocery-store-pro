@@ -52,6 +52,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  <a class="metric" href="#ownerCategoryControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧭 All 11 business categories</strong><span>Category-wise controls and global business search</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerShopkeeperControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">👥 Shopkeeper accounts</strong><span>Review linked shopkeeper accounts and access</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerCustomerControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧑‍🤝‍🧑 Customer directory</strong><span>Search customer accounts using privacy-safe profile fields</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
+ <a class="metric" href="#ownerOrderControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧾 Global orders</strong><span>Search order records across businesses (read-only)</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerCatalogControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">📦 Product categories</strong><span>Manage product categories and subcategories</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerPaymentControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">💳 Payments & subscriptions</strong><span>Review trusted payment verification records</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerAuditControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🛡️ Security & audit logs</strong><span>Inspect recorded security and admin activity</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
@@ -81,6 +82,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <div id="businessCategoryButtons" class="actions" style="margin-top:16px"></div><div id="businessWebsitesMessage" class="notice" role="status"></div><div id="businessWebsiteList" class="shop-list"></div></div>
 <div id="ownerShopkeeperControl" class="panel shop-section"><div class="row"><div><h1>Shopkeeper management</h1><div class="sub">View shopkeeper accounts, linked shops and control account access. Blocking an account also hides its shops from customers.</div></div><button id="shopkeepersRefresh" class="secondary">Refresh shopkeepers</button></div><div id="shopkeepersMessage" class="notice" role="status"></div><div id="shopkeeperList" class="shop-list"></div></div>
 <div id="ownerCustomerControl" class="panel shop-section"><div class="row"><div><h1>Customer directory</h1><div class="sub">Owner-only, read-only customer account lookup. Only profile name, account status and join date are shown; contact details and sensitive records are not exposed here.</div></div><button id="customersRefresh" class="secondary" type="button">Refresh customers</button></div><label class="field" for="customerGlobalSearch">Search customer accounts<input id="customerGlobalSearch" type="search" placeholder="Search customer name or account status…"></label><div id="customersMessage" class="notice" role="status"></div><div id="customerList" class="shop-list"></div></div>
+<div id="ownerOrderControl" class="panel shop-section"><div class="row"><div><h1>Global order console</h1><div class="sub">Owner-only, read-only order overview. Status changes stay disabled until a dedicated audited Owner RPC is available.</div></div><button id="ordersRefresh" class="secondary" type="button">Refresh orders</button></div><label class="field" for="orderGlobalSearch">Search all orders<input id="orderGlobalSearch" type="search" placeholder="Order number, shop, customer or status…"></label><div id="ordersMessage" class="notice" role="status"></div><div id="ownerOrderList" class="shop-list"></div></div>
 <div id="ownerCatalogControl" class="panel shop-section"><div class="row"><div><h1>Catalog management</h1><div class="sub">Create and enable product categories and subcategories.</div></div><button id="catalogRefresh" class="secondary">Refresh catalog</button></div>
 <div class="formgrid"><label class="field">New category<input id="newCategoryName" maxlength="80" placeholder="e.g. Fruits & Vegetables"></label><label class="field">New subcategory parent<select id="subCategoryParent"></select></label><label class="field">New subcategory<input id="newSubCategoryName" maxlength="80" placeholder="e.g. Fresh Fruits"></label></div>
 <div class="shop-actions"><button id="addCategoryButton" class="safe" type="button">Add category</button><button id="addSubCategoryButton" class="secondary" type="button">Add subcategory</button></div>
@@ -282,6 +284,37 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      actions.append(btn);card.append(actions);list.append(card);
    }
  }
+ let ownerOrders=[];
+ async function loadOwnerOrders(){
+   const list=$("ownerOrderList");list.replaceChildren();message("ordersMessage","Loading recent orders securely…");
+   const {data,error}=await client.from("orders").select("id,order_number,customer_id,shop_id,status,total,payment_method,payment_status,created_at").order("created_at",{ascending:false}).limit(200);
+   if(error){message("ordersMessage",error.message,true);return}
+   ownerOrders=data||[];
+   const shopIds=[...new Set(ownerOrders.map(o=>o.shop_id).filter(Boolean))];
+   const customerIds=[...new Set(ownerOrders.map(o=>o.customer_id).filter(Boolean))];
+   const [shopsResult,profilesResult]=await Promise.all([
+     shopIds.length?client.from("shops").select("id,name").in("id",shopIds):Promise.resolve({data:[],error:null}),
+     customerIds.length?client.from("profiles").select("id,full_name").in("id",customerIds):Promise.resolve({data:[],error:null})
+   ]);
+   if(shopsResult.error||profilesResult.error){message("ordersMessage","Orders loaded but related display names could not be loaded: "+(shopsResult.error||profilesResult.error).message,true);return}
+   const shops=new Map((shopsResult.data||[]).map(x=>[x.id,x.name]));
+   const customers=new Map((profilesResult.data||[]).map(x=>[x.id,x.full_name]));
+   const q=$("orderGlobalSearch").value.trim().toLowerCase();
+   const filtered=ownerOrders.filter(o=>[o.order_number,o.status,o.payment_status,o.payment_method,shops.get(o.shop_id),customers.get(o.customer_id)].filter(Boolean).join(" ").toLowerCase().includes(q));
+   message("ordersMessage",filtered.length+" of "+ownerOrders.length+" recent orders shown (maximum 200). Read-only; order status changes are not enabled.");
+   if(!filtered.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="No matching orders found.";list.append(empty);return}
+   for(const order of filtered){
+     const card=document.createElement("article");card.className="shop-card";
+     const top=document.createElement("div");top.className="shop-meta";
+     const info=document.createElement("div");
+     const title=document.createElement("div");title.className="shop-name";title.textContent=order.order_number||("Order "+order.id.slice(0,8));
+     const detail=document.createElement("div");detail.className="sub";detail.textContent=[shops.get(order.shop_id)||"Business",customers.get(order.customer_id)||"Customer",new Date(order.created_at).toLocaleString()].join(" · ");
+     const amount=document.createElement("div");amount.className="sub";amount.style.marginTop="7px";amount.textContent=money(order.total)+" · "+(order.payment_method||"Payment method n/a")+" · "+(order.payment_status||"Payment status n/a");
+     info.append(title,detail,amount);
+     const state=document.createElement("span");state.className="pill";state.textContent=order.status||"unknown";
+     top.append(info,state);card.append(top);list.append(card);
+   }
+ }
  let customerDirectory=[];
  function renderCustomers(){
    const list=$("customerList");list.replaceChildren();
@@ -388,7 +421,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    }
    loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
    $("ownerEmail").textContent=session.user.email||"Signed-in Owner";
-   await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers(),loadCustomers(),loadCatalog(),loadPayments(),loadAuditLogs()]);
+   await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers(),loadCustomers(),loadOwnerOrders(),loadCatalog(),loadPayments(),loadAuditLogs()]);
  }
  $("loginForm").addEventListener("submit",async e=>{
    e.preventDefault();$("loginButton").disabled=true;message("loginMessage","Signing in…");
@@ -404,6 +437,8 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  $("businessTypeFilter").addEventListener("change",loadShops);
   $("shopkeepersRefresh").addEventListener("click",loadShopkeepers);
  $("customersRefresh").addEventListener("click",loadCustomers);
+ $("ordersRefresh").addEventListener("click",loadOwnerOrders);
+ $("orderGlobalSearch").addEventListener("input",loadOwnerOrders);
  $("customerGlobalSearch").addEventListener("input",renderCustomers);
  $("paymentsRefresh").addEventListener("click",loadPayments);
  $("catalogRefresh").addEventListener("click",loadCatalog);
@@ -475,7 +510,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
     {label:"Payments & subscriptions",context:"Payment Control",id:"ownerPaymentControl",status:"Available",keywords:"payments razorpay subscriptions verify"},
     {label:"Security & audit logs",context:"Security Center",id:"ownerAuditControl",status:"Available",keywords:"security audit activity logs"},
     {label:"Customer directory (read-only)",context:"Customer Control",id:"ownerCustomerControl",status:"Available",keywords:"customers customer accounts profiles search"},
-    {label:"Global order management & status controls",context:"Order Control",status:"Pending",keywords:"orders order status delivery fulfilment"},
+    {label:"Global orders (read-only)",context:"Order Control",id:"ownerOrderControl",status:"Available",keywords:"orders order number status delivery fulfilment search"},
     {label:"Global product search & inventory controls",context:"Global Product Control",status:"Pending",keywords:"products inventory stock global edit delete"},
     {label:"Platform-wide settings",context:"Platform Settings",status:"Pending",keywords:"settings configuration platform features"},
     {label:"Unified admin reports",context:"Reports & Analytics",status:"Pending",keywords:"reports analytics sales revenue charts"}
