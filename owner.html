@@ -141,7 +141,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    const {data,error}=await client.from("shops").select("id,name,business_type,city,status,is_active").order("name");
    if(error){message("businessWebsitesMessage",error.message,true);return}
    websiteShops=data||[];
-   const extra=[...new Set(websiteShops.map(s=>s.business_type).filter(Boolean))].filter(k=>!BUSINESS_TYPES.some(t=>t.key===k)).map(key=>({key,label:key.replace(/[_-]/g," ").replace(/\\b\\w/g,c=>c.toUpperCase())}));
+   const extra=[...new Set(websiteShops.map(s=>s.business_type).filter(Boolean))].filter(k=>!BUSINESS_TYPES.some(t=>t.key===k)).map(key=>({key,label:key.replace(/[_-]/g," ").replace(/\b\w/g,c=>c.toUpperCase())}));
    const types=[...BUSINESS_TYPES,...extra];
    if(!types.some(t=>t.key===selectedWebsiteType))selectedWebsiteType=types[0]?.key||"grocery";
    for(const type of types){
