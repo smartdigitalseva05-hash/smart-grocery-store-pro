@@ -82,3 +82,6 @@ This file documents applied database changes; it is not a replacement for the Su
 - Migration `20261101110333_index_restaurant_reservation_foreign_keys` is applied. Added indexes for reservation customer/table foreign keys and the shopkeeper's newest-first reservation query.
 
 - Migration `20261101110740_hotel_customer_booking_requests` is applied. Adds secure public hotel booking requests, shopkeeper review and atomic confirmation into the existing hotel reservations table. Room/date conflicts are still enforced by the existing reservation trigger; customers are told that requests are not confirmed until the hotel assigns a room. No payment is collected on the request page.
+
+- Migration `20261101110740_hotel_customer_booking_requests` is applied. Adds secure public hotel booking requests, shopkeeper review and atomic confirmation into the existing hotel reservations table. Room/date conflicts are enforced by the existing reservation trigger; customers are told that requests are not confirmed until the hotel assigns a room. No payment is collected on the request page.
+- Migration `20261101110859_index_hotel_booking_request_reservation` is applied. Adds a unique reservation-link index so a hotel reservation can be linked to only one customer booking request and the foreign key is indexed.
