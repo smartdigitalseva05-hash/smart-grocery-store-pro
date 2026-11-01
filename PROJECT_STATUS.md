@@ -109,3 +109,14 @@ A module is complete only when:
 - Verified from schema and storefront code: `shops` has no dedicated website URL column; the existing customer storefront already supports `shop_id` filtering. Therefore the new links are shop-specific storefront URLs on the platform, not independently hosted custom domains.
 - Owner panel commits: `abdfd310ef8f852781a1d58edcdcc30523475ff1` (feature) and `632854f7dc04f140c68e5cdccf86f598870d0548` (dynamic category label polish).
 - Browser end-to-end testing and live GitHub Pages deployment confirmation are still pending.
+
+## Category-wise Super Admin Controls and Global Search (2026-11-01)
+
+- Replaced the earlier Business Website Links-only panel with **Category-wise Business Control** in `owner.html`.
+- The panel is rendered inside the existing Super Admin dashboard, which is only revealed after the authenticated Owner flow and the database `owner_dashboard_summary` permission check.
+- Added one button per configured business category plus **All Businesses**. Counts on buttons show registered stores in each category; unknown/new `business_type` keys are detected and get their own button.
+- Added global search across shop name, city, phone, status, category and owner display name. With **All Businesses** selected, results cover every category. Summary counters show total businesses, active businesses, category count and filtered result count.
+- Each shop card includes its category, owner and status, a live storefront link when active, and Owner RPC controls for shopkeeper approval (where applicable), activation, setting inactive, and suspension. Activation still relies on the existing verified-subscription server rule; no payment or subscription is fabricated.
+- All changes are in `owner.html`; `index.html` and database records/schema were not changed.
+- Commit: `3f619c473268f410c7c1aacd9da1e7aa15fe2f88`.
+- Static source checks passed for the new panel, global search, counters, category buttons and existing Owner RPC calls. Live browser testing and GitHub Pages deployment confirmation remain pending.
