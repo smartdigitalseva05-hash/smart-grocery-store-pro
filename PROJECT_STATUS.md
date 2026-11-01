@@ -137,3 +137,15 @@ A module is complete only when:
 - Category-specific workspace configurations exist, but that alone does not prove every specialized product/order/customer workflow is complete for every business type.
 - The live database previously contained only one registered Grocery shop; the other 10 categories have no live shop records to exercise their data flows against.
 - Continue auditing the real forms, database tables, RLS policies, customer discovery and order handling per category. Keep the Category Module in progress until the actual feature coverage and permissions are verified.
+
+
+## Role-based Powerful Search & Quick Finder (2026-11-01)
+
+- Added a separate **Owner Quick Finder** to `owner.html` and **Shopkeeper Quick Finder** to `shopkeeper.html`.
+- Both finders are shown only inside their respective authenticated workspace header; each searches only its own role's visible workspace content. The Shopkeeper finder does not index or expose the Owner dashboard or Owner-only controls.
+- Search indexes visible headings, buttons, links, form labels, input placeholders and accessible select labels. Results show the containing section name; selecting a result scrolls to it, highlights it briefly and focuses controls where appropriate.
+- Added keyboard shortcut **Ctrl + K** (also Cmd + K on supported devices) to open the finder, plus Escape and outside-click dismissal.
+- Hidden category panels and hidden dashboard sections are excluded from results until visible. No database queries, permissions, shop data or payment logic were changed.
+- Files changed: `owner.html`, `shopkeeper.html`. `index.html` remains untouched.
+- Initial source validation: both updated files have valid inline JavaScript syntax and no duplicate HTML IDs. The repository's GitHub Actions static validation workflow will also check the latest commit.
+- Scope note: this is a navigation/tool finder, not a cross-database search. Owner's existing All Businesses global shop search remains the place to find registered stores. Shopkeeper product/order data remains within its existing workspace lists and access rules.
