@@ -322,3 +322,11 @@ The next five owner-approved features have moved from **Pending** to **In Progre
 - Keep all five features **In Progress** until their actual controls are configured/implemented and relevant automated/API tests pass.
 - Do not deploy untested rate limiting, MFA gates, CORS restrictions, alert pipelines or recovery changes that could lock out legitimate users or disrupt payments.
 - Preserve index.html, existing business flows and database records unless a reviewed change is necessary.
+
+
+### Follow-up read-only audit (2026-11-01)
+- Supabase project state is **ACTIVE_HEALTHY**; organization tier is **Free**. Backup/PITR availability, retention and restore capability are still not confirmed from this metadata, so Backup & Recovery remains In Progress.
+- Targeted database catalog query confirms RLS is enabled on `profiles`, `shops`, `audit_logs` and `payments`. Current policy counts: profiles 2, shops 5, audit_logs 2, payments 1. Policy names/counts are not proof of policy correctness; predicate and role coverage still require review and negative authorization tests.
+- `audit_logs` has admin SELECT and INSERT policies, but end-to-end audit event coverage, tamper resistance, retention and Owner-only UI visibility have not been verified. Audit events are not yet declared Completed.
+- The current project metadata and available read-only APIs did not expose a verified MFA enforcement configuration or backup/restore drill. No MFA settings, Auth rate limits, database schema/data, secrets, Edge Functions, or frontend files were changed.
+- Security Advisor still reports **Leaked Password Protection Disabled**. Enable it in Supabase Auth password security settings after reviewing the impact on existing password users.
