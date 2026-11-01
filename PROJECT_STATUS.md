@@ -233,3 +233,14 @@ A module is complete only when:
 - Source commit: `a41ed38a04092de760d96bf36538d4fed8581a40`.
 - Static content verification passed: one All-in-One button, searchable modal, available/pending labels, disabled pending entries, five pending feature groups, and keyboard shortcut are present.
 - Overall All-in-One control feature status: **In Progress** until GitHub static validation and Pages deployment for this change succeed. The launcher/navigation layer is implemented; global customer/order/product operations and platform settings remain **Pending**.
+
+
+## Owner All-in-One Control — Customer Directory (2026-11-01)
+
+- Added a Customer Directory panel to `owner.html`, linked from the Owner Command Center and searchable through the All-in-One Control launcher.
+- Directory loads up to 500 customer profiles ordered newest first and filters locally by customer name or active/blocked status.
+- Privacy scope: displays only profile display name, account status and join date. It does not display phone, email, address, payment information, order contents or customer documents.
+- Read-only by design: no customer block/delete/role-change action was added because a dedicated audited Owner backend operation and policy review are not yet verified.
+- Source commits: `9d2602e29755d2aa79aa78f50ac4e79cb4940325` and `1c6229ddfe6dfe01266fe4a55dd809eddc0e770f`.
+- Customer Directory implementation: **In Progress** pending static validation, deployment and confirmation that the Owner RLS query succeeds. Customer account mutation controls remain **Pending**.
+- Owner All-in-One overall status: **In Progress**. Global Order controls, global Product controls, Platform Settings and reports remain **Pending**.
