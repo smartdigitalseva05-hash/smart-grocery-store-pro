@@ -268,3 +268,12 @@ A module is complete only when:
 - Source commit: `b73b1c954cd16271e8d0fb3ab01f4d95d9d5decf`.
 - Customer directory, order console and product console remain **In Progress** pending final validation/deployment and authenticated Owner query verification. No database records or schema were modified.
 - Order status mutation, customer account mutation, product mutation/bulk inventory controls, platform settings and analytics remain **Pending**.
+
+
+## Super High Security Shield — permanent project requirement (2026-11-01)
+
+- Added `SECURITY_ARCHITECTURE.md` as the mandatory security specification for every Smart Business Pro module.
+- Requirements include zero-trust server-side authorization, Super Admin MFA/step-up protection, Supabase RLS and tenant isolation, secret/key protection, abuse/rate limiting, input and browser attack protections, payment webhook signature/idempotency checks, audit alerts, encrypted backups and recovery.
+- Added a security verification gate covering role-based access, cross-shop IDOR/BOLA, auth/session security, secret scanning, injection/XSS/CSRF, file uploads, payment replay/concurrency, backup restore and Supabase Security Advisor.
+- This commit records the architecture and acceptance criteria only. It does **not** mean these controls have all been implemented or tested. The Security & Protection Module remains **In Progress**; each control must be implemented and verified before being marked Completed.
+- Existing `index.html`, database schema, and business/customer records were not changed by this documentation update.
