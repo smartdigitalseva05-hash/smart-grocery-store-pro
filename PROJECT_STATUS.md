@@ -107,5 +107,5 @@ A module is complete only when:
 - Selecting a category lists its registered stores. A store receives an **Open Website** link only when `status = active` and `is_active = true`; the link opens the existing customer storefront filtered to that shop using `index.html?shop_id=<shop UUID>`.
 - Inactive/pending shops are shown as not live, without a misleading working link. Active links can also be copied.
 - Verified from schema and storefront code: `shops` has no dedicated website URL column; the existing customer storefront already supports `shop_id` filtering. Therefore the new links are shop-specific storefront URLs on the platform, not independently hosted custom domains.
-- Owner panel change commit: `abdfd310ef8f852781a1d58edcdcc30523475ff1` (followed by the same-file category label adjustment attempt; see current GitHub file for latest revision).
+- Owner panel commits: `abdfd310ef8f852781a1d58edcdcc30523475ff1` (feature) and `632854f7dc04f140c68e5cdccf86f598870d0548` (dynamic category label polish).
 - Browser end-to-end testing and live GitHub Pages deployment confirmation are still pending.
