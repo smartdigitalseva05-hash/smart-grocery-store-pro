@@ -222,3 +222,14 @@ A module is complete only when:
 ### Security caveat
 - Security Advisor still reports leaked-password protection disabled. This is a project-level Auth setting and remains Pending; do not claim Security Module complete.
 - No schema, RLS policy, Auth setting, payment record, customer record or existing shop record was changed in this audit.
+
+
+## All-in-One Super Admin Control & Search (2026-11-01)
+
+- Added one prominent **All-in-One Control** button to the authenticated Owner header; it opens the centralized searchable control directory.
+- Search directory includes available sections for Business & 11 categories, Shopkeeper Accounts, Product Categories, Payments & Subscriptions, and Security & Audit Logs. Selecting an available result jumps to its existing Owner control section.
+- Directory also indexes Customer Controls, Global Order Controls, Global Product/Inventory Controls, Platform Settings, and Reports. These are explicitly labelled **Pending** and disabled in the launcher until their secure backend workflows are implemented; no fake controls or unauthorized actions are exposed.
+- Search matches feature names, alternate keywords and control area. Ctrl+K / Cmd+K opens the same launcher; Escape closes it.
+- Source commit: `a41ed38a04092de760d96bf36538d4fed8581a40`.
+- Static content verification passed: one All-in-One button, searchable modal, available/pending labels, disabled pending entries, five pending feature groups, and keyboard shortcut are present.
+- Overall All-in-One control feature status: **In Progress** until GitHub static validation and Pages deployment for this change succeed. The launcher/navigation layer is implemented; global customer/order/product operations and platform settings remain **Pending**.
