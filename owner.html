@@ -400,7 +400,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  const results=document.getElementById("quickFindResults");
  const closeButton=document.getElementById("quickFindClose");
  let entries=[];
- const clean=value=>(value||"").replace(/\\s+/g," ").trim();
+ const clean=value=>(value||"").replace(/\s+/g," ").trim();
  function isVisible(el){
    if(!el||!el.isConnected)return false;
    for(let node=el;node&&node!==document.body;node=node.parentElement){
@@ -434,7 +434,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    results.replaceChildren();
    const q=clean(query).toLowerCase();
    if(!q){const hint=document.createElement("div");hint.className="quick-find-empty";hint.textContent="Type a feature, page, setting or tool name to find it.";results.append(hint);return}
-   const words=q.split(/\\s+/).filter(Boolean);
+   const words=q.split(/\s+/).filter(Boolean);
    const ranked=entries.map((entry,index)=>{
      const score=words.reduce((n,word)=>n+(entry.search.includes(word)?(entry.label.toLowerCase().includes(word)?3:1):0),0);
      return {entry,index,score};
