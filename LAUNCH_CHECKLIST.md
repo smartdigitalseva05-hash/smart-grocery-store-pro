@@ -11,14 +11,14 @@ Last verified: 2026-11-01
   - `razorpay-verify-subscription-payment`
   - `razorpay-payment-webhook`
 - The approved customer storefront `index.html` remains unchanged. Its protected Git blob SHA is `854f4646215be9f0a5aaacc72ad4b7b56ac58f3e`.
-- All 40 public application tables have Row Level Security enabled.
+- All 41 public application tables have Row Level Security enabled.
 - Security Advisor has one remaining warning: leaked-password protection is disabled.
 - Performance Advisor has no remaining unindexed-foreign-key or multiple-permissive-policy findings. It reports unused indexes; do not remove those until real workload data is available.
 - Temporary smoke-test rows were rolled back. No smoke-test shops, reservations, payroll rows, repair jobs or service requests remain.
 - Customer-facing pages now exist for restaurant reservations, hotel booking requests, electronics repair requests and Digital Seva requests.
 - Digital Seva customer requests use a SECURITY INVOKER public endpoint backed by a private authorization-checked function. Anonymous users cannot read application records or directly set fees/statuses.
 - Hotel booking requests are converted into reservations atomically; existing room/date overlap checks remain in force.
-- Office leave approvals block overlapping approved leave. Payroll net pay is calculated in the database and paid records cannot be reopened.
+- Office leave approvals block overlapping approved leave. Payroll net pay is calculated in the database and paid records cannot be reopened. Office tasks support assignment, priority, due dates and guarded completion.
 - Electronics repair job updates use guarded status transitions and preserve customer-submitted details.
 - Hotel housekeeping tasks use guarded status transitions and record completion time.
 
