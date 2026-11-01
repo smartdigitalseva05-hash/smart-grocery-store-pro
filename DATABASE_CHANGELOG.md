@@ -95,3 +95,6 @@ This file documents applied database changes; it is not a replacement for the Su
 - Migration `20261101111813_digital_services_public_application_intake` is applied. Adds customer-linked public digital-service intake with shop-specific access checks, generated application numbers, private application records and guarded status transitions. The public form does not collect identity numbers, OTPs or document scans.
 
 - Migration `20261101111953_secure_digital_service_public_request_rpc` is applied. Public applicants now submit through a SECURITY INVOKER endpoint backed by a private authorization-checked function; direct anonymous table inserts and public application reads are disabled.
+
+- Migration `20261101112151_hotel_housekeeping_task_management` is applied. Adds a private, shopkeeper-managed housekeeping task register for cleaning, linen changes, inspections and maintenance, with staff assignment and guarded task transitions.
+- Migration `20261101112228_index_hotel_housekeeping_room_fk` is applied. Adds a composite index for the room-scoped housekeeping foreign key.
