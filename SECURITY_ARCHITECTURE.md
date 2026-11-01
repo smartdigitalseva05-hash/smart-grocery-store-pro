@@ -50,6 +50,26 @@ Use defense in depth and zero-trust authorization to reduce the risk of account 
    - Alert on suspicious sign-ins, repeated failures, privilege changes, unusual payment events, and sensitive admin actions.
    - Maintain encrypted backups, retention rules, and a documented restore procedure; periodically verify restoration.
 
+
+## The 10 mandatory Security Shield features (owner-approved)
+
+These are the exact ten features. All ten are mandatory; none may be omitted or treated as optional.
+
+1. **Zero-Trust Security** — verify identity, session validity, role, resource ownership and permission on every protected request at the trusted server/database layer.
+2. **Super Admin Lock** — require MFA for Owner/Super Admin and fresh re-authentication for sensitive actions; enforce server-side role checks and safe session revocation.
+3. **Database Fortress** — enforce Supabase RLS on exposed tables, least-privilege grants, correct tenant/shop isolation, secure RPC/view/Storage policies and server-side authorization.
+4. **Anti-Brute-Force** — apply login and sensitive-endpoint rate limits, progressive delays or temporary lockout, abuse detection and safe recovery controls.
+5. **Secret Vault** — keep service-role keys, Razorpay secrets, signing keys and credentials only in server-side secret storage; scan repository/history and rotate any exposed secret.
+6. **Attack Protection** — server-side validation, parameterized queries, output encoding, CSP and applicable CSRF protections; test XSS, SQL injection, IDOR/BOLA, open redirects, unsafe uploads and mass assignment.
+7. **Real-Time Alerts** — detect and alert on suspicious sign-ins, repeated failures, privilege changes, unusual payment events and sensitive Owner actions, with protected alert delivery.
+8. **Backup & Recovery** — encrypted backups, restricted access, retention policy, documented recovery objectives and periodic restore drills.
+9. **Audit Trail** — access-controlled, tamper-resistant records of who performed which security-relevant action and when; exclude secrets and unnecessary personal data.
+10. **Payment Shield** — verify Razorpay webhook signatures using the raw request body and server-side secret; validate amount/currency/order, enforce idempotency and replay/concurrency protection, and never trust client payment status.
+
+## Ten-feature completion gate
+
+Maintain a separate status and evidence for each of the ten features in `PROJECT_STATUS.md`. A feature is **Completed** only after implementation and relevant automated/API/security tests pass. Until then it must remain **Pending** or **In Progress**. The whole Security Shield is Completed only when all ten pass their acceptance checks and deployment/security review is verified.
+
 ## Required verification before Security Module can be marked Completed
 - RLS/policy matrix tests for signed-out, customer, shopkeeper, shop owner, and Super Admin roles.
 - Cross-shop IDOR/BOLA tests for reads, writes, storage, RPCs, and Edge Functions.
