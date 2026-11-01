@@ -98,3 +98,5 @@ This file documents applied database changes; it is not a replacement for the Su
 
 - Migration `20261101112151_hotel_housekeeping_task_management` is applied. Adds a private, shopkeeper-managed housekeeping task register for cleaning, linen changes, inspections and maintenance, with staff assignment and guarded task transitions.
 - Migration `20261101112228_index_hotel_housekeeping_room_fk` is applied. Adds a composite index for the room-scoped housekeeping foreign key.
+
+- Migration `20261101112706_office_task_project_tracker` is applied. Adds shop-scoped office task assignment, priority, due dates and guarded open/in-progress/blocked/completed/cancelled transitions.
