@@ -113,3 +113,6 @@ The existing `index.html` is intentionally preserved. Do not replace it without 
 
 - Added an index on `grocery_supplier_payments.created_by` to support creator-linked lookups and foreign-key maintenance.
 - The index is applied in Supabase migration `20261031142105` (`index_grocery_supplier_payment_creator`).
+
+
+See [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md) for verified deployment status, payment configuration requirements, security actions and remaining launch tests.
