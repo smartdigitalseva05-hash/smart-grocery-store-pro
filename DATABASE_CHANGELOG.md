@@ -87,3 +87,5 @@ This file documents applied database changes; it is not a replacement for the Su
 - Migration `20261101110859_index_hotel_booking_request_reservation` is applied. Adds a unique reservation-link index so a hotel reservation can be linked to only one customer booking request and the foreign key is indexed.
 
 - Migration `20261101111122_office_leave_and_payroll_register` is applied. Adds employee monthly salary, leave requests with approved-date overlap protection, and a manual payroll register with database-calculated net amounts and irreversible paid-state tracking. No statutory tax or benefits calculations are performed.
+
+- Migration `20261101111418_electronics_customer_repair_jobs` is applied. Adds public repair intake, shopkeeper-only diagnosis and cost fields, guarded job-state transitions, customer-data immutability and delivery timestamp tracking. Customer requests are not a repair quote or warranty approval.
