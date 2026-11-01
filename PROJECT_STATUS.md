@@ -196,3 +196,29 @@ A module is complete only when:
 4. Keep incomplete sub-features explicitly **Pending**, even when their parent dashboard or module has a visible UI.
 5. Do not mark physical user testing as required; use code review, automated/static tests and server/API checks as the project verification approach.
 6. Keep `index.html` and existing database records safe unless the Owner explicitly requests a change.
+
+
+## Owner Command Center — implementation audit update (2026-11-01)
+
+**Overall Owner Command Center status: In Progress (not fully completed).**
+
+### Verified backend capabilities
+- Owner dashboard summary is protected by an explicit active Super Admin check in `owner_dashboard_summary()`.
+- `shops` policies allow active Super Admin read/update/delete; shop activation and shopkeeper status changes already route through Owner RPC functions.
+- `profiles` SELECT and UPDATE policies include the private Super Admin check.
+- `products` SELECT/INSERT/UPDATE/DELETE policies include the private Super Admin check (product mutation still needs careful UI validation and audit review before exposing global bulk actions).
+- `orders` SELECT policy includes the private Super Admin check, but direct INSERT is explicitly denied and no Owner UPDATE policy appeared in the inspected policy set. Do not add order status mutation controls until a dedicated, audited Owner RPC and transition rules are verified.
+- `payments` SELECT policy includes the private Super Admin check; successful payment application uses the existing `verify_payment_and_activate` RPC.
+- `audit_logs` SELECT is protected by the private Super Admin check.
+
+### Remaining Owner Command Center work — explicitly Pending
+1. Global customer directory with safe fields, search and account controls; do not expose unnecessary customer PII.
+2. Global order console: search/filter and detail view; status changes require a dedicated server-side Owner RPC with allowed transition checks and audit events.
+3. Global product console: search/filter and safe per-product actions; bulk changes require explicit server-side authorization and audit.
+4. Platform settings console: only expose settings backed by a validated schema/RPC; no client-only fake settings.
+5. Unified audit trail with filters and pagination; verify no secrets or excessive personal data are rendered.
+6. Final role/access tests for Owner, Shopkeeper, Customer and signed-out users, plus static validation and successful deployment.
+
+### Security caveat
+- Security Advisor still reports leaked-password protection disabled. This is a project-level Auth setting and remains Pending; do not claim Security Module complete.
+- No schema, RLS policy, Auth setting, payment record, customer record or existing shop record was changed in this audit.
