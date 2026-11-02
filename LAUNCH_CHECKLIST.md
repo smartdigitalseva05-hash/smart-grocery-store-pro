@@ -1,6 +1,6 @@
 # Smart Business Pro — Launch Readiness Checklist
 
-Last verified: 2026-11-01
+Last verified: 2026-11-02
 
 ## Verified and deployed
 
@@ -65,7 +65,7 @@ See [PAYMENT_SETUP.md](PAYMENT_SETUP.md).
 
 ### 2. Authentication security
 
-Enable leaked-password protection in the Supabase Authentication password-security settings. This project currently has one Security Advisor warning for that setting; it is not changed automatically by the code deployment.
+Supabase's official documentation says leaked-password protection is available on Pro plan and above. This project is currently on the Free tier, so the Security Advisor warning is plan-gated and cannot be cleared by frontend code. Keep the warning open until the project is on an eligible plan and the Auth setting is enabled and re-verified.
 
 ### 3. Real browser acceptance tests
 
@@ -101,3 +101,11 @@ These items are not represented as completed:
 - Do not collect Aadhaar/PAN numbers, OTPs, passwords or sensitive document scans through public forms.
 - Office payroll is a manual record and does not calculate statutory deductions.
 - Customer hotel/restaurant requests are not confirmed until the shopkeeper accepts them; those request pages do not collect deposits.
+
+
+## Automated checks and current security gate — 2026-11-02
+
+- Static validation now also checks local page links/assets, `target="_blank"` opener safety, and common secret/key patterns in public HTML/JS. Latest validator commit: `4bdedaa0c065102fc55555c7d9b12525dd08033b`; confirm the matching GitHub Actions run before considering the new checks complete.
+- Current Supabase catalog snapshot: 41 public tables; all 41 have RLS enabled and policies. No RLS-disabled table, policy-less RLS table, or UPDATE policy missing WITH CHECK was found in the targeted query.
+- Seven public/anon mutation policies exist; they are structurally constrained to account ownership/admin checks or bounded customer-request inserts, and direct order inserts are denied. Negative API tests remain required.
+- Supabase Free tier currently blocks leaked-password protection (official docs: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). The current Security Advisor warning remains a launch security gate.
