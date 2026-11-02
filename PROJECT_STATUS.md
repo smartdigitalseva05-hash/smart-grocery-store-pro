@@ -614,3 +614,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Follow-up checks confirmed 0 persisted temporary Auth users, orders, payments or audit rows.
 - Profile privilege test: authenticated customer could update their own `full_name`, but direct `role` escalation was blocked by missing column UPDATE privilege (SQLSTATE 42501). Test transaction rolled back.
 - These SQL role simulations now cover two-tenant `shops`/`products`, customer-vs-shopkeeper `orders`, payment owner/shopkeeper/Super Admin AAL2 visibility, profile role-field protection, and Storage upload isolation. Authenticated HTTP/PostgREST negative tests and full table-by-table coverage are still outstanding; Zero-Trust and Database Fortress remain In Progress.
+
+
+### Public digital-service intake anti-abuse limiter — applied and tested (2026-11-02)
+- Added and applied `supabase/migrations/20261102240000_rate_limit_public_digital_service_intake.sql`.
+- The public digital-service intake RPC now applies atomic rolling 60-minute limits: max 5 submissions per normalized phone number per shop, and max 120 submissions per digital-service shop. Exceeding either limit raises PostgREST `PT429` (HTTP 429).
+- Phone/shop identifiers are HMACed with a random 32-byte key stored in a private, RLS-enabled table. Rate-limit counters are in a private RLS-enabled table; PUBLIC/anon/authenticated/service_role have no table access and cannot directly execute the limiter. Old counters are cleaned after 7 days.
+- Positive/negative transactional tests passed: first 5 same-phone requests succeeded and the 6th was blocked; 120 different-phone requests succeeded and the 121st for the shop was blocked. Each test was rolled back; follow-up checks confirm 0 persisted test users, shops, applications or rate-limit rows.
+- This is an application-level abuse control for the public intake RPC, not IP-level rate limiting. Supabase Auth sign-in rate limits and dashboard CAPTCHA/bot settings still require project Dashboard confirmation. No real applicant or shop data was changed.
