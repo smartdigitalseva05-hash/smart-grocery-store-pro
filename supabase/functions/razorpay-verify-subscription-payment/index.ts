@@ -39,6 +39,17 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   const userClient = ctx.supabase;
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return reply(401, { error: "Invalid or expired session." });
+  const admin = createAdminClient();
+  const { error: rateLimitError } = await admin.rpc("consume_payment_endpoint_rate_limit", {
+    p_user_id: userData.user.id, p_action: "verify",
+  });
+  if (rateLimitError) {
+    if (rateLimitError.code === "PT429") return reply(429, { error: "Too many payment verification attempts. Please wait 15 minutes and try again." });
+    console.error("Payment verification rate-limit check failed", rateLimitError.code || "unknown");
+    return reply(503, { error: "Payment security check is temporarily unavailable. Please retry shortly." });
+  }
+  const contentType = req.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().startsWith("application/json")) return reply(415, { error: "Content-Type must be application/json." });
   const limitedBody = await readBodyLimited(req, 16 * 1024);
   if (limitedBody.error === "too_large") return reply(413, { error: "Request body exceeds the 16 KiB limit." });
   if (limitedBody.error) return reply(400, { error: "Invalid request body headers." });
@@ -81,7 +92,6 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (gatewayPayment.order_id !== payment.gateway_order_id || gatewayPayment.status !== "captured" ||
       gatewayPayment.captured !== true || gatewayPayment.currency !== "INR" || gatewayPayment.amount !== expectedPaise)
     return reply(409, { error: "Razorpay payment is not captured or does not match the expected amount." });
-  const admin = createAdminClient();
   const payload = { ...(payment.gateway_payload || {}), razorpay_order_id: payment.gateway_order_id,
     razorpay_payment_id: body.razorpay_payment_id, captured: true, signature_verified: true, api_status_verified: true };
   const { data: saved, error: updateError } = await admin.from("payments").update({ status: "success",
