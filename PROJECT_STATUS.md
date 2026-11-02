@@ -873,3 +873,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Filters operate only on the already shop-scoped latest 100 order rows; order status mutations still go through the existing guarded `update_order_status_by_shopkeeper` RPC. No direct order-table status update was added.
 - Added regression assertions for the filter controls and filtered render path. Automated validation and live browser tests remain pending.
 - Order Module remains **In Progress**: customer checkout, status-transition matrix, owner oversight, payment reconciliation and real two-tenant HTTP/PostgREST tests are not all verified.
+
+
+### GitHub Pages storefront guard and category page deployment repaired — committed, verification pending (2026-11-02)
+- Reviewed the three intentional customer storefront changes committed earlier on 2026-11-02: shop-specific fail-closed links and product isolation, need-focused customer UI/privacy, and public shop address/hours/map details.
+- The Pages workflow still pinned the older approved `index.html` blob, so deployment correctly stopped. Updated only the workflow's approved baseline to the current reviewed `index.html` blob `750eb7dc79fee71e4874219f48add4887b55f203`; `index.html` itself was not modified in this work.
+- Added `business-category.html` to the Pages workflow's required-file checks and published artifact, so the 11 portal category links will not point to an omitted file after deployment.
+- Normalized all 11 category slug map keys in `apply-shop.html` to satisfy the existing exact static regression assertions; category behavior is unchanged.
+- Earlier CI attempts exposed validator issues (unquoted category keys and the stale storefront baseline); the source mapping and workflow guard are now corrected. The latest static validation and deployment runs must pass before claiming publication.
