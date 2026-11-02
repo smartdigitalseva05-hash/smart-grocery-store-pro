@@ -153,6 +153,8 @@ assert(workspace.includes('id="procurementHeading"'), "Supplier/purchase panel m
 assert(workspace.includes('textContent="Add a product or service"'), "Other Businesses must have product/service catalogue wording.");
 assert(workspace.includes('textContent="Add a Daily Needs item"'), "Daily Needs must have category-specific item creation wording.");
 assert(workspace.includes('id="productNameLabel"'), "Category-specific product/service naming label is missing.");
+assert(workspace.includes('category:categories(name)'), "Inventory CSV must resolve category names through the products.category_id foreign key.");
+assert(workspace.includes('x.category?.name||""'), "Inventory CSV must export the joined category name safely.");
 
 assert(workspace.includes('id="customerDirectoryRefresh"'), "Customer contact refresh control is missing.");
 
