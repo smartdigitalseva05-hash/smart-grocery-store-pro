@@ -88,4 +88,21 @@ for (const [key, label] of categories) {
   assert(owner.includes('key:"' + key + '"'), "Owner category controls are missing: " + key);
   assert(portal.includes("<h3>" + label + "</h3>"), "Portal category card is missing: " + label);
 }
+
+assert(workspace.includes("const cfg=types[shop.business_type]||types.other;"),
+  "Unknown business types must use the generic workspace, never inherit Grocery tools.");
+
+const requiredCategoryPanels = [
+  ["Restaurant", 'id="restaurantKitchenPanel"'],
+  ["Hotel", 'id="hotelManagementPanel"'],
+  ["Office / Company", 'id="officeManagementPanel"'],
+  ["Electronics", 'id="electronicsManagementPanel"'],
+  ["Medical", 'id="medicalManagementPanel"'],
+  ["Digital Services", 'id="digitalSevaPanel"']
+];
+for (const [label, marker] of requiredCategoryPanels) {
+  assert(workspace.includes(marker), "Shopkeeper workspace is missing the " + label + " module panel.");
+}
+assert(workspace.includes("function renderVariants("), "Garments variant renderer is missing.");
+assert(workspace.includes("function loadJewelleryDetails("), "Jewellery detail loader is missing.");
 console.log("Static validation passed: " + checks + " checks across " + pages.length + " pages, " + publicScripts.length + " public scripts and " + categories.length + " business categories.");
