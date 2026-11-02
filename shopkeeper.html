@@ -923,7 +923,8 @@ async function loadGrowthInsights(){
 function bindGrowthTools(){
  $("growthRefresh").addEventListener("click",loadGrowthInsights);
  $("exportBusinessReport").addEventListener("click",exportBusinessReports);
- $("advancedAlertsRefresh").addEventListener("click",loadAdvancedAlerts);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
+ $("advancedAlertsRefresh").addEventListener("click",loadAdvancedAlerts);
+ $("lowStockLimit").addEventListener("change",loadAdvancedAlerts);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
  $("shareShopWhatsApp").addEventListener("click",()=>{const msg=[$("whatsAppPromo").value.trim()||("Hello! Visit "+currentShop.name+" to view our products."),shopPublicUrl()].join("\n\n");window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");say("whatsAppMessage","WhatsApp opened. Review and send the message yourself.")});
  $("copyShopLink").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(shopPublicUrl());say("qrMessage","Shop link copied.")}catch{say("qrMessage","Copy not supported. "+shopPublicUrl(),true)}});
  $("downloadShopQr").addEventListener("click",()=>{const c=$("shopQr").querySelector("canvas");if(!c){say("qrMessage","Generate the QR first.",true);return}const a=document.createElement("a");a.href=c.toDataURL("image/png");a.download="shop-qr.png";a.click()});
@@ -997,12 +998,13 @@ async function loadAdvancedAlerts(){
  host.replaceChildren();msg.textContent="Checking advanced reminders…";
  const type=currentShop.business_type,today=new Date();today.setHours(0,0,0,0);
  const iso=today.toISOString().slice(0,10),soon=new Date(today);soon.setDate(soon.getDate()+30);const soonISO=soon.toISOString().slice(0,10);
+ const retailThreshold=Math.max(0,Math.min(10000,Number($("lowStockLimit")?.value??5)||0));
  const add=(title,detail,severity="info")=>{const card=document.createElement("article");card.className="product";const head=document.createElement("div");head.className="row";const strong=document.createElement("strong");strong.textContent=title;const pill=document.createElement("span");pill.className="pill";pill.textContent=severity==="high"?"Action needed":severity==="warn"?"Attention":"Reminder";head.append(strong,pill);const p=document.createElement("div");p.className="sub";p.textContent=detail;card.append(head,p);host.append(card)};
  const query=async(table,columns)=>{const r=await db.from(table).select(columns).eq("shop_id",currentShop.id).limit(250);if(r.error)throw new Error(table+": "+r.error.message);return r.data||[]};
  try{
   if(["grocery","daily_needs","other"].includes(type)){
    const rows=await query("products","id,name,stock,is_available");
-   const low=rows.filter(x=>Number(x.stock||0)<=5);
+   const low=rows.filter(x=>Number(x.stock||0)<=retailThreshold);
    add("Low-stock watch",low.length?low.length+" product(s) at or below 5 units: "+low.slice(0,5).map(x=>x.name+" ("+x.stock+")").join(", "):"No products are at or below 5 units.");
    add("Catalogue availability",rows.filter(x=>!x.is_available).length+" product(s) currently marked unavailable.");
   }else if(type==="garments"){
