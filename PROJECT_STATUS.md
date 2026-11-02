@@ -843,3 +843,10 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Verified exactly one audit trigger is attached to `public.order_items`, and anon/authenticated/PUBLIC cannot directly execute the private trigger function. The project now has 39 audit-named triggers, with 41/41 public tables still RLS-enabled.
 - Migration history now contains 146 applied migrations; the matching SQL source is committed in `supabase/migrations/`. No production order rows were inserted or changed for this check.
 - Trigger attachment and ACL are verified; a full transactional create/update/delete integration test for order line items remains pending to avoid mutating live customer order workflows.
+
+
+### Dedicated category navigation and registration — 2026-11-02
+- Added `business-category.html` to the static regression validator's required page set, so its inline JavaScript and local links are included in the same checks as other public pages.
+- Added regression assertions for all 11 dedicated category URL slugs, portal links, and category-aware registration routing.
+- Fixed category registration handoff: the dedicated landing-page URL now maps its slug (for example `daily-needs`, `office-company`, `digital-services`) to the exact database business_type key before the application is submitted. Unknown URL values are ignored and the user can still choose manually.
+- Preserved the existing `index.html` customer storefront. The code is committed, but GitHub Pages deployment and a live browser registration test have not yet been confirmed; do not mark those as passed.
