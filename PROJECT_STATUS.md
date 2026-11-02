@@ -941,3 +941,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Both queries explicitly filter by the currently selected `shop_id`; existing Supabase RLS remains the authorization boundary. CSV cells are quoted and formula-leading characters are neutralized to reduce spreadsheet formula injection risk. No records are written or modified.
 - Existing storefront `index.html` is unchanged. Static validation and deployment for this commit are pending.
 - Limitation: export is a shopkeeper-initiated browser download, not automatic accounting sync; report completeness is capped at the latest 5,000 rows per dataset.
+
+
+### Advanced reports and configurable stock alerts — 2026-11-02
+- Added shopkeeper-initiated CSV export for selected-shop inventory and recent orders, each with a 5,000-row cap. CSV fields are quoted and spreadsheet formula-leading characters are neutralized; export is read-only and requires an active shop/subscription.
+- Made the Grocery, Daily Needs and Other Businesses low-stock smart-alert threshold follow the existing dashboard threshold control. Changing the threshold refreshes the alert panel.
+- These additions do not alter storefront data, create fake tenants, or modify `index.html`. The deployment workflow's protected storefront hash was updated only after reviewing the latest intentional password-recovery redirect change in `index.html`; the storefront file itself was not modified in this work.
+- Latest commit `e70e37307827e9d0803234bb43f97cfe62423f95`; CI/deployment runs are in progress or queued. Do not claim the new CSV/threshold changes are live until deployment succeeds.
+- Remaining advanced work includes tested cross-category automations, configurable per-category rules, customer loyalty/referral, delivery tracking, advanced financial reporting, and real authenticated end-to-end verification. External messaging, AI APIs, and payment integrations require provider configuration and secure server-side implementation.
