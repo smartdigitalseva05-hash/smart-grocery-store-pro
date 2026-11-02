@@ -45,6 +45,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><div class="actions" style="margin-top:17px"><button id="loginButton" type="submit">Sign in securely</button></div></form><div id="loginMessage" class="notice" role="status"></div>
 <div id="ownerMfaPanel" class="hidden" style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border)">
  <h2 style="margin:0 0 8px">🔐 Super Admin authenticator verification</h2>
+ <div role="alert" style="padding:12px;border:1px solid #b45309;background:#451a03;color:#ffedd5;border-radius:11px;margin:12px 0;font-size:13px"><strong>Security warning:</strong> If an authenticator QR code or setup key was ever shared in a chat, screenshot, or with another person, treat it as compromised. Sign in again and choose <strong>Restart incomplete authenticator setup</strong> to replace an unfinished factor. Scan only the newly generated QR code, and never share its QR code, setup key, password, or 6-digit code.</div>
  <p id="mfaMessage" class="notice" role="status">Verifying your second factor…</p>
  <div id="mfaQrSection" class="hidden" style="margin:14px 0;padding:14px;background:#fff;border-radius:12px;color:#111">
   <img id="mfaQr" alt="Authenticator enrollment QR code" style="display:block;width:220px;max-width:100%;height:auto;margin:0 auto 12px">
