@@ -118,7 +118,7 @@
 
 - Supabase records migration `20261102081352` for audit coverage of `profiles`, `shops`, and `shop_trials` security-sensitive changes.
 - Catalog verification confirms all three triggers are installed. Their shared function is `SECURITY DEFINER` with an empty search path, and direct EXECUTE is denied to `anon` and `authenticated`.
-- Total trigger-based audit coverage is now 31 public tables. Only allowlisted security fields are captured; contact details are excluded.
+- Total trigger-based audit coverage is now 38 public tables. Only allowlisted security fields are captured; contact details are excluded.
 - The matching SQL source file still needs to be synchronized into the GitHub migrations directory, and the new triggers still need a controlled behavior/API test before the Audit Trail feature can be marked Completed.
 
 ## Payment abuse protection update — 2026-11-02 08:16 UTC
