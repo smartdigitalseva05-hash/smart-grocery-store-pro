@@ -934,3 +934,10 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - GitHub Pages deployment run **41452121274** and static validation run **41452121239** both completed successfully on commit `ce869e4f1cea4d655354284e5e4db3e73791071a`.
 - Limitation: this confirms static validation and deployment, not live authenticated UI execution for all 11 categories. The production database currently lacks real shops for most categories; do not create fake production data. Alert thresholds are initial operational defaults and should be configurable in a later iteration.
 - Existing customer storefront `index.html` was not changed.
+
+
+### Shop-scoped CSV business reports — 2026-11-02
+- Added an Advanced Business Reports control in the shopkeeper dashboard. Authenticated shopkeepers with an active shop and subscription can export two CSV files: inventory (product/category/price/stock/availability/created date) and recent orders (order ID/total/status/payment status/date), each capped at 5,000 rows.
+- Both queries explicitly filter by the currently selected `shop_id`; existing Supabase RLS remains the authorization boundary. CSV cells are quoted and formula-leading characters are neutralized to reduce spreadsheet formula injection risk. No records are written or modified.
+- Existing storefront `index.html` is unchanged. Static validation and deployment for this commit are pending.
+- Limitation: export is a shopkeeper-initiated browser download, not automatic accounting sync; report completeness is capped at the latest 5,000 rows per dataset.
