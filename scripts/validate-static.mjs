@@ -131,6 +131,13 @@ for (const [label, marker] of requiredCategoryPanels) {
 }
 assert(workspace.includes("function renderVariants("), "Garments variant renderer is missing.");
 assert(workspace.includes("function loadJewelleryDetails("), "Jewellery detail loader is missing.");
+assert(workspace.includes('id="customerDirectoryPanel"'), "Shopkeeper workspace is missing the customer contact book.");
+assert(workspace.includes('id="customerDirectorySearch"'), "Customer contact book is missing its search control.");
+assert(workspace.includes('recentShopOrders= data||[]') || workspace.includes('recentShopOrders=data||[]'),
+  "Customer contact book must use the current shop's loaded order result.");
+assert(workspace.includes('eq("shop_id",currentShop.id)'), "Shopkeeper customer/order queries must remain scoped to the selected shop.");
+assert(workspace.includes("function renderCustomerDirectory("), "Shopkeeper customer contact renderer is missing.");
+assert(workspace.includes('customerDirectoryRefresh').includes("customerDirectoryRefresh"), "Customer contact refresh control is missing.");
 
 const shopkeeperForms = [...workspace.matchAll(/<form\b[^>]*\bid=["']([^"']+)["']/g)].map(match => match[1]);
 const shopkeeperSubmitHandlers = new Set(
