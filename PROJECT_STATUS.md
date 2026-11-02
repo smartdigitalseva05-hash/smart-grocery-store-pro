@@ -949,3 +949,12 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - These additions do not alter storefront data, create fake tenants, or modify `index.html`. The deployment workflow's protected storefront hash was updated only after reviewing the latest intentional password-recovery redirect change in `index.html`; the storefront file itself was not modified in this work.
 - Latest commit `e70e37307827e9d0803234bb43f97cfe62423f95`; CI/deployment runs are in progress or queued. Do not claim the new CSV/threshold changes are live until deployment succeeds.
 - Remaining advanced work includes tested cross-category automations, configurable per-category rules, customer loyalty/referral, delivery tracking, advanced financial reporting, and real authenticated end-to-end verification. External messaging, AI APIs, and payment integrations require provider configuration and secure server-side implementation.
+
+
+### Inventory CSV category lookup correction — 2026-11-02
+- Reviewed the live Supabase `products` schema and confirmed the category relationship is `products.category_id -> categories.id`; there is no direct `products.category` text column.
+- Corrected the shop-scoped inventory CSV export to fetch `category:categories(name)` through that verified foreign key and export the joined category name. The query still filters by the selected `shop_id`, remains read-only, and keeps CSV formula-injection neutralization.
+- Added static regression assertions for the joined category relation and safe category-name export.
+- Static validation passed on commit `02ee345062aa28d7d321b8d17de6f0fe0fcdd9e2` (run `41482452575`). GitHub Pages custom deployment passed on commit `315f0c4d1861a9d33a67c327e831be1a515ba564` (run `41482452299`).
+- The preceding category-alert/report build `5543c4a83658940c31ee1ef3f748afa665fdc3` also passed static validation (run `41468719349`), custom deployment (run `41468720197`) and Pages build/deployment (run `41468718639`).
+- This closes a schema mismatch found by inspection; actual authenticated CSV download on a live shopkeeper account remains a browser acceptance test.
