@@ -556,3 +556,12 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Static project validation passed on commit `f704914688ec73d59cb83107b52d7c12945b88f8` (run 41389754781).
 - Static Pages deployment passed on the same commit (run 41389754795).
 - Pages build/deployment was still in progress at the last check (run 41389754703); no success claim until it completes.
+
+
+### Audit trigger compatibility correction and private-schema move — 2026-11-02
+- Follow-up audit found `public.audit_order_status()` was a SECURITY DEFINER trigger function (the earlier note that no SECURITY DEFINER functions existed in `public` was incomplete). It was attached to `orders` and writes both `audit_logs` and `order_status_history`.
+- To keep trusted trigger writes working after revoking direct client INSERT on `audit_logs`, moved the trigger implementation to `private.audit_order_status()` with `SECURITY DEFINER` and empty `search_path`; recreated `trg_audit_order` to call the private function; revoked direct EXECUTE from PUBLIC/anon/authenticated; removed the old public function.
+- Verified: trigger now points to `private.audit_order_status()`, old public function is absent, anon/authenticated cannot directly execute the new trigger function, and postgres can execute it.
+- Transactional trigger test passed: created a temporary order, changed pending → processing, observed exactly 1 audit row and 1 order_status_history row for that order, then rolled back the entire transaction. No order or audit data persisted from the test.
+- The earlier public SECURITY DEFINER catalog scan now shows only legacy trigger/helper routines with direct anon/authenticated EXECUTE revoked; no direct public RPC access was found in the inspected ACLs. Their attached triggers/callers remain under review; do not delete or move them without dependency mapping.
+- Existing production audit rows remain unchanged. This confirms the Audit Trail write path still functions after client INSERT revocation; event coverage and tamper/retention requirements remain open.
