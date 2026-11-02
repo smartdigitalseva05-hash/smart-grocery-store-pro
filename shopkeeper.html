@@ -369,7 +369,9 @@ a{color:#8ce2b3}
  <div class="row"><div><div class="sub">Unique customer contacts</div><h2 id="customerDirectoryCount">0</h2></div><div><div class="sub">Orders represented</div><h2 id="customerDirectoryOrders">0</h2></div></div>
  <div id="customerDirectoryList" class="products"></div><div id="customerDirectoryMessage" class="notice" role="status"></div>
 </section>
-<div class="panel"><div class="row"><div><h1>Incoming orders</h1><div class="sub">Orders belonging to the selected shop only.</div></div><button id="ordersRefresh" class="secondary">Refresh orders</button></div><div id="ordersMessage" class="notice" role="status"></div><div id="orderList" class="order-list"></div></div>
+<div class="panel"><div class="row"><div><h1>Incoming orders</h1><div class="sub">Orders belonging to the selected shop only.</div></div><button id="ordersRefresh" class="secondary">Refresh orders</button></div>
+<div class="formgrid"><label class="field">Filter by status<select id="orderStatusFilter"><option value="">All statuses</option><option value="pending">Pending</option><option value="paid">Paid</option><option value="processing">Processing</option><option value="out_for_delivery">Out for delivery</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></label><label class="field">Search order / product / phone<input id="orderSearch" type="search" maxlength="120" placeholder="Order number, item or delivery phone"></label><button id="applyOrderFilters" type="button" class="secondary">Apply filters</button><button id="clearOrderFilters" type="button" class="secondary">Clear filters</button></div>
+<div id="ordersMessage" class="notice" role="status"></div><div id="orderList" class="order-list"></div></div>
 </section><p class="foot">Shopkeeper access is enforced by Supabase Auth and Row Level Security. Never share your password. Owner-only controls are not available in this workspace.</p>
 <div id="quickFindOverlay" class="quick-find-overlay" aria-hidden="true">
  <div class="quick-find-box" role="dialog" aria-modal="true" aria-labelledby="quickFindTitle">
@@ -1123,8 +1125,17 @@ async function loadShopData(){
   if(error){say("ordersMessage",error.message,true);recentShopOrders=[];renderCustomerDirectory([]);return}
   recentShopOrders=data||[];renderCustomerDirectory(recentShopOrders);
   if(!data?.length){say("ordersMessage","No orders for this shop yet.");return}
-  say("ordersMessage",data.length+" recent order(s) loaded.");
-  for(const o of data){
+  const statusFilter=$("orderStatusFilter").value,searchTerm=$("orderSearch").value.trim().toLowerCase();
+  const visibleOrders=data.filter(o=>{
+   if(statusFilter&&o.status!==statusFilter)return false;
+   if(!searchTerm)return true;
+   const address=o.shipping_address&&typeof o.shipping_address==="object"?o.shipping_address:{};
+   const haystack=[o.order_number,o.status,address.phone,address.city,...(o.items||[]).map(x=>x.product?.name)].filter(Boolean).join(" ").toLowerCase();
+   return haystack.includes(searchTerm);
+  });
+  say("ordersMessage","Showing "+visibleOrders.length+" of "+data.length+" recent shop order(s).");
+  if(!visibleOrders.length){say("ordersMessage","No orders match these filters.");return}
+  for(const o of visibleOrders){
    const card=document.createElement("article");card.className="order";
    const top=document.createElement("div");top.className="row";
    const info=document.createElement("div");const title=document.createElement("strong");title.textContent=o.order_number||("Order "+o.id.slice(0,8));
@@ -1504,7 +1515,7 @@ async function loadShopData(){
   finally{button.disabled=false}
  });
  $("shopSelect").addEventListener("change",loadShopData);
- $("ordersRefresh").addEventListener("click",loadOrders);$("customerDirectoryRefresh").addEventListener("click",loadOrders);$("customerDirectorySearch").addEventListener("input",()=>renderCustomerDirectory());
+ $("ordersRefresh").addEventListener("click",loadOrders);$("applyOrderFilters").addEventListener("click",loadOrders);$("clearOrderFilters").addEventListener("click",()=>{$("orderStatusFilter").value="";$("orderSearch").value="";loadOrders()});$("customerDirectoryRefresh").addEventListener("click",loadOrders);$("customerDirectorySearch").addEventListener("input",()=>renderCustomerDirectory());
  $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
  $("trialButton").addEventListener("click",startFreeTrial);$("subscriptionButton").addEventListener("click",prepareSubscription);$("reload").addEventListener("click",boot);$("exportProducts").addEventListener("click",exportMyProducts);$("productsRefresh").addEventListener("click",loadProducts);
  $("logout").addEventListener("click",async()=>{await db.auth.signOut();showLogin("Signed out.")});
