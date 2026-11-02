@@ -9,9 +9,9 @@
 
 | # | Mandatory security feature | Current evidence-based status (2026-11-02) | Remaining completion gate |
 |---|---|---|---|
-| 1 | Zero-Trust Security | **In Progress** | Synthetic SQL role tests now cover two-tenant shops/products, customer/order/payment isolation, Storage upload ownership, profile role escalation and Super Admin AAL1/AAL2. Complete HTTP/PostgREST tests and remaining tables/RPCs. |
+| 1 | Zero-Trust Security | **In Progress** | SQL role tests cover two-tenant shops/products/orders/payments/Storage and seven additional business-module tables; owner A/B each saw only their own module rows, unrelated customer saw zero. Complete remaining HTTP/PostgREST tests and remaining RPCs. |
 | 2 | Super Admin Lock | **In Progress** | Owner TOTP enrollment/challenge UI exists and `private.is_super_admin()` requires active Super Admin + JWT AAL2 + a currently verified TOTP factor. No live factor is enrolled yet; complete real enrollment, fresh-session verification, recovery and sensitive-operation HTTP tests. |
-| 3 | Database Fortress | **In Progress** | 41/41 public tables have RLS and policies. Two-tenant SQL tests cover shops/products/orders/payments/Storage; shopkeeper grants are least-privilege; private limiter tables are deny-all; anonymous catalog reads are now column-allowlisted and tested. Complete remaining table/API matrix and HTTP/PostgREST tests. |
+| 3 | Database Fortress | **In Progress** | 41/41 public tables have RLS and policies. Two-tenant SQL isolation now also passes across Electronics, Hotel, Office and Restaurant operational tables; anonymous catalog reads are column-allowlisted; shopkeeper grants are least-privilege; private limiter tables are deny-all. Complete remaining table/API matrix and HTTP/PostgREST tests. |
 | 4 | Anti-Brute-Force | **In Progress** | Concurrency-safe sliding 60-minute limits now cover Digital Services, Electronics repair, Hotel booking and Restaurant reservations (5 per phone/shop; 120 per shop/type); transactional trigger tests passed. Still implement/test login and Razorpay endpoint abuse limits, IP/device controls and recovery. |
 | 5 | Secret Vault | **In Progress** | Static scan passed for common secret patterns in public files; complete Git-history scan, server-secret inventory and rotation review. Never publish secret values. |
 | 6 | Attack Protection | **In Progress** | Static checks pass, but broad server-side validation/XSS/CSRF/SQLi/IDOR/upload/redirect testing remains. Checkout and verification Edge Functions currently use wildcard CORS; restrict only after caller-origin inventory and regression tests. |
@@ -325,9 +325,9 @@ All ten are mandatory. No feature may be omitted. Each stays **In Progress** unt
 
 | # | Security feature | Status | Required evidence before Completed |
 |---|---|---|---|
-| 1 | Zero-Trust Security | **In Progress** | Server-side authorization on every protected request; role, session, ownership and cross-shop isolation tests. |
+| 1 | Zero-Trust Security | **In Progress** | SQL role tests cover two-tenant shops/products/orders/payments/Storage and seven additional business-module tables; owner A/B each saw only their own module rows, unrelated customer saw zero. Complete remaining HTTP/PostgREST tests and remaining RPCs. |
 | 2 | Super Admin Lock | **Pending** | MFA, step-up re-authentication, server-side Owner role checks and session revocation tests. |
-| 3 | Database Fortress | **In Progress** | Full RLS/grant/policy/RPC/view/Storage audit and role-based tenant-isolation tests. |
+| 3 | Database Fortress | **In Progress** | 41/41 public tables have RLS and policies. Two-tenant SQL isolation now also passes across Electronics, Hotel, Office and Restaurant operational tables; anonymous catalog reads are column-allowlisted; shopkeeper grants are least-privilege; private limiter tables are deny-all. Complete remaining table/API matrix and HTTP/PostgREST tests. |
 | 4 | Anti-Brute-Force | **Pending** | Verified rate limits, progressive delays/lockout, abuse detection and recovery tests. |
 | 5 | Secret Vault | **In Progress** | Secret scanning of current files and Git history; confirm secrets server-side only; rotate any exposed credentials. |
 | 6 | Attack Protection | **In Progress** | Server-side validation and negative tests for XSS, SQL injection, CSRF, IDOR/BOLA, unsafe uploads and redirects. |
@@ -764,3 +764,10 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Transactional verification passed for all seven tables: each emitted exactly one create, one update and one delete event (21 total). Negative payload scan confirmed all seeded PII/notes/payroll amounts were absent. The transaction was rolled back; follow-up confirmed 0 temporary business rows and 0 temporary audit rows remain.
 - Separate visibility simulation: the existing shopkeeper saw exactly one fixture row in each of the seven module tables; an unrelated authenticated customer saw zero in all seven. Fixture transaction rolled back. This is a SQL role simulation, not HTTP/PostgREST tenant testing.
 - Audit Trail remains In Progress; full event coverage for all remaining business tables, retention controls and alert linkage are still open. No Security Shield feature is marked fully completed.
+
+
+### Two-tenant isolation verified across seven additional operational tables — 2026-11-02
+- Built two synthetic shopkeeper identities and separate active test shops for Electronics, Hotel, Office/Company and Restaurant inside one SQL transaction. Created tenant-specific repair jobs, hotel booking requests, housekeeping tasks, office leave requests, payroll records, office tasks and restaurant reservations.
+- Under authenticated Tenant A claims, each of the seven tables returned only Tenant A's fixture row (count 1). Under Tenant B claims, each returned only Tenant B's fixture row (count 1). An unrelated authenticated customer saw count 0 in all seven tables.
+- All fixtures, including the synthetic Auth user/profile, shops, related rooms/employees, operational rows and generated audit events, were rolled back. Independent cleanup query confirmed 0 test Auth users, profiles, shops, repair jobs and audit rows remain.
+- This extends Zero-Trust/Database Fortress SQL evidence. It is not a live HTTP/PostgREST test, and neither feature is marked Completed.
