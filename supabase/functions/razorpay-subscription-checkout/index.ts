@@ -34,6 +34,17 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   const userClient = ctx.supabase;
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return reply(401, { error: "Invalid or expired session. Please sign in again." });
+  const admin = createAdminClient();
+  const { error: rateLimitError } = await admin.rpc("consume_payment_endpoint_rate_limit", {
+    p_user_id: userData.user.id, p_action: "checkout",
+  });
+  if (rateLimitError) {
+    if (rateLimitError.code === "PT429") return reply(429, { error: "Too many checkout attempts. Please wait 15 minutes and try again." });
+    console.error("Checkout rate-limit check failed", rateLimitError.code || "unknown");
+    return reply(503, { error: "Payment security check is temporarily unavailable. Please retry shortly." });
+  }
+  const contentType = req.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().startsWith("application/json")) return reply(415, { error: "Content-Type must be application/json." });
   const limitedBody = await readBodyLimited(req, 16 * 1024);
   if (limitedBody.error === "too_large") return reply(413, { error: "Request body exceeds the 16 KiB limit." });
   if (limitedBody.error) return reply(400, { error: "Invalid request body headers." });
@@ -57,7 +68,6 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   const paymentId = String(checkout.payment_id);
   const amountPaise = Math.round(Number(checkout.amount) * 100);
   if (!Number.isSafeInteger(amountPaise) || amountPaise < 100) return reply(400, { error: "Invalid payment amount. Please contact support." });
-  const admin = createAdminClient();
   const { data: currentPayment, error: currentError } = await admin.from("payments")
     .select("id,user_id,amount,currency,status,verified,gateway,gateway_order_id,shop_subscription_id")
     .eq("id", paymentId).eq("user_id", userData.user.id).single();
