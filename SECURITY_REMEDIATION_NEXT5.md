@@ -113,3 +113,10 @@
 - GitHub Actions static validation passed on commit `ee80b0eaf3710619db23e02c983be1c2681db478`. The Pages workflow's Deno Edge Function type-check, HTML validation and deployment also passed. The customer-facing `index.html` was not modified.
 - The Super Admin MFA audit found zero verified TOTP factors for the active Super Admin account. This is an Owner enrollment dependency; do not bypass the AAL2/TOTP requirement. Leaked-password protection remains plan-gated on the current Free tier.
 - Remaining gates: disallowed-origin/oversized-body live HTTP tests, payment abuse rate limits, real Razorpay signature/replay/concurrency tests, MFA enrollment and sensitive-operation API tests, and verified manual database plus Storage backup/restore.
+
+## Audit coverage update — 2026-11-02 08:14 UTC
+
+- Supabase records migration `20261102081352` for audit coverage of `profiles`, `shops`, and `shop_trials` security-sensitive changes.
+- Catalog verification confirms all three triggers are installed. Their shared function is `SECURITY DEFINER` with an empty search path, and direct EXECUTE is denied to `anon` and `authenticated`.
+- Total trigger-based audit coverage is now 31 public tables. Only allowlisted security fields are captured; contact details are excluded.
+- The matching SQL source file still needs to be synchronized into the GitHub migrations directory, and the new triggers still need a controlled behavior/API test before the Audit Trail feature can be marked Completed.
