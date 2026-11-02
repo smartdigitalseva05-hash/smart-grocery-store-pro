@@ -74,6 +74,7 @@ a{color:#8ce2b3}
 <div class="product"><strong>WhatsApp Shop Promotion</strong><p class="sub">Prepare a message; you choose recipients and send it yourself.</p><label class="field">Offer / message<textarea id="whatsAppPromo" maxlength="500" rows="3" placeholder="Fresh groceries available today!"></textarea></label><div class="product-actions"><button id="shareShopWhatsApp" type="button">Share on WhatsApp</button></div><div id="whatsAppMessage" class="notice"></div></div></div>
 <div class="product" style="margin-top:12px"><div class="row"><div><strong>Advanced Business Reports</strong><div class="sub">Download shop-scoped inventory and recent sales reports for accounting and offline review.</div></div><button id="exportBusinessReport" class="secondary" type="button">Export CSV reports</button></div><div id="exportBusinessReportMessage" class="notice" role="status"></div></div>
 <div class="product" style="margin-top:12px"><strong>Smart Sales Analytics</strong><div class="formgrid"><div><div class="sub">Recent orders</div><h2 id="metricOrders">—</h2></div><div><div class="sub">Paid / collected revenue</div><h2 id="metricRevenue">—</h2></div><div><div class="sub">Delivered orders</div><h2 id="metricDelivered">—</h2></div><div><div class="sub">Products listed</div><h2 id="metricProducts">—</h2></div></div><div id="analyticsMessage" class="notice"></div></div>
+<div class="product" id="financialSummaryPanel" style="margin-top:12px"><div class="row"><div><strong>Financial Summary</strong><div class="sub">Shop-scoped order collections and outstanding amounts. This is not net profit or tax accounting.</div></div><label class="field">Period<select id="financialPeriod"><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option><option value="all">All available orders (up to 5,000)</option></select></label></div><div class="formgrid"><div><div class="sub">Orders in period</div><h2 id="financialOrderCount">—</h2></div><div><div class="sub">Paid collections</div><h2 id="financialPaidTotal">—</h2></div><div><div class="sub">Pending collection</div><h2 id="financialPendingTotal">—</h2></div><div><div class="sub">Cancelled / refunded</div><h2 id="financialExcludedCount">—</h2></div></div><div id="financialSummaryMessage" class="notice" role="status"></div></div>
 <div class="product" style="margin-top:12px"><strong>Best-selling products</strong><p class="sub">Ranked by units in the latest 100 orders. Cancelled orders are excluded.</p><div id="bestSellerList" class="products"></div><div id="bestSellerMessage" class="notice"></div></div>
 <div class="product" style="margin-top:12px"><div class="row"><div><strong>Low Stock Alerts</strong><div class="sub">Show products at or below your selected threshold.</div></div><label class="field">Alert at or below<input id="lowStockLimit" type="number" min="0" max="10000" value="5"></label></div><div id="lowStockList" class="products"></div></div>
 <div class="product" style="margin-top:12px"><div class="row"><strong>Shopkeeper Growth Score</strong><h2 id="growthScore">—/100</h2></div><div id="growthBreakdown" class="products"></div><div class="sub">An operational readiness indicator based on products, availability, stock and delivered orders. Not a profit guarantee.</div></div>
@@ -892,6 +893,25 @@ async function exportBusinessReports(){
  finally{button.disabled=false}
 }
 
+async function loadFinancialSummary(){
+ if(!currentShop)return;
+ const period=$("financialPeriod")?.value||"30",host=$("financialSummaryMessage");
+ host.textContent="Loading financial summary for this shop…";
+ try{
+  let q=db.from("orders").select("id,total,status,payment_status,created_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(5000);
+  if(period!=="all"){const days=Number(period);const since=new Date();since.setDate(since.getDate()-days);q=q.gte("created_at",since.toISOString());}
+  const {data,error}=await q;if(error)throw error;
+  const rows=data||[],excluded=rows.filter(o=>["cancelled","refunded"].includes(String(o.status||"").toLowerCase()));
+  const valid=rows.filter(o=>!["cancelled","refunded"].includes(String(o.status||"").toLowerCase()));
+  const paid=valid.filter(o=>String(o.payment_status||"").toLowerCase()==="paid");
+  const pending=valid.filter(o=>!["paid","refunded"].includes(String(o.payment_status||"").toLowerCase()));
+  $("financialOrderCount").textContent=rows.length.toLocaleString("en-IN");
+  $("financialPaidTotal").textContent=money(paid.reduce((sum,o)=>sum+Number(o.total||0),0));
+  $("financialPendingTotal").textContent=money(pending.reduce((sum,o)=>sum+Number(o.total||0),0));
+  $("financialExcludedCount").textContent=excluded.length.toLocaleString("en-IN");
+  host.textContent=(rows.length===5000?"Showing maximum 5,000 matching orders. ":"")+"Paid totals use payment_status=paid; pending totals exclude cancelled/refunded orders. Gross order totals only—cost of goods, expenses, tax and net profit are not included.";
+ }catch(error){host.textContent="Financial summary unavailable: "+(error.message||"Could not load orders.");host.classList.add("error");}
+}
 async function loadGrowthInsights(){
  if(!currentShop)return;
  const [pRes,oRes]=await Promise.all([db.from("products").select("id,name,stock,is_available").eq("shop_id",currentShop.id),db.from("orders").select("id,total,status,payment_status,created_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100)]);
@@ -923,6 +943,7 @@ async function loadGrowthInsights(){
 function bindGrowthTools(){
  $("growthRefresh").addEventListener("click",loadGrowthInsights);
  $("exportBusinessReport").addEventListener("click",exportBusinessReports);
+ $("financialPeriod").addEventListener("change",loadFinancialSummary);
  $("advancedAlertsRefresh").addEventListener("click",loadAdvancedAlerts);
  $("lowStockLimit").addEventListener("change",loadAdvancedAlerts);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
  $("shareShopWhatsApp").addEventListener("click",()=>{const msg=[$("whatsAppPromo").value.trim()||("Hello! Visit "+currentShop.name+" to view our products."),shopPublicUrl()].join("\n\n");window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");say("whatsAppMessage","WhatsApp opened. Review and send the message yourself.")});
@@ -1106,7 +1127,7 @@ async function loadShopData(){
   if(!canManage&&!trialActive)say("subscriptionMessage",currentTrial?"Your one-time free trial has already been used. Choose a paid plan to reactivate.":"Start your free 7-day trial to unlock products, stock and orders.");
   await subscribeShopOrders();
   await Promise.all([loadCategories(),loadProducts(),loadOrders()]);
-  await loadGrowthInsights();
+  await loadGrowthInsights();await loadFinancialSummary();
   await loadAdvancedAlerts();
  }
  async function loadPlans(){
