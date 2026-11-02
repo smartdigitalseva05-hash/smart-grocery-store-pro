@@ -295,9 +295,38 @@ async function initialize() {
     });
 
     await loadDeliveryFee();
+
+    // Fail closed: every customer storefront must be opened through a shop-specific link/QR.
+    if (!requestedShopId) {
+      categories = [];
+      products = [];
+      $("categories").replaceChildren();
+      $("storeHeroTitle").textContent = "Open your shop's personal store link";
+      $("status").textContent = "This page is not linked to a specific shop. Scan the shopkeeper's QR code or open the store link shared by that shop.";
+      $("status").classList.remove("error");
+      renderProducts();
+      return;
+    }
+
+    const {data:store,error:storeError}=await db.from("shops")
+      .select("id,name,business_type,status,is_active")
+      .eq("id",requestedShopId)
+      .eq("status","active")
+      .eq("is_active",true)
+      .maybeSingle();
+    if (storeError || !store) {
+      showError("This store link is invalid or the shop is not currently active.");
+      products = [];
+      categories = [];
+      $("categories").replaceChildren();
+      renderProducts();
+      return;
+    }
+    selectedBusinessType = store.business_type || "all";
+    $("storeHeroTitle").textContent = "Order from " + store.name;
     await loadCategories();
     await loadProducts();
-    if(requestedShopId && new URLSearchParams(location.search).get("reorder")) await loadRepeatOrder();
+    if(new URLSearchParams(location.search).get("reorder")) await loadRepeatOrder();
 
   } catch (e) {
     showError("Connection error: " + e.message);
@@ -356,6 +385,7 @@ async function loadDeliveryFee() {
 
 async function loadCategories() {
   if (!db) return;
+  if (!requestedShopId) { categories = []; $("categories").replaceChildren(); return; }
 
   let categoryQuery = db.from("categories").select("id,name").eq("is_active", true);
   if (selectedBusinessType !== "all") categoryQuery = categoryQuery.eq("business_type", selectedBusinessType);
@@ -380,11 +410,17 @@ async function loadCategories() {
 
 async function loadProducts() {
   if (!db) return;
+  if (!requestedShopId) {
+    products = [];
+    $("status").textContent = "Open this page using a shop-specific QR code or store link.";
+    renderProducts();
+    return;
+  }
 
-  $("status").textContent = "Loading products...";
+  $("status").textContent = "Loading this shop's products...";
 
   let productQuery = db.from("products").select("id,shop_id,category_id,name,description,price,sale_price,stock,images,is_available,shop:shops!inner(name,city,business_type,status,is_active)").eq("shop.status","active").eq("shop.is_active",true).eq("is_available",true).gt("stock",0);
-  if(requestedShopId) productQuery=productQuery.eq("shop_id",requestedShopId);
+  productQuery=productQuery.eq("shop_id",requestedShopId);
   const {data,error}=await productQuery.order("created_at",{ascending:false});
 
   if (error) {
@@ -397,8 +433,8 @@ async function loadProducts() {
   else if(requestedShopId) $("storeHeroTitle").textContent="This shop has no available products right now";
   $("status").classList.remove("error");
   $("status").textContent = products.length
-    ? "Available products and services from approved local businesses."
-    : "No products are currently available in this category.";
+    ? "Showing products from this store only."
+    : "This store has no available products right now.";
 
   renderProducts();
 }
