@@ -135,3 +135,13 @@
 - Applied migration `20261102081910` to add an explicit deny-all policy for `anon` and `authenticated` on the private payment rate-limit event table. The server-only security-definer function remains the sole intended write path.
 - Supabase Security Advisor now reports only the leaked-password-protection warning, which is plan-gated on the current Free tier; the private-table no-policy informational finding is cleared.
 - Migrations `20261102081352`, `20261102081537`, and `20261102081910` are present in live Supabase migration history. Their SQL source files still need repository synchronization.
+ 
+## Migration and storage reconciliation — 2026-11-02 08:40 UTC
+
+- All 145 applied Supabase migrations now have exact version-matched SQL files in GitHub; there are zero missing and zero extra migration files.
+- The shop-logos bucket is limited to 2 MiB and JPEG/PNG/WebP. No objects existed in that bucket before the restriction. The existing product-images bucket is unchanged.
+- The private payment rate-limit events table now has a UUID primary key, RLS and a deny-all policy for anon/authenticated; test rows created by synthetic tests were cleaned.
+- The installed restaurant ticket status transition guard is now represented in migration history and source control.
+- Removed an untracked obsolete reconciliation SQL file that could have restored older, less restrictive credit-ledger policy and order RPC definitions.
+- Structural checks still show 41/41 public tables protected by RLS and policies, with audit triggers on 38 tables.
+- Remaining external/manual gates are unchanged: Owner must enroll and verify TOTP; leaked-password protection is plan-gated on the current Free tier; full live HTTP/concurrency/payment replay tests and a database-plus-Storage restore drill remain outstanding.
