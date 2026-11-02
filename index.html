@@ -738,7 +738,7 @@ $("forgotPassword").onclick = async e => {
   link.style.pointerEvents = "none";
   link.setAttribute("aria-disabled", "true");
   try {
-    const redirectTo = new URL(window.location.pathname, window.location.origin).href;
+    const redirectTo = "https://smartdigitalseva05-hash.github.io/smart-grocery-store-pro/";
     const {error} = await db.auth.resetPasswordForEmail(email, {redirectTo});
     if (error) throw error;
     notify("Reset email requested. Check Inbox, Spam and Promotions. Open the newest link on this same website.");
