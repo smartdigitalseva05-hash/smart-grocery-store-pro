@@ -143,6 +143,10 @@ assert(workspace.includes('select("id,name,description,category_id,price,sale_pr
 assert(workspace.includes('textContent="Edit product details"'), "Shopkeeper product manager is missing full detail editing.");
 assert(workspace.includes("category_id:selectedCategory?.value||null"), "Product editing must support category reassignment.");
 assert(workspace.includes("description:description.trim()||null"), "Product editing must support description changes.");
+assert(workspace.includes('id="orderStatusFilter"'), "Shopkeeper order manager is missing the status filter.");
+assert(workspace.includes('id="orderSearch"'), "Shopkeeper order manager is missing order search.");
+assert(workspace.includes("const visibleOrders=data.filter(o=>"), "Shopkeeper order filters must be applied to the selected shop's fetched orders.");
+assert(workspace.includes("for(const o of visibleOrders)"), "Shopkeeper order renderer must use filtered orders.");
 assert(workspace.includes('id="customerDirectoryRefresh"'), "Customer contact refresh control is missing.");
 
 const shopkeeperForms = [...workspace.matchAll(/<form\b[^>]*\bid=["']([^"']+)["']/g)].map(match => match[1]);
