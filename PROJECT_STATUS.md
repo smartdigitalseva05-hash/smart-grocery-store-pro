@@ -916,3 +916,12 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Static validation passed on commit `6521739abdba892bc5f2c656dc8b46f9e695904d` (run `41444030828`). Custom website deployment passed (run `41444030821`); GitHub Pages build and deployment passed (run `41444031150`). Artifact completeness and inline JavaScript checks passed.
 - The shopkeeper page is published at `https://smartdigitalseva05-hash.github.io/smart-grocery-store-pro/shopkeeper.html`. This verifies deployment, not a real authenticated transaction test.
 - All 11 business-type configurations are present. Daily Needs procurement and Other Businesses product/service wording are now added. Full 11-tenant authenticated end-to-end testing remains pending, so no blanket 100% feature-complete claim is made.
+
+
+### 11-category workspace isolation regression checks — passed (2026-11-02)
+- Extended `scripts/validate-static.mjs` to verify that all 20 category-specific data loaders (restaurant, hotel, office, electronics, medical, digital services, procurement and customer credit) are called during selected-shop refresh and include a selected-`shop_id` filter.
+- Static validation passed on commit `bf3fc3fc45ff299a2b6eeae86bd803ab66d73edc` (run `41444666732`). The Pages deployment for that commit passed (run `41444666730`), including storefront protection, Edge Function type-check, HTML/inline-JS validation, artifact completeness and deploy.
+- Database spot-check confirmed RLS enabled and policies present on all 23 category-specific module tables checked (garment variants, jewellery details, restaurant, hotel, office, electronics, medical, digital services, Grocery/Daily Needs supplier and expense tables).
+- Security Advisor still reports one known warning: Auth leaked-password protection is disabled. No other Security Advisor finding was returned in this check.
+- No production customer/order/shop data was changed. Existing `index.html` remains untouched.
+- This verifies static wiring, deployment and RLS presence—not real authenticated end-to-end workflows for 11 separate shopkeeper accounts. Final acceptance still requires safe, authenticated testing for each category; do not mark the whole suite 100% certified before that.
