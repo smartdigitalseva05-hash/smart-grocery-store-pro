@@ -866,3 +866,10 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Every update remains constrained by both product ID and the currently selected shop ID, with active subscription checks on the edit control. No bulk or cross-shop mutation was introduced.
 - Added static regression assertions for the required product fields and category/description update payload. Automated validation and live shopkeeper browser testing are pending.
 - Product Module is now **In Progress** rather than Pending; full add/edit/delete/stock verification across all 11 categories and real tenant-isolation tests remain open.
+
+
+### Shopkeeper order workbench filters — implemented, verification pending (2026-11-02)
+- Added order status filter (pending, paid, processing, out for delivery, delivered, cancelled) and a search over order number, product name, delivery phone and city.
+- Filters operate only on the already shop-scoped latest 100 order rows; order status mutations still go through the existing guarded `update_order_status_by_shopkeeper` RPC. No direct order-table status update was added.
+- Added regression assertions for the filter controls and filtered render path. Automated validation and live browser tests remain pending.
+- Order Module remains **In Progress**: customer checkout, status-transition matrix, owner oversight, payment reconciliation and real two-tenant HTTP/PostgREST tests are not all verified.
