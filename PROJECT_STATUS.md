@@ -42,7 +42,7 @@
 - Applied migration `20261102081910`: explicit deny-all RLS policy for anon/authenticated on the private rate-limit table. Security Advisor now reports only the plan-gated leaked-password-protection warning; the private-table no-policy INFO finding is cleared.
 - Checkout v12 and verification v10 now call the rate-limit RPC using server-side credentials, fail closed if the check is unavailable, require JSON, and retain JWT verification, exact-origin CORS and 16 KiB request limits.
 - Static regression tests and GitHub Pages deployment passed on commit `1c38e319658dcf7bee61573fb5ba9d7907794b4e`. Concurrent-load and live HTTP tests remain open. Supabase Auth login limits and IP/device controls also remain open.
-- The matching SQL source files for migrations `20261102081352`, `20261102081537` and `20261102081910` still need to be synchronized into the GitHub migrations directory; live Supabase migration history records them.
+- The matching SQL source files for migrations `20261102081352`, `20261102081537`, `20261102081910` and `20261102082023` still need to be synchronized into the GitHub migrations directory; live Supabase migration history records them.
 
 
 
