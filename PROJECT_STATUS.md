@@ -17,7 +17,7 @@
 | 6 | Attack Protection | **In Progress** | Static checks pass, but broad server-side validation/XSS/CSRF/SQLi/IDOR/upload/redirect testing remains. Checkout and verification Edge Functions currently use wildcard CORS; restrict only after caller-origin inventory and regression tests. |
 | 7 | Real-Time Alerts | **In Progress** | End-to-end alert generation, trusted delivery, deduplication, recipient authorization and delivery tests are not verified. |
 | 8 | Backup & Recovery | **Blocked (managed daily backups on Free tier); manual export path In Progress** | Supabase docs say daily managed backups are Pro/Team/Enterprise; Free projects must use CLI db dump and off-site exports. Database exports do not include Storage objects. Build and verify manual DB + Storage backup and restore. |
-| 9 | Audit Trail | **In Progress** | Direct client INSERT/UPDATE/DELETE is denied; order and payment triggers plus owner/subscription RPCs write audit events. Current trigger coverage is only orders/payments; review other sensitive mutation events, tamper resistance, retention and alert linkage. |
+| 9 | Audit Trail | **In Progress** | Direct client INSERT/UPDATE/DELETE is denied; order, payment and customer-credit ledger triggers plus owner/subscription RPCs write audit events. Review remaining sensitive mutation paths, tamper resistance, retention and alert linkage. |
 | 10 | Payment Shield | **In Progress** | Database negative/amount-mismatch and idempotent activation tests passed with rollback. Still test real Razorpay raw-body HMAC, invalid signatures, HTTP replay/duplicate delivery and concurrent webhook requests. |
 
 ### Verified baseline (not a 10/10 completion claim)
@@ -658,3 +658,12 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Supabase Security Advisor reports the private event/key/counter tables as INFO RLS-enabled/no-policy findings (intentional deny-all; no anon/auth table privileges) and one WARN for Free-tier leaked-password protection disabled. No production applicant, shop, or payment data was changed.
 - CI passed for migration commit `5361e095096f833c6b25d900731189116423ed7d`: static validation (41393343638), static Pages deploy (41393343598), Pages build/deployment (41393342923).
 - The old fixed-window counter table is currently retained but no longer used; its live row count was 0 before replacement. Keep it until a later reviewed cleanup migration; do not remove the HMAC key.
+
+
+### Customer credit ledger hardened as append-only and audited — applied and verified (2026-11-02)
+- Confirmed `shopkeeper.html` only reads and inserts `shop_credit_ledger`; no app update/delete path exists. The old `shop_credit_ledger_owner_all` policy permitted UPDATE and DELETE, and the table had no triggers.
+- Applied migration `supabase/migrations/20261102270000_make_shop_credit_ledger_append_only_and_audited.sql`: replaced ALL policy with owner-scoped SELECT and INSERT policies; revoked UPDATE/DELETE from PUBLIC, anon, authenticated and service_role; added a database trigger that rejects UPDATE/DELETE with SQLSTATE 55000; added an AFTER INSERT audit trigger.
+- The audit event records shop_id, entry_type, amount and entry_date only. Customer name, phone and notes are deliberately excluded from audit JSON.
+- Transactional test passed: shop owner inserted a temporary adjustment; audit event was created; direct UPDATE and DELETE attempts as database owner were both blocked by the append-only trigger. Entire transaction rolled back; follow-up check confirmed 0 persisted test ledger rows and 0 test audit rows.
+- Verified privileges: authenticated SELECT/INSERT true, UPDATE/DELETE false; anon SELECT/INSERT false. No existing ledger rows were present before migration; no business data was changed.
+- Audit Trail coverage now includes order status, payment security-state, and customer-credit ledger insert events, plus explicit audit inserts in Owner and subscription RPCs. Remaining high-risk mutation paths still need a full event matrix.
