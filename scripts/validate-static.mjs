@@ -138,6 +138,12 @@ assert(workspace.includes('recentShopOrders= data||[]') || workspace.includes('r
 assert(workspace.includes('eq("shop_id",currentShop.id)'), "Shopkeeper customer/order queries must remain scoped to the selected shop.");
 assert(workspace.includes("function renderCustomerDirectory("), "Shopkeeper customer contact renderer is missing.");
 assert(workspace.includes('id="customerDirectoryRefresh"'), "Customer contact refresh control is missing.");
+assert(workspace.includes('id="financialSummaryPanel"'), "Shopkeeper financial summary panel is missing.");
+assert(workspace.includes('id="financialPeriod"'), "Financial summary period selector is missing.");
+assert(workspace.includes("async function loadFinancialSummary()"), "Shop-scoped financial summary loader is missing.");
+assert(workspace.includes('db.from("orders").select("id,total,status,payment_status,created_at").eq("shop_id",currentShop.id)'), "Financial summary must query only the selected shop.");
+assert(workspace.includes('addEventListener("change",loadFinancialSummary)'), "Financial summary period selector is not wired.");
+
 assert(workspace.includes('select("id,name,description,category_id,price,sale_price,stock,is_available,offer_text,images")'),
   "Product manager must load the fields required for complete product editing.");
 assert(workspace.includes('textContent="Edit product details"'), "Shopkeeper product manager is missing full detail editing.");
