@@ -858,3 +858,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - No customer account mutation, cross-shop discovery, additional personal-data collection, database schema change or production data mutation was added. The existing `index.html` storefront remains untouched.
 - Added static regression assertions for the customer contact panel, search, renderer and selected-shop scoping. GitHub Actions static validation and Pages deployment for this change are still pending; customer display behavior also needs a real shopkeeper browser test with a shop that has orders.
 - Customer Module remains **In Progress**, not Completed: customer account controls belong in the audited Owner workflow, and full cross-category/shop privacy tests remain outstanding.
+
+
+### Shopkeeper product editor expanded — implemented, verification pending (2026-11-02)
+- Expanded the selected-shop product query to load description and category ID for editing.
+- Replaced the limited price/offer editor with a complete detail editor for product name, category assignment, description, regular price, offer price and offer text. Stock, availability, image and delete actions remain separate.
+- Every update remains constrained by both product ID and the currently selected shop ID, with active subscription checks on the edit control. No bulk or cross-shop mutation was introduced.
+- Added static regression assertions for the required product fields and category/description update payload. Automated validation and live shopkeeper browser testing are pending.
+- Product Module is now **In Progress** rather than Pending; full add/edit/delete/stock verification across all 11 categories and real tenant-isolation tests remain open.
