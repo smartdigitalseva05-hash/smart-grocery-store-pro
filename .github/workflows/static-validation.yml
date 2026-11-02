@@ -25,5 +25,5 @@ jobs:
         run: node scripts/scan-secret-history.mjs
       - name: Validate HTML scripts, IDs and business categories
         run: node scripts/validate-static.mjs
-      - name: Test Razorpay webhook body limits and signature helpers
-        run: node --test tests/webhook-security.test.mjs
+      - name: Test payment body limits and webhook signature helpers
+        run: node --test tests/*.test.mjs
