@@ -14,6 +14,15 @@
 (()=>{
  const URL="https://wqlopfftzvsjsxmrmxeq.supabase.co",KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX",db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
  let mode="signup",user=null;
+ const categorySlugMap={
+  grocery:"grocery","daily-needs":"daily_needs",garments:"garments",jewellery:"jewellery",
+  restaurant:"restaurant",hotel:"hotel","office-company":"office_company",electronics:"electronics",
+  medical:"medical","digital-services":"digital_services","other-businesses":"other"
+ };
+ const requestedCategory=new URLSearchParams(window.location.search).get("category");
+ if(requestedCategory&&categorySlugMap[requestedCategory]){
+  $("businessType").value=categorySlugMap[requestedCategory];
+ }
  const say=(id,msg,bad=false)=>{$(id).textContent=msg;$(id).classList.toggle("error",bad)};
  function setMode(next){mode=next;$("nameWrap").classList.toggle("hidden",mode!=="signup");$("authButton").textContent=mode==="signup"?"Create account":"Sign in";$("password").autocomplete=mode==="signup"?"new-password":"current-password";say("authMessage","")}
  async function showSession(){
