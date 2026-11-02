@@ -103,3 +103,13 @@
 - Targeted public view catalog query returned no rows. PostgreSQL row_security is ON. API exposed-schema configuration was not available from the database settings query and must be checked in Supabase API settings.
 - Supabase official backup documentation: daily managed backups are for Pro/Team/Enterprise. Free-tier projects should use Supabase CLI db dump and off-site backups; database backups do not include Storage objects. Until manual database and Storage export/restore are demonstrated, Backup & Recovery remains Blocked for managed backups and In Progress for a manual recovery implementation. https://supabase.com/docs/guides/platform/backups
 - No database privileges, schema, functions, Auth settings, secrets, or application records were changed during this review.
+
+
+## Verified execution update — 2026-11-02 08:12 UTC
+
+- Applied migration `20261102080828` (`harden_grocery_expense_update_tenant_integrity`). The live `grocery_expenses_update` policy now has a restrictive `USING` and matching `WITH CHECK` for an active Grocery shop. A `SECURITY INVOKER` trigger with an empty search path prevents authenticated changes to `shop_id` and `created_by`. Live catalog inspection confirms the policy and trigger are installed.
+- The production frontend origin was confirmed from the shopkeeper password-reset redirect and Pages deployment: `https://smartdigitalseva05-hash.github.io`. Checkout and verification CORS were restricted from wildcard to this exact origin with `Vary: Origin`.
+- Checkout and verification now use the repository's 16 KiB streaming request-body limit helper. Deployed versions: checkout v11 and verification v9; both retain `verify_jwt=true`.
+- GitHub Actions static validation passed on commit `ee80b0eaf3710619db23e02c983be1c2681db478`. The Pages workflow's Deno Edge Function type-check, HTML validation and deployment also passed. The customer-facing `index.html` was not modified.
+- The Super Admin MFA audit found zero verified TOTP factors for the active Super Admin account. This is an Owner enrollment dependency; do not bypass the AAL2/TOTP requirement. Leaked-password protection remains plan-gated on the current Free tier.
+- Remaining gates: disallowed-origin/oversized-body live HTTP tests, payment abuse rate limits, real Razorpay signature/replay/concurrency tests, MFA enrollment and sensitive-operation API tests, and verified manual database plus Storage backup/restore.
