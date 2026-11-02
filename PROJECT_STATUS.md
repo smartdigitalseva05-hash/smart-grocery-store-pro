@@ -9,16 +9,16 @@
 
 | # | Mandatory security feature | Current evidence-based status (2026-11-02) | Remaining completion gate |
 |---|---|---|---|
-| 1 | Zero-Trust Security | **In Progress** | Complete request-by-request server authorization review and negative tests for signed-out, customer, shopkeeper, shop owner and Super Admin, including cross-shop IDOR/BOLA. |
-| 2 | Super Admin Lock | **In Progress** | Owner page currently shows email/password login; MFA enrollment/enforcement and AAL2 step-up on sensitive server-side operations are not verified. Implement and test role/session revocation safely. |
-| 3 | Database Fortress | **In Progress** | Structural baseline: 41/41 public tables have RLS and policies; 0 missing UPDATE WITH CHECK in targeted scan. Complete grants, policy predicate, RPC/view/Storage review and role-isolation API tests. |
-| 4 | Anti-Brute-Force | **In Progress** | No app-level limiter was evident in inspected Razorpay handlers. Verify Auth limits and implement atomic distributed limits for sensitive endpoints; test concurrency, lockout and recovery. |
+| 1 | Zero-Trust Security | **In Progress** | Synthetic SQL role tests now cover two-tenant shops/products, customer/order/payment isolation, Storage upload ownership, profile role escalation and Super Admin AAL1/AAL2. Complete HTTP/PostgREST tests and remaining tables/RPCs. |
+| 2 | Super Admin Lock | **In Progress** | Owner TOTP enrollment/challenge UI exists and `private.is_super_admin()` requires JWT AAL2. No live factor is enrolled yet; complete real enrollment, fresh-session verification, recovery and sensitive-operation HTTP tests. |
+| 3 | Database Fortress | **In Progress** | 41/41 public tables have RLS and policies. SQL role simulations passed for shops/products, orders/payments, Storage and profile privilege checks. Complete private-schema exposure confirmation, all-table policy/grant review and HTTP/PostgREST tests. |
+| 4 | Anti-Brute-Force | **In Progress** | Atomic 60-minute public digital-intake limits (5 per phone/shop; 120 per shop) are implemented and transactional limit tests passed. Still implement/test login and Razorpay endpoint abuse limits, IP/device controls, concurrency and recovery. |
 | 5 | Secret Vault | **In Progress** | Static scan passed for common secret patterns in public files; complete Git-history scan, server-secret inventory and rotation review. Never publish secret values. |
 | 6 | Attack Protection | **In Progress** | Static checks pass, but broad server-side validation/XSS/CSRF/SQLi/IDOR/upload/redirect testing remains. Checkout and verification Edge Functions currently use wildcard CORS; restrict only after caller-origin inventory and regression tests. |
 | 7 | Real-Time Alerts | **In Progress** | End-to-end alert generation, trusted delivery, deduplication, recipient authorization and delivery tests are not verified. |
 | 8 | Backup & Recovery | **Blocked (managed daily backups on Free tier); manual export path In Progress** | Supabase docs say daily managed backups are Pro/Team/Enterprise; Free projects must use CLI db dump and off-site exports. Database exports do not include Storage objects. Build and verify manual DB + Storage backup and restore. |
-| 9 | Audit Trail | **In Progress** | audit_logs table and policies exist; prove trusted-only writes, immutable/tamper-resistant behavior, event coverage, retention and Owner-only reads. |
-| 10 | Payment Shield | **In Progress** | Razorpay checkout/verify JWT and webhook raw-body HMAC checks exist; complete invalid-signature, amount/order mismatch, duplicate/replay and concurrent-delivery tests. |
+| 9 | Audit Trail | **In Progress** | Direct client INSERT/UPDATE/DELETE is denied; order and payment triggers plus owner/subscription RPCs write audit events. Current trigger coverage is only orders/payments; review other sensitive mutation events, tamper resistance, retention and alert linkage. |
+| 10 | Payment Shield | **In Progress** | Database negative/amount-mismatch and idempotent activation tests passed with rollback. Still test real Razorpay raw-body HMAC, invalid signatures, HTTP replay/duplicate delivery and concurrent webhook requests. |
 
 ### Verified baseline (not a 10/10 completion claim)
 - GitHub Actions static validator passed **283 checks** across 14 HTML pages, 1 public JS file and all 11 business categories on commit ab83f827e611403b6d786fddef5d0a90669a9a31 (run 41377126260). This is static validation, not end-to-end security proof.
@@ -43,9 +43,9 @@
 
 ## Current active work
 
-**Module 1 — Business Category Module (functional implementation).**
+**Active module — Security Shield (10 mandatory controls).**
 
-The immediate goal is to make all 11 business categories work as real category-based flows, not just display cards. A parallel read-only security audit has also started so new functionality is not built on unreviewed access controls.
+The execution lock remains active. Only Security Shield implementation, verification, safe maintenance and regression work may proceed. Business category and other feature modules remain paused until all 10 controls meet their evidence gates.
 
 ## 11 Business Categories
 
@@ -110,8 +110,9 @@ The immediate goal is to make all 11 business categories work as real category-b
 
 ## Development order
 
-1. Category Module — finish category selection, category mapping, and category-aware flows.
-2. Security & Protection Module — finish critical access-control and secret-handling review before expanding live shop workflows.
+1. Security Shield — complete and independently verify all 10 controls; no other feature work before the gate passes.
+2. Full security regression, Advisor review, backup/restore evidence and deployment verification.
+3. Only after 10/10 is formally Completed, resume the business-category and other product modules.
 3. Registration Module — save each shop with the correct category.
 4. Shop Dashboard Module — show the correct tools for each shop.
 5. Product Module — category/shop-specific product management.
