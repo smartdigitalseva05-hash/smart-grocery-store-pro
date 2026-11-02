@@ -405,3 +405,15 @@ The next five owner-approved features have moved from **Pending** to **In Progre
 - Managed daily Supabase backups are not included on this project's Free tier. A manual recovery plan is required: export database with Supabase CLI db dump, export Storage objects separately, encrypt and store copies off-site, record backup date/checksum, and restore into a separate safe project before claiming Backup & Recovery Completed.
 - Do not use the production restore action as a test; it can cause downtime and roll back current records. A restore drill must target a separate non-production project.
 - Current status: managed daily backups are Blocked by plan; manual export/restore implementation is In Progress.
+
+
+## Applied security remediation — 2026-11-02
+
+**Database Fortress sub-control implemented and verified (this does not complete the full Database Fortress feature):**
+- Added migration `20261102100000_revoke_client_execute_on_private_trigger_functions.sql` and applied it successfully to Supabase.
+- Revoked direct `EXECUTE` from `PUBLIC`, `anon`, and `authenticated` for every attached trigger-returning function in the `private` schema. PostgreSQL triggers continue to invoke their trigger functions; these functions are not intended as client RPC endpoints.
+- Post-migration read-only verification: **23 attached private trigger functions remain registered; 0 are directly executable by anon; 0 are directly executable by authenticated.**
+- Supabase Security Advisor after migration reports only the existing leaked-password-protection warning in its returned security lint list. This is plan-gated on the current Free tier; it is not silently marked resolved.
+- No customer/business/payment records were changed. Existing `index.html` was not edited.
+
+**Remaining Database Fortress gates:** review every RLS predicate and storage policy; verify API-exposed schema settings; review all remaining SECURITY DEFINER functions and intended anonymous RPCs; perform negative role/tenant-isolation API tests. Do not mark feature 3 Completed yet.
