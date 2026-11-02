@@ -156,6 +156,32 @@ assert(workspace.includes('id="productNameLabel"'), "Category-specific product/s
 
 assert(workspace.includes('id="customerDirectoryRefresh"'), "Customer contact refresh control is missing.");
 
+// Verify every category-specific manager is wired into the selected-shop refresh cycle.
+const categoryLoaders = [
+  ["Restaurant tables", "loadRestaurantTables"], ["Restaurant reservations", "loadRestaurantReservations"],
+  ["Restaurant menu", "loadRestaurantMenu"], ["Restaurant ticket options", "loadRestaurantTicketOptions"],
+  ["Restaurant kitchen", "loadRestaurantKitchen"], ["Hotel rooms", "loadHotelRooms"],
+  ["Hotel reservations", "loadHotelReservations"], ["Hotel booking requests", "loadHotelBookingRequests"],
+  ["Hotel housekeeping", "loadHotelHousekeepingTasks"], ["Office employees", "loadOfficeEmployees"],
+  ["Office attendance", "loadOfficeAttendance"], ["Office leave requests", "loadOfficeLeaveRequests"],
+  ["Office payroll", "loadOfficePayroll"], ["Office tasks", "loadOfficeTasks"],
+  ["Electronics inventory", "loadElectronicsInventory"], ["Electronics repair jobs", "loadElectronicsServiceJobs"],
+  ["Medical batches", "loadMedicalBatches"], ["Digital service applications", "loadDigitalApplications"],
+  ["Supplier procurement", "loadGroceryProcurement"], ["Customer credit book", "loadCustomerCredit"]
+];
+const shopRefreshStart = workspace.indexOf("async function loadShopData()");
+const shopRefresh = workspace.slice(shopRefreshStart, shopRefreshStart + 5000);
+for (const [label, loader] of categoryLoaders) {
+  assert(workspace.includes("async function " + loader + "("), "Missing category manager loader: " + label);
+  assert(shopRefresh.includes("await " + loader + "("), "Selected-shop refresh does not load: " + label);
+}
+for (const [, loader] of categoryLoaders) {
+  const start = workspace.indexOf("async function " + loader + "(");
+  const next = workspace.indexOf("\nasync function ", start + 20);
+  const body = workspace.slice(start, next < 0 ? start + 12000 : next);
+  assert(body.includes('.eq("shop_id",currentShop.id)') || body.includes(".eq('shop_id',currentShop.id)"),
+    loader + " must query only the currently selected shop.");
+}
 const shopkeeperForms = [...workspace.matchAll(/<form\b[^>]*\bid=["']([^"']+)["']/g)].map(match => match[1]);
 const shopkeeperSubmitHandlers = new Set(
   [...workspace.matchAll(/\$\(["']([^"']+Form)["']\)\.addEventListener\(["']submit["']/g)].map(match => match[1])
