@@ -439,3 +439,14 @@ The next five owner-approved features have moved from **Pending** to **In Progre
 - **Next Database Fortress gate:** confirm the Data API exposed-schema allowlist, review all grants on exposed schemas and bucket policies (including `shop-logos`), then run authenticated/anon API negative tests using dedicated test identities and non-production fixtures. Do not mark Database Fortress complete before those checks pass.
 
 **Status precedence:** This security-first execution lock supersedes older sections in this file that describe the Business Category Module or other feature modules as the current active implementation. Until the 10 Security Shield features pass their evidence gates, only security work and safe maintenance/regression fixes are authorized.
+
+
+## Storage security follow-up — 2026-11-02
+
+- Re-queried live `storage.objects` policies: exactly three policies exist, all scoped to authenticated shop owners and the `product-images` bucket. INSERT, UPDATE (USING + WITH CHECK), and DELETE require a UUID shop folder whose shop is owned by auth.uid(), active, enabled, and not expired.
+- Confirmed `shop-logos` currently has **no matching Storage object policy**. Its bucket is public-read, with no configured max file size or MIME allowlist. The inspected shopkeeper frontend uploads product images only to `product-images`; no `shop-logos` upload call was found in that page. Do not add a permissive write policy. Before changing bucket limits or adding upload permissions, trace every Owner/Edge Function/admin upload caller and any existing logo objects.
+- Confirmed `product-images` is public-read with 5 MiB limit and JPEG/PNG/WebP allowlist. Keep customer documents and private records out of both public buckets.
+- The PostgreSQL runtime did not expose PostgREST `pgrst.db_schemas` via `current_setting` (NULL); this is not evidence that `private` is or is not exposed. Supabase API settings must be checked in the Dashboard; do not infer the exposed schema list from SQL grants.
+- Supabase Security Advisor still reports leaked-password protection disabled (plan-gated on current Free tier).
+- No production changes made in this follow-up. No bucket configuration, Storage policies, API settings, customer files, payment data, or application pages were modified.
+- **Next:** inspect Owner/Edge Function logo-upload call paths and existing bucket objects; then confirm API exposed schemas through project settings and prepare dedicated test identities for Storage and RLS negative API tests.
