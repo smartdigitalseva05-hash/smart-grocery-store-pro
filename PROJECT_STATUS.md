@@ -3,9 +3,9 @@
 
 ## OWNER DIRECTIVE — SECURITY-FIRST EXECUTION LOCK (2026-11-02)
 
-**Permanent project priority:** The 10-feature Security Shield is the only active implementation module until all ten controls are implemented, independently verified, and deployment/security review is complete. Do not start or expand category, shopkeeper, Owner dashboard, payment UI, analytics, or other feature work before that gate passes. Only security work and safe maintenance/regression fixes are allowed during this lock.
+**Current execution directive (updated 2026-11-02):** Preserve every security safeguard already implemented. The Owner has instructed that work requiring Owner-only OTP enrollment, paid-plan upgrades, real external payment credentials/transactions, or off-site restore credentials must be deferred rather than block website completion. Do not claim those controls are complete; keep them explicitly marked Deferred/Blocked. Continue implementing and validating the remaining Smart Business Pro website modules with available GitHub/Supabase access. Never weaken security or overwrite the protected customer storefront `index.html`.
 
-**Do not confuse documentation or a visible UI with a working security control.** A feature may be marked Completed only with implementation evidence plus passing automated/API tests for its acceptance criteria. Keep blocked/plan-gated items open and state the dependency. Do not claim 10/10 until every row below is Completed.
+**Evidence rule:** A feature may be marked Completed only with implementation evidence plus passing automated/API tests for its acceptance criteria. Where physical browser testing or external credentials are unavailable, state that limitation and do not invent a pass.
 
 | # | Mandatory security feature | Current evidence-based status (2026-11-02) | Remaining completion gate |
 |---|---|---|---|
@@ -144,9 +144,10 @@ The execution lock remains active. Only Security Shield implementation, verifica
 
 ## Development order
 
-1. Security Shield — complete and independently verify all 10 controls; no other feature work before the gate passes.
-2. Full security regression, Advisor review, backup/restore evidence and deployment verification.
-3. Only after 10/10 is formally Completed, resume the business-category and other product modules.
+1. Preserve and improve all security controls that can be implemented and verified through connected GitHub/Supabase access.
+2. Defer Owner-only, plan-gated and external-credential gates without falsely marking them Completed.
+3. Continue completing the 11 business-category workflows, registration, shopkeeper, customer and Owner experiences; verify each available code/API path.
+4. Run regression, Security Advisor and deployment checks after each safe batch; keep index.html protected.
 3. Registration Module — save each shop with the correct category.
 4. Shop Dashboard Module — show the correct tools for each shop.
 5. Product Module — category/shop-specific product management.
