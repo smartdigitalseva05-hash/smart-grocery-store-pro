@@ -417,3 +417,10 @@ The next five owner-approved features have moved from **Pending** to **In Progre
 - No customer/business/payment records were changed. Existing `index.html` was not edited.
 
 **Remaining Database Fortress gates:** review every RLS predicate and storage policy; verify API-exposed schema settings; review all remaining SECURITY DEFINER functions and intended anonymous RPCs; perform negative role/tenant-isolation API tests. Do not mark feature 3 Completed yet.
+
+
+## Post-remediation privilege clarification — 2026-11-02
+
+- The earlier count of 17 anon-executable SECURITY DEFINER functions included private trigger functions that were subsequently hardened. After the applied migration, the current catalog shows **32 SECURITY DEFINER functions in private (6 anon-executable, 21 authenticated-executable) and 11 in public (0 anon-executable, 0 authenticated-executable)**.
+- The 6 remaining anon-executable private functions are the named public-intake/availability helpers: `is_active_digital_service_shop`, `is_active_electronics_service_shop`, `is_active_hotel_booking_shop`, `is_active_restaurant_booking_shop`, `is_public_shop_active`, and `submit_digital_service_application`. They need an explicit API-exposed-schema and input/output review; do not revoke them blindly because public storefront/booking/request flows may rely on them.
+- All 23 attached private trigger functions now have no direct EXECUTE grant for anon or authenticated. The trigger definitions remain attached.
