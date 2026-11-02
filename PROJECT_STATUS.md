@@ -739,3 +739,9 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Added/applied `supabase/migrations/20261102350000_restore_owner_scoped_shop_application_insert.sql`, granting only INSERT to `authenticated`; anon INSERT remains denied.
 - Transaction test as the existing authenticated shop owner inserted a temporary application while deliberately supplying `is_active=true`, `status='active'`, a subscription plan and future expiry. The database trigger forced the row to `is_active=false`, `status='inactive'`, `subscription_plan_id=NULL`, `subscription_expires_at=NULL`. A subsequent owner attempt to activate the shop directly was blocked with SQLSTATE 42501. Transaction rolled back; follow-up confirmed 0 persisted test rows. This preserves the normal owner-review/payment activation gate.
 - This fixes an app/database permission mismatch without changing the application UI or granting any activation authority. HTTP/PostgREST regression test is still pending.
+
+
+### Latest deployment and regression CI confirmation — 2026-11-02
+- GitHub Actions completed successfully for shop-application permission migration commit `0e1d735f42017cf14eb5eb19a3322cd6de67d685`: static validation run `41396151908`, Pages deployment run `41396151828`, and Pages build/deployment run `41396148318` all passed.
+- The follow-up `PROJECT_STATUS.md` commit `2616efa15ce04d6ddff3ab2aa9084b70d854ca8e` also passed static validation (`41396240659`), Pages deployment (`41396240690`) and Pages build/deployment (`41396240487`).
+- Static CI and Pages deployment are green for the current repo head at this checkpoint. This does not substitute for authenticated HTTP/PostgREST tests or live Owner MFA enrollment.
