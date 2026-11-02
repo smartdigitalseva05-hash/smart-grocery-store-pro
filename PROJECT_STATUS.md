@@ -35,6 +35,15 @@
 - GitHub Actions static validation passed on commit `ee80b0eaf3710619db23e02c983be1c2681db478`; the Pages workflow's Deno type-check, website validation and deployment all passed. The customer storefront `index.html` was not changed.
 - MFA audit still finds zero verified TOTP factors for the active Super Admin account; Super Admin Lock remains incomplete until the Owner enrolls and verifies a factor and the fresh-session/API acceptance tests pass. Security Advisor still reports leaked-password protection disabled; current Free tier plan-gates this control.
 
+
+
+### Payment endpoint abuse-control verification — 2026-11-02 08:19 UTC
+- Applied migration `20261102081537`: private payment rate-limit event storage plus a server-only RPC. Checkout is limited to 5 requests per account per rolling 15 minutes; verification is limited to 10. Sequential SQL threshold tests confirmed request 6 and request 11 are rejected with `PT429`.
+- Applied migration `20261102081910`: explicit deny-all RLS policy for anon/authenticated on the private rate-limit table. Security Advisor now reports only the plan-gated leaked-password-protection warning; the private-table no-policy INFO finding is cleared.
+- Checkout v12 and verification v10 now call the rate-limit RPC using server-side credentials, fail closed if the check is unavailable, require JSON, and retain JWT verification, exact-origin CORS and 16 KiB request limits.
+- Static regression tests and GitHub Pages deployment passed on commit `1c38e319658dcf7bee61573fb5ba9d7907794b4e`. Concurrent-load and live HTTP tests remain open. Supabase Auth login limits and IP/device controls also remain open.
+- The matching SQL source files for migrations `20261102081352`, `20261102081537` and `20261102081910` still need to be synchronized into the GitHub migrations directory; live Supabase migration history records them.
+
 ### Execution order while the lock is active
 1. Complete and test Super Admin Lock and Zero-Trust server authorization.
 2. Complete Database Fortress role/tenant isolation tests and remediate findings.
