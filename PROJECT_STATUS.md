@@ -42,13 +42,24 @@
 - Applied migration `20261102081910`: explicit deny-all RLS policy for anon/authenticated on the private rate-limit table. Security Advisor now reports only the plan-gated leaked-password-protection warning; the private-table no-policy INFO finding is cleared.
 - Checkout v12 and verification v10 now call the rate-limit RPC using server-side credentials, fail closed if the check is unavailable, require JSON, and retain JWT verification, exact-origin CORS and 16 KiB request limits.
 - Static regression tests and GitHub Pages deployment passed on commit `1c38e319658dcf7bee61573fb5ba9d7907794b4e`. Concurrent-load and live HTTP tests remain open. Supabase Auth login limits and IP/device controls also remain open.
-- The matching SQL source files for migrations `20261102081352`, `20261102081537`, `20261102081910` and `20261102082023` still need to be synchronized into the GitHub migrations directory; live Supabase migration history records them.
+- Supabase migration history and GitHub source now match exactly: **145 applied migrations / 145 SQL files**, with zero missing or extra migration files. This includes audit, payment rate-limit, MFA-gated expense, shop-logo storage, primary-key and restaurant status-guard migrations. An unsafe untracked legacy reconciliation SQL file was removed so it cannot accidentally reapply older permissive policies or replace hardened order RPCs.
 
 
 
 ### Grocery expense Super Admin boundary — 2026-11-02 08:20 UTC
 - Applied migration `20261102082023` so the `grocery_expenses` UPDATE policy allows either the row creator or a Super Admin who passes `private.is_super_admin()` (active Super Admin + JWT AAL2 + verified TOTP). The identity trigger still prevents changing `shop_id` or `created_by`, including for Super Admin.
 - The active Super Admin account currently has zero verified TOTP factors, so this override remains unavailable until the Owner completes enrollment and verification. This is intentional fail-closed behavior.
+
+
+### Security maintenance and migration reconciliation — 2026-11-02 08:40 UTC
+- Reconciled every applied Supabase migration with its exact versioned GitHub source filename: 145/145 match, zero missing and zero extra SQL migration files.
+- Added shop-logo bucket upload constraints: 2 MiB maximum, JPEG/PNG/WebP only. The bucket had no stored objects before this change. Existing product-image bucket remains unchanged at 5 MiB with JPEG/PNG/WebP.
+- Added a UUID primary key and cleanup index to the private payment rate-limit event table. Catalog verification confirms RLS enabled, one deny-all browser-role policy, and a primary key; the previous no-primary-key performance finding is resolved. The new cleanup index may remain reported unused until older events need pruning; do not remove it.
+- Recorded the already-installed restaurant kitchen ticket forward-only status guard in migration history. Live function and trigger were checked before source synchronization.
+- Removed an untracked legacy reconciliation migration that could have reintroduced permissive credit-ledger policies and replaced hardened order RPC implementations if accidentally pushed.
+- Cleaned all synthetic rate-limit test events; verification found zero remaining test rows.
+- Current structural verification: 41/41 public tables have RLS and policies; audit triggers cover 38 public tables. Security Advisor shows only the plan-gated leaked-password-protection warning.
+- Latest static validation and GitHub Pages deploy succeeded on commit 450617814f0b450736674872102cd71c7262f7f7. Final Pages build is still running at the time of this status update.
 
 ### Execution order while the lock is active
 1. Complete and test Super Admin Lock and Zero-Trust server authorization.
