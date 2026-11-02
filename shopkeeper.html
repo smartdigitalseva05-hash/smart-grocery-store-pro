@@ -1212,7 +1212,7 @@ async function loadShopData(){
  async function loadProducts(){
   const list=$("productList");
   if(!currentShop){list.replaceChildren();say("listMessage","Select an approved shop first.");return}list.replaceChildren();say("listMessage","Loading your products…");
-  const {data,error}=await db.from("products").select("id,name,price,sale_price,stock,is_available,offer_text,images").eq("shop_id",currentShop.id).order("created_at",{ascending:false});
+  const {data,error}=await db.from("products").select("id,name,description,category_id,price,sale_price,stock,is_available,offer_text,images").eq("shop_id",currentShop.id).order("created_at",{ascending:false});
   if(error){say("listMessage",error.message,true);return}
   if(!data?.length){say("listMessage","No products added to this shop yet.");return}
   say("listMessage",data.length+" product(s) loaded.");
@@ -1226,14 +1226,23 @@ async function loadShopData(){
    const actions=document.createElement("div");actions.className="product-actions";
    const stock=document.createElement("button");stock.className="secondary";stock.disabled=!canManageProducts();stock.textContent="Update stock";stock.addEventListener("click",async()=>{const n=window.prompt("Enter new stock quantity:",String(p.stock));if(n===null)return;const value=Number(n);if(!Number.isInteger(value)||value<0){say("listMessage","Stock must be a whole number 0 or greater.",true);return}const {error}=await db.from("products").update({stock:value}).eq("id",p.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await loadProducts()});
    const toggle=document.createElement("button");toggle.className="secondary";toggle.disabled=!canManageProducts();toggle.textContent=p.is_available?"Hide product":"Make available";toggle.addEventListener("click",async()=>{const {error}=await db.from("products").update({is_available:!p.is_available}).eq("id",p.id).eq("shop_id",currentShop.id);if(error){say("listMessage",error.message,true);return}await loadProducts()});
-   const edit=document.createElement("button");edit.className="secondary";edit.disabled=!canManageProducts();edit.textContent="Edit price & offer";edit.addEventListener("click",async()=>{
-     const priceText=window.prompt("New regular price (₹):",String(p.price));if(priceText===null)return;
+   const edit=document.createElement("button");edit.className="secondary";edit.disabled=!canManageProducts();edit.textContent="Edit product details";edit.addEventListener("click",async()=>{
+     const name=window.prompt("Product name:",p.name);if(name===null)return;
+     const categoryOptions=[...$("pCategory").options].filter(o=>o.value);
+     const currentCategory=categoryOptions.find(o=>o.value===p.category_id);
+     const categoryName=window.prompt("Category name (leave blank for no category):",currentCategory?.textContent||"");if(categoryName===null)return;
+     const selectedCategory=categoryName.trim()?categoryOptions.find(o=>o.textContent.trim().toLowerCase()===categoryName.trim().toLowerCase()):null;
+     if(categoryName.trim()&&!selectedCategory){say("listMessage","Choose an existing category name shown in the Add a product category list.",true);return}
+     const description=window.prompt("Product description:",p.description||"");if(description===null)return;
+     const priceText=window.prompt("Regular price (₹):",String(p.price));if(priceText===null)return;
      const saleText=window.prompt("Offer price (₹), leave blank for no offer:",p.sale_price==null?"":String(p.sale_price));if(saleText===null)return;
      const offerText=window.prompt("Offer text:",p.offer_text||"");if(offerText===null)return;
-     const price=Number(priceText),sale=saleText.trim()===""?null:Number(saleText);
-     if(!Number.isFinite(price)||price<=0||(sale!==null&&(!Number.isFinite(sale)||sale<=0||sale>=price))){say("listMessage","Enter a valid regular price and an optional lower offer price.",true);return}
-     const {error}=await db.from("products").update({price,sale_price:sale,offer_text:offerText.trim()||null}).eq("id",p.id).eq("shop_id",currentShop.id);
-     if(error){say("listMessage",error.message,true);return}await loadProducts();
+     const cleanName=name.trim(),price=Number(priceText),sale=saleText.trim()===""?null:Number(saleText);
+     if(!cleanName||cleanName.length>120||!Number.isFinite(price)||price<=0||(sale!==null&&(!Number.isFinite(sale)||sale<=0||sale>=price))){say("listMessage","Enter a product name, a valid regular price and an optional lower offer price.",true);return}
+     edit.disabled=true;say("listMessage","Saving product details…");
+     const {error}=await db.from("products").update({name:cleanName,category_id:selectedCategory?.value||null,description:description.trim()||null,price,sale_price:sale,offer_text:offerText.trim()||null}).eq("id",p.id).eq("shop_id",currentShop.id);
+     if(error){say("listMessage",error.message,true);edit.disabled=!canManageProducts();return}
+     say("listMessage","Product details updated.");await loadProducts();
     });
     const imageEdit=document.createElement("button");imageEdit.className="secondary";imageEdit.disabled=!canManageProducts();imageEdit.textContent="Edit image";imageEdit.addEventListener("click",async()=>{
      const first=Array.isArray(p.images)?p.images[0]:null;const current=typeof first==="string"?first:first?.url||"";
