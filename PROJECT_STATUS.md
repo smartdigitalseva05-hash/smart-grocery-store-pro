@@ -925,3 +925,12 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Security Advisor still reports one known warning: Auth leaked-password protection is disabled. No other Security Advisor finding was returned in this check.
 - No production customer/order/shop data was changed. Existing `index.html` remains untouched.
 - This verifies static wiring, deployment and RLS presence—not real authenticated end-to-end workflows for 11 separate shopkeeper accounts. Final acceptance still requires safe, authenticated testing for each category; do not mark the whole suite 100% certified before that.
+
+
+### Advanced category smart alerts — 2026-11-02
+- Added an Advanced Smart Alerts panel to `shopkeeper.html`, refreshed automatically when the selected shop loads and manually through a refresh control.
+- Category-aware, read-only reminders now cover all 11 business types: retail low stock/catalogue availability; garment size/colour variant stock; jewellery metal-rate freshness and missing hallmark references; restaurant pending kitchen tickets and upcoming reservations; hotel open housekeeping tasks and arrivals; office pending leave, overdue tasks and unpaid payroll records; electronics warranty expiry and overdue repair jobs; medical expired/near-expiry batches; Digital Services overdue/upcoming application deadlines.
+- Every alert query is filtered by the selected `shop_id`; the feature does not write or alter business records and uses existing RLS-protected tables. No schema migration or secret was added.
+- GitHub Pages deployment run **41452121274** and static validation run **41452121239** both completed successfully on commit `ce869e4f1cea4d655354284e5e4db3e73791071a`.
+- Limitation: this confirms static validation and deployment, not live authenticated UI execution for all 11 categories. The production database currently lacks real shops for most categories; do not create fake production data. Alert thresholds are initial operational defaults and should be configurable in a later iteration.
+- Existing customer storefront `index.html` was not changed.
