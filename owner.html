@@ -153,7 +153,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    finally{$("mfaStart").disabled=false}
  }
  async function verifyOwnerMfa(){
-   const code=$("mfaCode").value.replace(/\\D/g,"").slice(0,6);
+   const code=$("mfaCode").value.replace(/\D/g,"").slice(0,6);
    if(!ownerMfaFactorId||code.length!==6){message("mfaMessage","Enter the 6-digit authenticator code.",true);return}
    $("mfaVerify").disabled=true;message("mfaMessage","Verifying second factor…");
    try{
@@ -544,7 +544,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
   $("mfaStart").addEventListener("click",startOwnerMfaEnrollment);
  $("mfaVerify").addEventListener("click",verifyOwnerMfa);
  $("mfaSignOut").addEventListener("click",async()=>{await client.auth.signOut();ownerMfaFactorId=null;ownerMfaMode=null;showLogin("Signed out.")});
- $("mfaCode").addEventListener("input",()=>{$("mfaCode").value=$("mfaCode").value.replace(/\\D/g,"").slice(0,6)});
+ $("mfaCode").addEventListener("input",()=>{$("mfaCode").value=$("mfaCode").value.replace(/\D/g,"").slice(0,6)});
  $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers()])});
  $("shopsRefresh").addEventListener("click",loadShops);
  $("websitesRefresh").addEventListener("click",loadBusinessWebsites);
