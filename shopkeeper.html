@@ -1005,7 +1005,7 @@ async function loadAdvancedAlerts(){
   if(["grocery","daily_needs","other"].includes(type)){
    const rows=await query("products","id,name,stock,is_available");
    const low=rows.filter(x=>Number(x.stock||0)<=retailThreshold);
-   add("Low-stock watch",low.length?low.length+" product(s) at or below 5 units: "+low.slice(0,5).map(x=>x.name+" ("+x.stock+")").join(", "):"No products are at or below 5 units.");
+   add("Low-stock watch",low.length?low.length+" product(s) at or below "+retailThreshold+" units: "+low.slice(0,5).map(x=>x.name+" ("+x.stock+")").join(", "):"No products are at or below "+retailThreshold+" units.");
    add("Catalogue availability",rows.filter(x=>!x.is_available).length+" product(s) currently marked unavailable.");
   }else if(type==="garments"){
    const rows=await query("garment_product_variants","sku,size_label,color_name,stock,is_available");
