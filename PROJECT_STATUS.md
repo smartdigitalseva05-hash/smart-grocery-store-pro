@@ -590,3 +590,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Database function source scan found only `rls_auto_enable` using dynamic SQL; it uses `format('%I.%I', schema_name, table_name)` with catalog-derived identifiers, rather than concatenating user input. No application-provided dynamic SQL was found in the reviewed public/private functions.
 - This is a static sink/source review, not a full browser payload/XSS test or SQL injection penetration test. Attack Protection remains In Progress. `index.html` was not changed.
 - Latest commit `c60c844d2b920b967265cd930a4b9a17b3c2c380` passed Static project validation, static Pages deployment, and Pages build/deployment (runs 41391032908, 41391032899, 41391032805).
+
+
+### Isolated two-tenant RLS tests — passed with rollback (2026-11-02)
+- Built a temporary second Auth identity, shopkeeper profile, inactive Grocery shop and product inside a single explicit transaction. Used synthetic JWT subjects for the existing shop owner and the temporary second owner, both at AAL1. No real user credentials were created.
+- `shops` isolation: tenant 1 saw exactly its own shop and could not see or own tenant 2's shop; tenant 2 saw exactly its own test shop and could not see tenant 1's shop.
+- `products` isolation: tenant 1 could not see tenant 2's test product; tenant 2 could see its own test product.
+- All test operations were rolled back. Follow-up checks confirmed the temporary Auth user, shop and product all have 0 persisted rows. No production user, shop, product or payment data changed.
+- This is stronger than the earlier one-tenant simulation and validates core row isolation for `shops` and `products` under two synthetic authenticated identities. It is still SQL role simulation, not full HTTP/PostgREST API testing, and does not cover every table or Storage policy. Database Fortress remains In Progress.
