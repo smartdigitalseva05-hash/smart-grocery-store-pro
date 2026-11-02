@@ -667,3 +667,10 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Transactional test passed: shop owner inserted a temporary adjustment; audit event was created; direct UPDATE and DELETE attempts as database owner were both blocked by the append-only trigger. Entire transaction rolled back; follow-up check confirmed 0 persisted test ledger rows and 0 test audit rows.
 - Verified privileges: authenticated SELECT/INSERT true, UPDATE/DELETE false; anon SELECT/INSERT false. No existing ledger rows were present before migration; no business data was changed.
 - Audit Trail coverage now includes order status, payment security-state, and customer-credit ledger insert events, plus explicit audit inserts in Owner and subscription RPCs. Remaining high-risk mutation paths still need a full event matrix.
+
+
+### Credit-ledger subscription enforcement and owner-isolation test — applied and verified (2026-11-02)
+- Tightened the credit-ledger INSERT policy so a new entry requires the authenticated owner of the shop, an active shopkeeper profile, `business_type='grocery'`, active shop status and a current subscription. SELECT remains owner-scoped so historical entries remain readable.
+- Transaction tests passed: the real shop owner could insert a temporary adjustment and the audit trigger wrote the expected event; an unrelated authenticated customer attempting an insert was blocked by RLS. Both transactions rolled back; follow-up checks show 0 persisted test ledger rows and 0 persisted test audit rows.
+- This closes the previous front-end-only subscription gate for ledger writes. No real ledger or customer data existed/was changed.
+- CI for the policy migration commit `e5ed0c76107b401ec03d41d4ba079debe92fcbb0`: static validation passed (41393780189); static Pages deploy (41393780062) and Pages build/deployment (41393779854) were still in progress at the last poll.
