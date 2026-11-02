@@ -82,12 +82,16 @@ const registration = read("apply-shop.html");
 const workspace = read("shopkeeper.html");
 const owner = read("owner.html");
 const portal = read("portal.html");
+const storefront = read("index.html");
 for (const [key, label] of categories) {
   assert(registration.includes('value="' + key + '"'), "Registration is missing business type: " + key);
   assert(workspace.includes(key + ":{name:"), "Shopkeeper workspace is missing category config: " + key);
   assert(owner.includes('key:"' + key + '"'), "Owner category controls are missing: " + key);
   assert(portal.includes("<h3>" + label + "</h3>"), "Portal category card is missing: " + label);
 }
+assert(storefront.includes('id="businessTypeFilter"'), "Customer storefront is missing its business-category filter.");
+assert(storefront.includes("p.shop?.business_type === selectedBusinessType"),
+  "Customer storefront must filter products by the selected shop business type.");
 
 assert(workspace.includes("const cfg=types[shop.business_type]||types.other;"),
   "Unknown business types must use the generic workspace, never inherit Grocery tools.");
