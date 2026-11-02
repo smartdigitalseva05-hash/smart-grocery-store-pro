@@ -147,6 +147,12 @@ assert(workspace.includes('id="orderStatusFilter"'), "Shopkeeper order manager i
 assert(workspace.includes('id="orderSearch"'), "Shopkeeper order manager is missing order search.");
 assert(workspace.includes("const visibleOrders=data.filter(o=>"), "Shopkeeper order filters must be applied to the selected shop's fetched orders.");
 assert(workspace.includes("for(const o of visibleOrders)"), "Shopkeeper order renderer must use filtered orders.");
+assert(workspace.includes('!["grocery","daily_needs"].includes(shop.business_type)'), "Supplier/purchase panel must be limited to Grocery and Daily Needs shops.");
+assert(workspace.includes('!["grocery","daily_needs"].includes(currentShop.business_type)'), "Supplier/purchase loader must enforce the same category allowlist.");
+assert(workspace.includes('id="procurementHeading"'), "Supplier/purchase panel must show its category-specific heading.");
+assert(workspace.includes('textContent="Add a product or service"'), "Other Businesses must have product/service catalogue wording.");
+assert(workspace.includes('textContent="Add a Daily Needs item"'), "Daily Needs must have category-specific item creation wording.");
+assert(workspace.includes('id="productNameLabel"'), "Category-specific product/service naming label is missing.");
 assert(workspace.includes('id="customerDirectoryRefresh"'), "Customer contact refresh control is missing.");
 
 const shopkeeperForms = [...workspace.matchAll(/<form\b[^>]*\bid=["']([^"']+)["']/g)].map(match => match[1]);
