@@ -152,6 +152,8 @@ assert(workspace.includes("description:description.trim()||null"), "Product edit
 assert(workspace.includes('id="orderStatusFilter"'), "Shopkeeper order manager is missing the status filter.");
 assert(workspace.includes('id="orderSearch"'), "Shopkeeper order manager is missing order search.");
 assert(workspace.includes("const visibleOrders=data.filter(o=>"), "Shopkeeper order filters must be applied to the selected shop's fetched orders.");
+assert(workspace.includes('db.from("order_status_history").select("old_status,new_status,reason,created_at").eq("order_id",o.id)'), "Delivery timeline must read status history for the selected order only.");
+assert(workspace.includes('textContent="View delivery timeline"'), "Shopkeeper order cards must expose delivery timeline control.");
 assert(workspace.includes("for(const o of visibleOrders)"), "Shopkeeper order renderer must use filtered orders.");
 assert(workspace.includes('!["grocery","daily_needs"].includes(shop.business_type)'), "Supplier/purchase panel must be limited to Grocery and Daily Needs shops.");
 assert(workspace.includes('!["grocery","daily_needs"].includes(currentShop.business_type)'), "Supplier/purchase loader must enforce the same category allowlist.");
