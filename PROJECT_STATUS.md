@@ -11,7 +11,7 @@
 |---|---|---|---|
 | 1 | Zero-Trust Security | **In Progress** | SQL role tests cover two-tenant shops/products/orders/payments/Storage and seven additional business-module tables; owner A/B each saw only their own module rows, unrelated customer saw zero. Complete remaining HTTP/PostgREST tests and remaining RPCs. |
 | 2 | Super Admin Lock | **In Progress** | Owner TOTP enrollment/challenge UI exists and `private.is_super_admin()` requires active Super Admin + JWT AAL2 + a currently verified TOTP factor. No live factor is enrolled yet; complete real enrollment, fresh-session verification, recovery and sensitive-operation HTTP tests. |
-| 3 | Database Fortress | **In Progress** | 41/41 public tables have RLS and policies. Two-tenant SQL isolation passes across Electronics, Hotel, Office and Restaurant operational tables; anonymous catalog reads are column-allowlisted; shopkeeper grants are least-privilege; private limiter tables are deny-all. Migration `20261102080828` now adds a tenant-scoped `grocery_expenses` UPDATE policy with `WITH CHECK` and an immutable shop/creator trigger; catalog verification confirms both are installed. Complete remaining table/API matrix and HTTP/PostgREST tests. |
+| 3 | Database Fortress | **In Progress** | 41/41 public tables have RLS and policies. Two-tenant SQL isolation passes across Electronics, Hotel, Office and Restaurant operational tables; anonymous catalog reads are column-allowlisted; shopkeeper grants are least-privilege; private limiter tables are deny-all. `grocery_expenses` UPDATE has tenant-scoped `WITH CHECK`; the creator/shop identity trigger is immutable, and the AAL2+verified-TOTP Super Admin override is restricted by `private.is_super_admin()`. Complete remaining table/API matrix and HTTP/PostgREST tests. |
 | 4 | Anti-Brute-Force | **In Progress** | Concurrency-safe sliding 60-minute limits cover public intake forms. Payment endpoints now enforce account-based 15-minute limits: 5 checkout attempts and 10 verification attempts; sequential threshold tests rejected attempts 6 and 11. Still implement/test login/Auth limits, IP/device controls, concurrent load and recovery. |
 | 5 | Secret Vault | **In Progress** | Current-tree scan and automated reachable-Git-history scan cover Supabase, Razorpay, AWS, Google, GitHub, Slack and private-key patterns; no findings. Selected secret-file paths have zero commits. External credential inventory and rotation review remain. |
 | 6 | Attack Protection | **In Progress** | Checkout and verification CORS allow only `https://smartdigitalseva05-hash.github.io`; both enforce JSON content type, 16 KiB streamed body limits and account-based rate limits. Checkout v12 and verification v10 are deployed with JWT required. Broad server-side validation/XSS/CSRF/SQLi/IDOR/upload/redirect and live disallowed-origin HTTP tests remain. |
@@ -43,6 +43,12 @@
 - Checkout v12 and verification v10 now call the rate-limit RPC using server-side credentials, fail closed if the check is unavailable, require JSON, and retain JWT verification, exact-origin CORS and 16 KiB request limits.
 - Static regression tests and GitHub Pages deployment passed on commit `1c38e319658dcf7bee61573fb5ba9d7907794b4e`. Concurrent-load and live HTTP tests remain open. Supabase Auth login limits and IP/device controls also remain open.
 - The matching SQL source files for migrations `20261102081352`, `20261102081537` and `20261102081910` still need to be synchronized into the GitHub migrations directory; live Supabase migration history records them.
+
+
+
+### Grocery expense Super Admin boundary — 2026-11-02 08:20 UTC
+- Applied migration `20261102082023` so the `grocery_expenses` UPDATE policy allows either the row creator or a Super Admin who passes `private.is_super_admin()` (active Super Admin + JWT AAL2 + verified TOTP). The identity trigger still prevents changing `shop_id` or `created_by`, including for Super Admin.
+- The active Super Admin account currently has zero verified TOTP factors, so this override remains unavailable until the Owner completes enrollment and verification. This is intentional fail-closed behavior.
 
 ### Execution order while the lock is active
 1. Complete and test Super Admin Lock and Zero-Trust server authorization.
