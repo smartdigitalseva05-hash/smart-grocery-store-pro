@@ -491,3 +491,13 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Anonymous role: saw 1 shop, 1 product, and 48 categories through the intended public-read paths. A separate anonymous attempt to read `shop_subscriptions` was denied by table privileges (Postgres 42501); no grant was added.
 - The live dataset currently contains only one shop owner / one shop. Therefore this is a useful positive-owner and negative-non-owner check, but it is **not** a real two-tenant cross-shop IDOR test. A second isolated shop-owner test identity and second tenant are still required before Database Fortress can pass.
 - These are SQL role simulations, not authenticated HTTP/PostgREST requests. API-level negative tests remain outstanding.
+
+
+### Additional callable-function and RLS predicate tests — 2026-11-02
+- Re-audited function ACLs and definitions. No SECURITY DEFINER functions were found in `public`; public RPC wrappers are SECURITY INVOKER and delegate to guarded private routines. The public `submit_digital_service_application` RPC is intentionally executable by anon/authenticated for customer intake; its private SECURITY DEFINER implementation validates active digital-service shop and validates service/name/phone/notes lengths before insert.
+- Negative SQL role simulation: anon call to public digital-service intake with a non-existent shop was rejected with SQLSTATE `55000` (“not currently accepting requests”). No row was inserted.
+- Negative SQL role simulation: a synthetic non-admin authenticated subject calling `public.owner_set_shop_status` for the real shop was rejected with SQLSTATE `42501` (“Only active super_admin…”). Transaction rolled back; shop status unchanged.
+- These are SQL-level checks, not authenticated HTTP/PostgREST tests; no claim of full API authorization coverage.
+- Targeted UPDATE-policy review found a predicate mismatch on `grocery_expenses_update`: its `USING` clause requires ownership of an active Grocery shop with unexpired subscription, while `WITH CHECK` only requires shop ownership and `created_by = auth.uid()`. No trigger exists on `grocery_expenses` to enforce immutable `shop_id`. This may allow a row to be reassigned by its creator to another shop they own (including a non-active/non-Grocery shop) during an otherwise permitted update. It does not currently establish cross-user tenant access, but is a data-integrity / tenant-boundary hardening finding.
+- No production policy was modified. Remediation must preserve legitimate expense editing and be verified with an isolated two-shop owner test before applying a migration.
+- Feature gates remain unchanged: Security Shield 0/10 fully verified.
