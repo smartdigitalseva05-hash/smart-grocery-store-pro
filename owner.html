@@ -147,7 +147,10 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
        if(removeError)throw removeError;
        ownerMfaFactorId=null;
      }
-     const {data,error}=await client.auth.mfa.enroll({factorType:"totp",friendlyName:"Smart Business Pro Owner"});
+     // Use a fresh label for a replacement setup: Supabase rejects duplicate
+     // friendly names when an older incomplete factor still exists.
+     const setupLabel="Smart Business Pro Owner "+new Date().toISOString().slice(0,10)+" "+Math.random().toString(36).slice(2,6).toUpperCase();
+     const {data,error}=await client.auth.mfa.enroll({factorType:"totp",friendlyName:setupLabel});
      if(error)throw error;
      ownerMfaFactorId=data.id;ownerMfaMode="enroll";
      $("mfaQr").src=data.totp.qr_code;
