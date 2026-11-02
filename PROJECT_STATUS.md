@@ -54,7 +54,7 @@ The immediate goal is to make all 11 business categories work as real category-b
 
 ### Read-only audit findings (2026-11-01)
 - Supabase Security Advisor reports **1 warning**: leaked-password protection is disabled. Remediation: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
-- Database inspection found **40 public tables**; all 40 currently have RLS enabled and at least one RLS policy. This is a positive baseline, not proof that every policy is correct.
+- Database inspection on 2026-11-02 found **41 public tables**; all 41 have RLS enabled and at least one RLS policy. Follow-up catalog checks found 0 tables with RLS disabled, 0 RLS-enabled tables without a policy, and 0 UPDATE policies missing WITH CHECK. Seven public/anon mutation policies were inspected: each is scoped to the authenticated row owner or private Super Admin check, or is a constrained customer-request INSERT; direct order INSERT is explicitly denied. These structural checks still require negative role-based API tests. This is a positive baseline, not proof that every policy is correct.
 - Three Razorpay Edge Functions are active. Checkout and payment verification require JWT. The public webhook has JWT verification disabled but its inspected handler validates the raw-body Razorpay HMAC-SHA256 signature using a constant-time comparison, then checks captured status, INR currency, order match, and exact amount before applying payment. Replay/idempotency behavior still needs dedicated tests.
 - A client-side `password-security.js` checks for passwords of at least 12 characters and queries the Have I Been Pwned range API using the first five SHA-1 hash characters. This client-side check is supplementary and does not replace Supabase Auth protections.
 - No database or Auth settings were changed during this audit.
@@ -290,9 +290,9 @@ All ten are mandatory. No feature may be omitted. Each stays **In Progress** unt
 | 3 | Database Fortress | **In Progress** | Full RLS/grant/policy/RPC/view/Storage audit and role-based tenant-isolation tests. |
 | 4 | Anti-Brute-Force | **Pending** | Verified rate limits, progressive delays/lockout, abuse detection and recovery tests. |
 | 5 | Secret Vault | **In Progress** | Secret scanning of current files and Git history; confirm secrets server-side only; rotate any exposed credentials. |
-| 6 | Attack Protection | **Pending** | Server-side validation and negative tests for XSS, SQL injection, CSRF, IDOR/BOLA, unsafe uploads and redirects. |
-| 7 | Real-Time Alerts | **Pending** | Verified alert generation, delivery, access controls and sensitive-event coverage. |
-| 8 | Backup & Recovery | **Pending** | Encrypted backup configuration, retention/access review and successful restore drill. |
+| 6 | Attack Protection | **In Progress** | Server-side validation and negative tests for XSS, SQL injection, CSRF, IDOR/BOLA, unsafe uploads and redirects. |
+| 7 | Real-Time Alerts | **In Progress** | Verified alert generation, delivery, access controls and sensitive-event coverage. |
+| 8 | Backup & Recovery | **In Progress** | Encrypted backup configuration, retention/access review and successful restore drill. |
 | 9 | Audit Trail | **In Progress** | Verify coverage, integrity, access restrictions, retention and safe log contents. |
 | 10 | Payment Shield | **In Progress** | Test invalid signatures, amount/currency/order mismatch, duplicates, replay and concurrent webhook delivery. |
 
@@ -330,3 +330,13 @@ The next five owner-approved features have moved from **Pending** to **In Progre
 - `audit_logs` has admin SELECT and INSERT policies, but end-to-end audit event coverage, tamper resistance, retention and Owner-only UI visibility have not been verified. Audit events are not yet declared Completed.
 - The current project metadata and available read-only APIs did not expose a verified MFA enforcement configuration or backup/restore drill. No MFA settings, Auth rate limits, database schema/data, secrets, Edge Functions, or frontend files were changed.
 - Security Advisor still reports **Leaked Password Protection Disabled**. Enable it in Supabase Auth password security settings after reviewing the impact on existing password users.
+
+
+## Automated hardening and database verification — 2026-11-02
+
+- Extended `scripts/validate-static.mjs` to check local href/src targets, ensure target=`_blank` anchors include `rel=noopener`, scan public HTML/JS for common private-key and payment-secret patterns, and retain JavaScript syntax, duplicate-ID and 11-category checks.
+- The expanded validator commit is `4bdedaa0c065102fc55555c7d9b12525dd08033b`. Its GitHub Actions result must be checked before this validator enhancement is marked Completed; the previous attempt on `49a577aa1ad8fba4df161002a86697832cfd5c11` failed because of a validator regex-escaping defect, which was corrected in the follow-up commit.
+- Supabase read-only catalog verification: 41 public tables; 0 with RLS disabled; 0 RLS-enabled tables without any policy; 0 UPDATE policies missing WITH CHECK. Seven public/anon mutation policies were reviewed structurally. Customer-request INSERT policies constrain status, ownership and active shop state; direct order INSERT has a false WITH CHECK predicate. This is not a substitute for negative API tests with anon, Customer, Shopkeeper and Super Admin sessions.
+- The `shops` table has four non-internal guard triggers, including protected activation-field changes, immutable business type for non-admins, and subscription-expiry tamper protection. No production database changes were made.
+- Supabase project remains ACTIVE_HEALTHY on the Free tier. Official Supabase documentation states leaked-password protection is available on Pro and above; therefore the existing Security Advisor warning is plan-gated on the current tier, not a website-code defect. Keep this item open until the plan supports it and the setting is verified: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+- Existing customer storefront `index.html` remains unchanged (blob SHA `854f4646215be9f0a5aaacc72ad4b7b56ac58f3e`). No Auth settings, schema, RLS policies, customer/shop records, payment records, Edge Function deployments or secrets were changed.
