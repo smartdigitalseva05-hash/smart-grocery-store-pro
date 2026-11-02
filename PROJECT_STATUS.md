@@ -582,3 +582,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Live Auth factor inventory currently shows **no MFA factors enrolled** for the active Super Admin account. The Owner dashboard is therefore intentionally gated until the account holder signs in to `owner.html`, enrolls a TOTP authenticator, and verifies a code. No factor was enrolled or secret generated automatically.
 - Recovery dependency: keep authenticator access on a second trusted device or store the setup key securely. If all factors are lost, the project administrator must recover the factor through Supabase Auth administration. Do not claim Super Admin Lock fully Completed until the real account enrollment, fresh-login AAL2 check, and sensitive-operation negative API tests pass.
 - CI passed on commit `703123399f064f3a376ddac74ad251438e327e1f`: Static project validation, static Pages deployment, and Pages build/deployment all succeeded (runs 41390857065, 41390857047, 41390856866).
+
+
+### Client-side XSS sink and SQL dynamic-query review — 2026-11-02
+- Static scan covered 19 tracked HTML/JS/TS files (including the three Razorpay Edge Function sources). Found 16 `innerHTML` sinks; no `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, or dynamic `location.assign/replace` sinks.
+- Reviewed the live storefront `index.html` sinks without modifying the file: database-backed product/category text is passed through `escapeHTML`; product IDs are UUID-typed database fields; quantity/price values are numeric; fallback markup is constant. `catalogue.html` and `showcase.html` render local static catalogue arrays. Owner panel uses DOM text nodes/textContent for audit event data.
+- Database function source scan found only `rls_auto_enable` using dynamic SQL; it uses `format('%I.%I', schema_name, table_name)` with catalog-derived identifiers, rather than concatenating user input. No application-provided dynamic SQL was found in the reviewed public/private functions.
+- This is a static sink/source review, not a full browser payload/XSS test or SQL injection penetration test. Attack Protection remains In Progress. `index.html` was not changed.
+- Latest commit `c60c844d2b920b967265cd930a4b9a17b3c2c380` passed Static project validation, static Pages deployment, and Pages build/deployment (runs 41391032908, 41391032899, 41391032805).
