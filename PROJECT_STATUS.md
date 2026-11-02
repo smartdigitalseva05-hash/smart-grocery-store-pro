@@ -482,3 +482,12 @@ Security-first execution lock remains in force. Do not begin business-category o
 - This update is inventory and source review only; it changes no production data, bucket policy, payment flow, auth policy, or `index.html`.
 - Security Shield full-feature count remains **0/10 fully verified**. The previously applied private trigger-function EXECUTE revocation remains a completed sub-control only.
 - Next: confirm exposed schemas in Dashboard; build isolated authenticated test identities and negative cross-tenant API tests; then implement only the smallest evidence-backed remediation with migration + automated verification.
+
+
+### Read-only RLS role simulation — 2026-11-02
+Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT subject claims; each transaction was rolled back. No rows were inserted, updated, or deleted.
+- Existing shop-owner identity: `authenticated` role + matching owner subject saw exactly 1 owned shop and 1 subscription row; saw 0 audit-log rows.
+- Synthetic non-owner authenticated subject: saw 0 shops, 0 subscriptions, 0 audit-log rows, and 0 digital-service applications.
+- Anonymous role: saw 1 shop, 1 product, and 48 categories through the intended public-read paths. A separate anonymous attempt to read `shop_subscriptions` was denied by table privileges (Postgres 42501); no grant was added.
+- The live dataset currently contains only one shop owner / one shop. Therefore this is a useful positive-owner and negative-non-owner check, but it is **not** a real two-tenant cross-shop IDOR test. A second isolated shop-owner test identity and second tenant are still required before Database Fortress can pass.
+- These are SQL role simulations, not authenticated HTTP/PostgREST requests. API-level negative tests remain outstanding.
