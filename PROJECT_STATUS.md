@@ -344,7 +344,7 @@ The next five owner-approved features have moved from **Pending** to **In Progre
 
 ## Static hardening verification result — 2026-11-02
 
-<badge>Static validation passed</badge>
+**Static validation passed.**
 
 - Corrected the validator to ignore runtime-generated template URLs while still checking static local paths.
 - GitHub Actions static validation passed on commit `ab83f827e611403b6d786fddef5d0a90669a9a31`, run `41377126260`: **283 checks across 14 HTML pages, 1 public script and all 11 business categories**.
