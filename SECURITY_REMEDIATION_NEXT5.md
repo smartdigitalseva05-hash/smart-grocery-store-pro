@@ -93,3 +93,13 @@
 - Supabase project is ACTIVE_HEALTHY on the Free tier. Supabase official documentation states leaked-password protection is available on Pro and above; this item is plan-gated until the tier supports it and the setting is verified: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
 - The expanded static validator checks local links/assets, new-tab opener safety and common private credential patterns. It passed 283 checks across 14 HTML pages, 1 public script and all 11 business categories on commit `ab83f827e611403b6d786fddef5d0a90669a9a31` (GitHub Actions run `41377126260`). The Pages deployment/build for that commit was still pending at the time of this update.
 - No production schema, policies, Auth settings, Edge Functions, secrets or business/payment records were modified by this audit.
+
+
+## Expanded database privilege and backup review — 2026-11-02
+
+- Catalog query: 71 functions in public/private schemas; 43 are SECURITY DEFINER. 32 SECURITY DEFINER functions have a function-level search_path that includes public; 17 are executable by anon according to PostgreSQL privilege checks.
+- The private schema currently grants USAGE to anon and authenticated. This requires immediate exposure/caller review. It does **not** establish that every function is remotely callable: confirm whether private is in Supabase API exposed schemas and map existing legitimate callers before changing grants. Do not revoke access until customer-facing anonymous request flows have been checked.
+- Review each SECURITY DEFINER function for explicit authorization, safe search_path, qualified object names, and least-privilege EXECUTE grants. The inspected Owner RPCs include private.is_super_admin() checks; payment activation permits service-role or active Super Admin. These individual code checks still need role-based negative API tests.
+- Targeted public view catalog query returned no rows. PostgreSQL row_security is ON. API exposed-schema configuration was not available from the database settings query and must be checked in Supabase API settings.
+- Supabase official backup documentation: daily managed backups are for Pro/Team/Enterprise. Free-tier projects should use Supabase CLI db dump and off-site backups; database backups do not include Storage objects. Until manual database and Storage export/restore are demonstrated, Backup & Recovery remains Blocked for managed backups and In Progress for a manual recovery implementation. https://supabase.com/docs/guides/platform/backups
+- No database privileges, schema, functions, Auth settings, secrets, or application records were changed during this review.
