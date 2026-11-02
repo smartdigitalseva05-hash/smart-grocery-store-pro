@@ -21,4 +21,15 @@ for (const [label, path] of functions) {
     assert.ok(source.includes("readBodyLimited(req, 16 * 1024)"));
     assert.ok(source.includes("Request body exceeds the 16 KiB limit."));
   });
+
+  test(`${label}: account rate limiting fails closed`, () => {
+    assert.ok(source.includes('consume_payment_endpoint_rate_limit'));
+    assert.ok(source.includes('rateLimitError.code === "PT429"'));
+    assert.ok(source.includes('return reply(503, { error: "Payment security check is temporarily unavailable.'));
+  });
+
+  test(`${label}: JSON content type is required`, () => {
+    assert.ok(source.includes('Content-Type must be application/json.'));
+    assert.ok(source.includes('return reply(415'));
+  });
 }
