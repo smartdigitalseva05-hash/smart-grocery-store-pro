@@ -18,7 +18,7 @@
 | 7 | Real-Time Alerts | **In Progress** | Owner dashboard now subscribes to `audit_logs` INSERT events through Supabase Realtime; publication enabled and SELECT is AAL2+verified-TOTP RLS-gated. Live connection awaits real Owner TOTP enrollment; failed-login alerts and out-of-app delivery remain open. |
 | 8 | Backup & Recovery | **Blocked (managed daily backups on Free tier); manual export path In Progress** | Supabase docs say daily managed backups are Pro/Team/Enterprise; Free projects must use CLI db dump and off-site exports. Database exports do not include Storage objects. Build and verify manual DB + Storage backup and restore. |
 | 9 | Audit Trail | **In Progress** | Direct audit-log writes are denied; order, payment, customer-credit, supplier-payment, stock-purchase, stock-movement and grocery-expense triggers now record financial events. Review remaining business mutation paths, retention and alert linkage. |
-| 10 | Payment Shield | **In Progress** | Database negative/amount-mismatch and idempotent activation tests passed with rollback. Still test real Razorpay raw-body HMAC, invalid signatures, HTTP replay/duplicate delivery and concurrent webhook requests. |
+| 10 | Payment Shield | **In Progress** | Database negative/amount-mismatch and idempotent activation tests passed; deployed webhook v9 now caps streamed raw bodies at 1 MiB and verifies HMAC over exact bytes, with Node unit tests passing. Still test real signed Razorpay deliveries, invalid signatures, HTTP replay/duplicate delivery and concurrency. |
 
 ### Verified baseline (not a 10/10 completion claim)
 - GitHub Actions static validator passed **283 checks** across 14 HTML pages, 1 public JS file and all 11 business categories on commit ab83f827e611403b6d786fddef5d0a90669a9a31 (run 41377126260). This is static validation, not end-to-end security proof.
@@ -714,3 +714,12 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - `auth.audit_log_entries` currently has 0 rows and no trigger. The Auth login/recovery events are visible in the external `auth_audit_logs` / `auth_logs` log streams, not as database rows that the current `audit_logs` Realtime subscription can consume.
 - Therefore the Owner's live audit feed covers database audit events only. Failed-login alerts require a supported log-drain/management-API integration and a configured trusted destination; do not claim failed-login alerting is complete.
 - No email addresses, IP addresses, user agents or raw log payloads were copied into the project status. Log queries were read-only.
+
+
+### Razorpay webhook request-body DoS hardening — tested and deployed (2026-11-02)
+- The webhook previously called `req.text()` without a size limit. Replaced it with `readBodyLimited()` that rejects declared or streamed bodies above 1 MiB (HTTP 413), rejects malformed Content-Length (HTTP 400), and preserves exact request bytes for HMAC-SHA256 verification.
+- Moved raw-byte HMAC and constant-time comparison helpers into `supabase/functions/razorpay-payment-webhook/security-utils.js`; added `tests/webhook-security.test.mjs` and wired it into `.github/workflows/static-validation.yml`.
+- Node unit tests passed in GitHub Actions run `41395363868`: body under limit, declared oversize, streamed oversize, exact-limit acceptance, malformed Content-Length, standard HMAC-SHA256 vector and signature comparison.
+- Deployed `razorpay-payment-webhook` version 9; verified active deployment, `verify_jwt=false` (intentional because the handler authenticates with Razorpay HMAC), body cap and raw-byte HMAC in deployed source. No checkout, payment state transition or subscription activation logic was changed.
+- Pages build/deployment passed for commit `59f2cf51c01b36255a54341d77995e270b9df317` (41395363491); static validation passed (41395363868). The Pages deploy job was still pending at last poll.
+- This is a request-size/DoS hardening and unit-test result, not an end-to-end Razorpay signature/replay test. Real signed webhook, invalid-signature HTTP response, duplicate delivery and concurrent callback tests remain open; Payment Shield remains In Progress.
