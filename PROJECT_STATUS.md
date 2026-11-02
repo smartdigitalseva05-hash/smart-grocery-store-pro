@@ -550,3 +550,9 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 ### Latest CI snapshot — 2026-11-02
 - Static project validation passed on commit `258b12bd75839fab7a48cff8455da3297223b988` (run 41389708281).
 - Static Pages deployment and Pages build/deployment for that same commit were still in progress at the time of this update. Previous commit `b53e08a3ec738a9c28bfe8714bd64e3c513d7b34` passed all three CI workflows.
+
+
+### CI verification after helper lockdown — 2026-11-02
+- Static project validation passed on commit `f704914688ec73d59cb83107b52d7c12945b88f8` (run 41389754781).
+- Static Pages deployment passed on the same commit (run 41389754795).
+- Pages build/deployment was still in progress at the last check (run 41389754703); no success claim until it completes.
