@@ -138,6 +138,12 @@ assert(workspace.includes('recentShopOrders= data||[]') || workspace.includes('r
 assert(workspace.includes('eq("shop_id",currentShop.id)'), "Shopkeeper customer/order queries must remain scoped to the selected shop.");
 assert(workspace.includes("function renderCustomerDirectory("), "Shopkeeper customer contact renderer is missing.");
 assert(workspace.includes('id="customerDirectoryRefresh"'), "Customer contact refresh control is missing.");
+assert(workspace.includes('select("id,name,description,category_id,price,sale_price,stock,is_available,offer_text,images")'),
+  "Product manager must load the fields required for complete product editing.");
+assert(workspace.includes('textContent="Edit product details"'), "Shopkeeper product manager is missing full detail editing.");
+assert(workspace.includes("category_id:selectedCategory?.value||null"), "Product editing must support category reassignment.");
+assert(workspace.includes("description:description.trim()||null"), "Product editing must support description changes.");
+assert(workspace.includes('id="customerDirectoryRefresh"'), "Customer contact refresh control is missing.");
 
 const shopkeeperForms = [...workspace.matchAll(/<form\b[^>]*\bid=["']([^"']+)["']/g)].map(match => match[1]);
 const shopkeeperSubmitHandlers = new Set(
