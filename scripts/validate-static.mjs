@@ -7,7 +7,7 @@ const pages = [
   "index.html", "owner.html", "apply-shop.html", "shopkeeper.html",
   "portal.html", "showcase.html", "catalogue.html", "demo-store.html",
   "digital-service-request.html", "electronics-repair.html", "hotel-booking.html",
-  "my-orders.html", "restaurant-booking.html", "shopkeeper-benefits.html"
+  "my-orders.html", "restaurant-booking.html", "shopkeeper-benefits.html", "business-category.html"
 ];
 const publicScripts = ["password-security.js"];
 const categories = [
@@ -83,6 +83,7 @@ const workspace = read("shopkeeper.html");
 const owner = read("owner.html");
 const portal = read("portal.html");
 const storefront = read("index.html");
+const categoryLanding = read("business-category.html");
 for (const [key, label] of categories) {
   assert(registration.includes('value="' + key + '"'), "Registration is missing business type: " + key);
   assert(workspace.includes(key + ":{name:"), "Shopkeeper workspace is missing category config: " + key);
@@ -92,6 +93,18 @@ for (const [key, label] of categories) {
 assert(storefront.includes('id="businessTypeFilter"'), "Customer storefront is missing its business-category filter.");
 assert(storefront.includes("p.shop?.business_type === selectedBusinessType"),
   "Customer storefront must filter products by the selected shop business type.");
+
+const categorySlugs = [
+  "grocery", "daily-needs", "garments", "jewellery", "restaurant", "hotel",
+  "office-company", "electronics", "medical", "digital-services", "other-businesses"
+];
+for (const slug of categorySlugs) {
+  assert(categoryLanding.includes('"' + slug + '"'), "Dedicated category landing page is missing: " + slug);
+  assert(portal.includes("business-category.html?category=" + slug),
+    "Portal category card is missing its dedicated URL: " + slug);
+}
+assert(categoryLanding.includes('id="apply"'), "Category landing page is missing category-aware registration link.");
+assert(categoryLanding.includes('encodeURIComponent(current.slug)'), "Category registration link must preserve selected category.");
 
 assert(workspace.includes("const cfg=types[shop.business_type]||types.other;"),
   "Unknown business types must use the generic workspace, never inherit Grocery tools.");
