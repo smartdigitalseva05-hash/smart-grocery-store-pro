@@ -109,4 +109,14 @@ for (const [label, marker] of requiredCategoryPanels) {
 }
 assert(workspace.includes("function renderVariants("), "Garments variant renderer is missing.");
 assert(workspace.includes("function loadJewelleryDetails("), "Jewellery detail loader is missing.");
+
+const shopkeeperForms = [...workspace.matchAll(/<form\\b[^>]*\\bid=["']([^"']+)["']/g)].map(match => match[1]);
+const shopkeeperSubmitHandlers = new Set(
+  [...workspace.matchAll(/\\$\\(["']([^"']+Form)["']\\)\\.addEventListener\\(["']submit["']/g)].map(match => match[1])
+);
+for (const formId of shopkeeperForms) {
+  assert(shopkeeperSubmitHandlers.has(formId), "Shopkeeper form has no submit handler: " + formId);
+}
+assert(!/from\\(["']shop_credit_ledger["']\\)[\\s\\S]{0,160}\\.(?:update|delete)\\(/i.test(workspace),
+  "Shop credit ledger must remain append-only in the shopkeeper client.");
 console.log("Static validation passed: " + checks + " checks across " + pages.length + " pages, " + publicScripts.length + " public scripts and " + categories.length + " business categories.");
