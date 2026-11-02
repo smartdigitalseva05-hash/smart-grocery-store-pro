@@ -732,3 +732,10 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Security Advisor now reports only the Auth leaked-password-protection warning; it no longer reports the five private-table RLS findings. This setting is plan-gated on the current Free organization and remains an external prerequisite, not a code change.
 - CI: static validation passed for the grant commit `11ccde6020b49c95d680f8ef52ef7697352c4532` (run 41395698980) and deny-policy commit `702da6ca9266c1d213102312ac5cd633e4341860` (run 41395761900). Pages deployment/build were still running at last poll.
 - These are targeted permission and policy improvements, not proof of full HTTP/API tenant isolation. Database Fortress and Anti-Brute-Force remain In Progress; no Security Shield item is promoted to fully complete.
+
+
+### Owner-scoped shop application INSERT permission restored and tested — applied (2026-11-02)
+- `apply-shop.html` submits new shop applications with a direct authenticated INSERT into `public.shops`, but the authenticated role had no INSERT table privilege even though a strict `shops_insert` RLS policy and a BEFORE INSERT activation-guard trigger were already present.
+- Added/applied `supabase/migrations/20261102350000_restore_owner_scoped_shop_application_insert.sql`, granting only INSERT to `authenticated`; anon INSERT remains denied.
+- Transaction test as the existing authenticated shop owner inserted a temporary application while deliberately supplying `is_active=true`, `status='active'`, a subscription plan and future expiry. The database trigger forced the row to `is_active=false`, `status='inactive'`, `subscription_plan_id=NULL`, `subscription_expires_at=NULL`. A subsequent owner attempt to activate the shop directly was blocked with SQLSTATE 42501. Transaction rolled back; follow-up confirmed 0 persisted test rows. This preserves the normal owner-review/payment activation gate.
+- This fixes an app/database permission mismatch without changing the application UI or granting any activation authority. HTTP/PostgREST regression test is still pending.
