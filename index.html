@@ -117,6 +117,14 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
   <p class="small" id="needHelpText" aria-live="polite">Select an option to get started. You can also search directly below.</p>
 </section>
 
+<section class="panel" id="publicStoreDetails" aria-label="Shop information">
+ <h2 id="publicStoreName">Your connected shop</h2>
+ <p id="publicStoreAddress" class="small">Shop address will appear here.</p>
+ <p id="publicStoreHours" class="small">Opening hours not provided yet.</p>
+ <p id="publicStoreStatus" class="notice">Checking shop status…</p>
+ <a id="publicStoreMap" class="btn btn-light hidden" target="_blank" rel="noopener noreferrer">Open shop location in Maps</a>
+</section>
+
 <div class="search-row">
   <select id="businessTypeFilter" aria-label="Choose business category">
     <option value="grocery">Grocery</option><option value="daily_needs">Daily Needs</option><option value="garments">Garments</option><option value="jewellery">Jewellery</option><option value="restaurant">Restaurant</option><option value="hotel">Hotel</option><option value="office_company">Office / Company</option><option value="electronics">Electronics</option><option value="medical">Medical</option><option value="digital_services">Digital Services</option><option value="other">Other Businesses</option><option value="all">All Business Categories</option>
@@ -325,7 +333,7 @@ async function initialize() {
     }
 
     const {data:store,error:storeError}=await db.from("shops")
-      .select("id,name,business_type,status,is_active")
+      .select("id,name,business_type,address,city,status,is_active,opening_time,closing_time,latitude,longitude")
       .eq("id",requestedShopId)
       .eq("status","active")
       .eq("is_active",true)
@@ -340,6 +348,21 @@ async function initialize() {
     }
     selectedBusinessType = store.business_type || "all";
     $("storeHeroTitle").textContent = "How can we help you today?";
+    $("publicStoreName").textContent = store.name;
+    $("publicStoreAddress").textContent = [store.address,store.city].filter(Boolean).join(", ");
+    const timeLabel=value=>{if(!value)return "";const [h,m]=value.split(":").map(Number);return new Intl.DateTimeFormat("en-IN",{hour:"numeric",minute:"2-digit",hour12:true,timeZone:"Asia/Kolkata"}).format(new Date(Date.UTC(2020,0,1,h-5,m-30)))};
+    const opening=timeLabel(store.opening_time),closing=timeLabel(store.closing_time);
+    $("publicStoreHours").textContent=opening&&closing?"Opening hours: "+opening+" – "+closing:"Opening hours not provided yet.";
+    const parts=new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZone:"Asia/Kolkata"}).formatToParts(new Date());
+    const now=Number(parts.find(x=>x.type==="hour").value)*60+Number(parts.find(x=>x.type==="minute").value);
+    if(store.opening_time&&store.closing_time){
+      const [oh,om]=store.opening_time.split(":").map(Number),[ch,cm]=store.closing_time.split(":").map(Number),start=oh*60+om,end=ch*60+cm;
+      const isOpen=start===end?true:(end>start?now>=start&&now<end:now>=start||now<end);
+      $("publicStoreStatus").textContent=isOpen?"🟢 Open now":"🔴 Closed now";
+    }else{$("publicStoreStatus").textContent="Shop timing not provided. Please confirm availability with the shop."}
+    const mapQuery=store.latitude!==null&&store.longitude!==null?store.latitude+","+store.longitude:[store.address,store.city].filter(Boolean).join(", ");
+    $("publicStoreMap").href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(mapQuery);
+    $("publicStoreMap").classList.remove("hidden");
     await loadCategories();
     await loadProducts();
     if(new URLSearchParams(location.search).get("reorder")) await loadRepeatOrder();
