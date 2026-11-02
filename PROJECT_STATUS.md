@@ -340,3 +340,13 @@ The next five owner-approved features have moved from **Pending** to **In Progre
 - The `shops` table has four non-internal guard triggers, including protected activation-field changes, immutable business type for non-admins, and subscription-expiry tamper protection. No production database changes were made.
 - Supabase project remains ACTIVE_HEALTHY on the Free tier. Official Supabase documentation states leaked-password protection is available on Pro and above; therefore the existing Security Advisor warning is plan-gated on the current tier, not a website-code defect. Keep this item open until the plan supports it and the setting is verified: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
 - Existing customer storefront `index.html` remains unchanged (blob SHA `854f4646215be9f0a5aaacc72ad4b7b56ac58f3e`). No Auth settings, schema, RLS policies, customer/shop records, payment records, Edge Function deployments or secrets were changed.
+
+
+## Static hardening verification result — 2026-11-02
+
+<badge>Static validation passed</badge>
+
+- Corrected the validator to ignore runtime-generated template URLs while still checking static local paths.
+- GitHub Actions static validation passed on commit `ab83f827e611403b6d786fddef5d0a90669a9a31`, run `41377126260`: **283 checks across 14 HTML pages, 1 public script and all 11 business categories**.
+- Checks include inline JavaScript syntax, duplicate IDs, local href/src targets, `target="_blank"` rel=noopener, common secret/key patterns in public HTML/JS, and category presence across registration, workspace, Owner controls and portal.
+- Latest Pages deployment and GitHub Pages build for this commit were still queued/pending at the time of this update (runs `41377126262` and `41377126180`). Keep deployment status pending until both complete successfully.
