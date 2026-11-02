@@ -45,7 +45,7 @@ for (const page of pages) {
   // Catch broken static local links and assets before publishing to GitHub Pages.
   for (const match of html.matchAll(/\b(?:href|src)=["']([^"']+)["']/gi)) {
     const raw = match[1].trim();
-    if (!raw || raw.includes("${") || raw.includes("{{") || /^(?:#|[a-z][a-z0-9+.-]*:|\\/\\/)/i.test(raw)) continue;
+    if (!raw || raw.includes("${") || raw.includes("{{") || raw.startsWith("//") || raw.startsWith("#") || /^[a-z][a-z0-9+.-]*:/i.test(raw)) continue;
     const pathname = decodeURIComponent(raw.split(/[?#]/, 1)[0]);
     if (!pathname) continue;
     const target = path.resolve(root, path.dirname(page), pathname);
