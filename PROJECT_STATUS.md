@@ -835,3 +835,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Production data currently contains one registered shop and one active shop; no invalid or NULL business_type values were found. No synthetic production tenants were added.
 - Three Edge Functions are ACTIVE: razorpay-subscription-checkout (v12, JWT required), razorpay-verify-subscription-payment (v10, JWT required), and razorpay-payment-webhook (v9, JWT intentionally not required because the handler verifies Razorpay HMAC signatures).
 - These are direct production configuration/schema checks. They do not replace browser-level checkout, customer booking, or Owner MFA/TOTP tests. Owner-only TOTP enrollment, live payment credentials/transactions, plan-gated leaked-password protection, and external restore credentials remain deferred as instructed; no corresponding feature is marked complete.
+
+
+### Order line-item audit coverage added — applied and source-synced (2026-11-02)
+- Reviewed the public-table trigger inventory and found `order_items` had a restaurant kitchen synchronization trigger but no privacy-minimized business audit trigger. `order_status_history` is a purpose-built lifecycle history table; `audit_logs` is the audit sink itself, so neither was given a recursive generic audit trigger.
+- Added/applied migration `20261102090550_audit_order_item_mutations.sql`. It records create/update/delete events for order line items with only order ID, product ID, quantity, price-at-purchase and total price. Product names, customer information and free-form content are excluded.
+- Verified exactly one audit trigger is attached to `public.order_items`, and anon/authenticated/PUBLIC cannot directly execute the private trigger function. The project now has 39 audit-named triggers, with 41/41 public tables still RLS-enabled.
+- Migration history now contains 146 applied migrations; the matching SQL source is committed in `supabase/migrations/`. No production order rows were inserted or changed for this check.
+- Trigger attachment and ACL are verified; a full transactional create/update/delete integration test for order line items remains pending to avoid mutating live customer order workflows.
