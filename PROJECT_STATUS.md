@@ -622,3 +622,12 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Phone/shop identifiers are HMACed with a random 32-byte key stored in a private, RLS-enabled table. Rate-limit counters are in a private RLS-enabled table; PUBLIC/anon/authenticated/service_role have no table access and cannot directly execute the limiter. Old counters are cleaned after 7 days.
 - Positive/negative transactional tests passed: first 5 same-phone requests succeeded and the 6th was blocked; 120 different-phone requests succeeded and the 121st for the shop was blocked. Each test was rolled back; follow-up checks confirm 0 persisted test users, shops, applications or rate-limit rows.
 - This is an application-level abuse control for the public intake RPC, not IP-level rate limiting. Supabase Auth sign-in rate limits and dashboard CAPTCHA/bot settings still require project Dashboard confirmation. No real applicant or shop data was changed.
+
+
+### Payment Shield database negative/idempotency tests — passed with rollback (2026-11-02)
+- Built temporary shop/subscription/payment fixtures inside transactions using the trusted service-role claim; no real Razorpay transaction or customer payment was created.
+- Idempotency test: first `verify_payment_and_activate` call marked payment verified, activated the pending subscription and shop, and wrote payment audit events. A second call returned success without repeating activation. Exactly 3 payment audit events were observed for the insert, captured-state update and verified-state update. Entire transaction was rolled back.
+- Negative test 1: captured payment payload without either `signature_verified` or `webhook_signature_verified` was rejected (SQLSTATE 55000); payment remained unverified and shop inactive.
+- Negative test 2: verified-capture flags with an amount different from the active plan price were rejected (SQLSTATE 22023); payment remained unverified and shop inactive.
+- Follow-up checks confirmed 0 persisted test shops, subscriptions, payments or audit rows.
+- These prove database-side verification guards and idempotent activation under a trusted-process simulation. They do not test live Razorpay HMAC generation, invalid HTTP webhook signatures, duplicate webhook HTTP delivery, or concurrent webhook requests; Payment Shield remains In Progress.
