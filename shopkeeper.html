@@ -352,9 +352,9 @@ a{color:#8ce2b3}
  <div id="digitalApplicationList" class="products"></div>
 </div><div class="panel" id="starter-products"><h1>Quick add from 200 starter products</h1><p class="muted">Choose a starter item to prefill the form. Confirm the real price, stock and photo before saving.</p><div class="formgrid"><label class="field">Search starter products<input id="starterSearch" type="search" placeholder="Search rice, oil, soap…"></label><label class="field">Choose starter product<select id="starterSelect"><option value="">Choose from 200 products…</option></select></label></div><button id="useStarter" type="button" class="secondary">Use starter product</button><span id="starterHint" class="sub" role="status">Templates are not live inventory.</span></div>
 <div class="panel" id="bulk-starter-products"><h1>Bulk add starter products</h1><p class="muted">Select multiple items from the 200-product starter catalogue. They will be saved as <strong>hidden drafts</strong> with zero stock, so customers cannot order them until you confirm price, stock and photos.</p><label class="field">Search starter catalogue<input id="bulkStarterSearch" type="search" placeholder="Search product or category…"></label><div class="starter-tools"><button id="bulkSelectVisible" type="button" class="secondary">Select visible</button><button id="bulkClear" type="button" class="secondary">Clear selection</button><button id="bulkImport" type="button">Add selected as hidden drafts</button></div><div id="bulkStarterCount" class="starter-count" role="status">0 selected</div><div id="bulkStarterList" class="starter-bulk-grid"></div><div id="bulkStarterMessage" class="notice" role="status"></div></div>
-<div class="panel"><h1>Add a product</h1><p class="muted">Products are saved directly to Supabase. Plan limits and shop ownership are enforced by database policies/triggers.</p>
+<div class="panel"><h1 id="productEditorTitle">Add a product</h1><p class="muted" id="productEditorDescription">Products are saved directly to Supabase. Plan limits and shop ownership are enforced by database policies/triggers.</p>
 <form id="productForm"><div class="formgrid">
-<label class="field">Product name<input id="pName" maxlength="120" required></label>
+<label class="field" id="productNameLabel">Product name<input id="pName" maxlength="120" required></label>
 <label class="field">Category<select id="pCategory"><option value="">No category</option></select></label>
 <label class="field">Price (₹)<input id="pPrice" type="number" min="0.01" step="0.01" required></label>
 <label class="field">Offer price (₹)<input id="pSale" type="number" min="0.01" step="0.01" placeholder="Optional"></label>
@@ -424,7 +424,7 @@ a{color:#8ce2b3}
     electronics:{name:"Electronics / Mobile Store",desc:"Device, warranty and repair workspace",items:["Device catalogue with brand and model","IMEI 1 / IMEI 2 and serial-number tracking","Purchase details and warranty dates","Public repair requests and technician job workflow","Diagnosis, estimate, customer-approved cost and delivery status"],note:"Device and warranty records plus customer repair requests and technician job tracking are available. Formal warranty-claim automation remains future work."},
     medical:{name:"Medical Store",desc:"Pharmacy inventory workspace",items:["Medicine batch and brand register","Batch number, manufacturing and expiry dates","Batch-wise quantity, MRP, purchase price and supplier","Expiry alerts and batch status controls"],note:"Batch inventory and expiry tracking are available. This is not a complete compliant pharmacy system; prescription, dispensing and regulatory workflows are not included."},
     digital_services:{name:"Digital Seva / Service Centre",desc:"Service business workspace",items:["Service application and applicant register","Reference number, applied/expected dates and document checklist","Application status progression","Service fee, amount received and balance tracking"],note:"Application and fee tracking are available. Government portal integration, online document storage and automatic official status verification are not included."},
-    other:{name:"Other Business",desc:"General business workspace",items:["General item/service catalogue","Stock and availability","Product photos and CSV export","Orders and billing framework"],note:"Specialized workflows can be added after confirming this business category."}
+    other:{name:"Other Business · Products & Services",desc:"Flexible product and service business workspace",items:["Category-based product and service catalogue","Service descriptions, pricing and availability","Product/service photos and customer-facing shop link","Customer orders, status tracking and CSV catalogue export","Customer contact book and credit ledger"],note:"Use the catalogue for products or clearly described services. Orders, customer contacts, credit entries, shop QR and sales insights are available in the shared workspace; appointment scheduling and industry-specific compliance tools are not included."}
   };
   const cfg=types[shop.business_type]||types.other;
   $("workspaceTitle").textContent=cfg.name+" workspace";
@@ -436,7 +436,20 @@ a{color:#8ce2b3}
   $("groceryProcurementPanel").classList.toggle("hidden",!["grocery","daily_needs"].includes(shop.business_type));
   ["starter-products","bulk-starter-products"].forEach(id=>{const el=$(id);if(el)el.classList.toggle("hidden",!["grocery","daily_needs"].includes(shop.business_type))});
    const dailyMode=shop.business_type==="daily_needs";$("starter-products").querySelector("h1").textContent=dailyMode?"Quick add Daily Needs essentials":"Quick add from 200 grocery starter products";$("starter-products").querySelector("p").textContent=dailyMode?"Choose daily-use household, personal-care, cleaning and convenience items. Suggested prices are examples; confirm your actual price and stock.":"Choose a starter item to prefill the form. Confirm the real price, stock and photo before saving.";$("starterSearch").placeholder=dailyMode?"Search soap, cleaning, stationery…":"Search rice, oil, soap…";$("starterSelect").options[0].textContent=dailyMode?"Choose a Daily Needs item…":"Choose from 200 products…";$("bulk-starter-products").querySelector("h1").textContent=dailyMode?"Bulk add Daily Needs essentials":"Bulk add starter products";$("bulk-starter-products").querySelector("p").textContent=dailyMode?"Select daily essentials to create hidden drafts with zero stock. Confirm local price, stock and photos before publishing.":"Select multiple items from the 200-product starter catalogue. They will be saved as hidden drafts with zero stock, so customers cannot order them until you confirm price, stock and photos.";
-  $("productForm").querySelector("h1");
+  const productTitle=$("productEditorTitle"),productDescription=$("productEditorDescription"),productNameLabel=$("productNameLabel");
+  if(shop.business_type==="other"){
+    productTitle.textContent="Add a product or service";
+    productDescription.textContent="List a product or service with a clear description, price and available quantity. Customer orders remain linked to this shop.";
+    productNameLabel.firstChild.textContent="Product / service name";
+  }else if(shop.business_type==="daily_needs"){
+    productTitle.textContent="Add a Daily Needs item";
+    productDescription.textContent="List household, personal-care, cleaning, stationery or convenience essentials.";
+    productNameLabel.firstChild.textContent="Item name";
+  }else{
+    productTitle.textContent=shop.business_type==="restaurant"?"Add a retail product (menu items are managed in Restaurant · Menu & Kitchen)":"Add a product";
+    productDescription.textContent="Products are saved directly to Supabase. Plan limits and shop ownership are enforced by database policies/triggers.";
+    productNameLabel.firstChild.textContent="Product name";
+  }
 }
 async function loadRestaurantTables(){
  const panel=$("restaurantTablesPanel"),list=$("restaurantTablesList");if(!panel||!list)return;
