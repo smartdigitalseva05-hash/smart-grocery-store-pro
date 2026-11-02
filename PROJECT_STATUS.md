@@ -598,3 +598,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - `products` isolation: tenant 1 could not see tenant 2's test product; tenant 2 could see its own test product.
 - All test operations were rolled back. Follow-up checks confirmed the temporary Auth user, shop and product all have 0 persisted rows. No production user, shop, product or payment data changed.
 - This is stronger than the earlier one-tenant simulation and validates core row isolation for `shops` and `products` under two synthetic authenticated identities. It is still SQL role simulation, not full HTTP/PostgREST API testing, and does not cover every table or Storage policy. Database Fortress remains In Progress.
+
+
+### Two-tenant Storage upload RLS tests — passed with rollback (2026-11-02)
+- Created a temporary authenticated shopkeeper, active test shop and Storage object attempts entirely inside a transaction. The shop was activated only through a synthetic service-role claim in the test transaction; no live shop status was changed.
+- Existing shop owner attempting to INSERT a `product-images` object into the other tenant's UUID shop folder was rejected by Storage RLS (SQLSTATE 42501).
+- The temporary shop owner successfully INSERTed a `product-images` object into their own active shop folder, confirming the positive owner path.
+- Transaction rolled back. Follow-up checks show 0 persisted test Auth users, 0 test shops and 0 test Storage objects. Existing bucket settings, policies and files were not changed.
+- This verifies cross-tenant Storage write isolation for `product-images` at SQL role level. It does not replace full Storage HTTP API tests or cover `shop-logos` (which intentionally has no write policy).
