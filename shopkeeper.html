@@ -403,7 +403,7 @@ a{color:#8ce2b3}
     digital_services:{name:"Digital Seva / Service Centre",desc:"Service business workspace",items:["Service application and applicant register","Reference number, applied/expected dates and document checklist","Application status progression","Service fee, amount received and balance tracking"],note:"Application and fee tracking are available. Government portal integration, online document storage and automatic official status verification are not included."},
     other:{name:"Other Business",desc:"General business workspace",items:["General item/service catalogue","Stock and availability","Product photos and CSV export","Orders and billing framework"],note:"Specialized workflows can be added after confirming this business category."}
   };
-  const cfg=types[shop.business_type]||types.grocery;
+  const cfg=types[shop.business_type]||types.other;
   $("workspaceTitle").textContent=cfg.name+" workspace";
   $("workspaceType").textContent=cfg.desc+" · "+shop.name;
   $("workspaceFeatures").replaceChildren();
