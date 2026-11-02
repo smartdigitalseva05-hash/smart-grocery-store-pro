@@ -501,3 +501,12 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Targeted UPDATE-policy review found a predicate mismatch on `grocery_expenses_update`: its `USING` clause requires ownership of an active Grocery shop with unexpired subscription, while `WITH CHECK` only requires shop ownership and `created_by = auth.uid()`. No trigger exists on `grocery_expenses` to enforce immutable `shop_id`. This may allow a row to be reassigned by its creator to another shop they own (including a non-active/non-Grocery shop) during an otherwise permitted update. It does not currently establish cross-user tenant access, but is a data-integrity / tenant-boundary hardening finding.
 - No production policy was modified. Remediation must preserve legitimate expense editing and be verified with an isolated two-shop owner test before applying a migration.
 - Feature gates remain unchanged: Security Shield 0/10 fully verified.
+
+
+### Audit Trail hardening — 2026-11-02
+- Added and applied `supabase/migrations/20261102183000_restrict_direct_audit_log_writes.sql`.
+- Revoked direct INSERT on `public.audit_logs` from `authenticated` and removed the obsolete `audit_admin_insert` policy. Authenticated SELECT remains; anon has no SELECT or INSERT.
+- Live privilege verification: authenticated SELECT=true, INSERT=false; anon SELECT=false, INSERT=false. The remaining `audit_admin` policy is SELECT-only.
+- Five app routines that write audit events are SECURITY DEFINER functions owned by `postgres`; Owner page uses SELECT only. Direct authenticated INSERT test failed as expected with SQLSTATE 42501 and created no row.
+- This prevents ordinary client sessions from fabricating audit events. Event coverage, privileged-operator tamper resistance, retention and alerting remain unverified; Audit Trail is still In Progress.
+- No existing audit rows or business/payment data were changed; `index.html` remains untouched.
