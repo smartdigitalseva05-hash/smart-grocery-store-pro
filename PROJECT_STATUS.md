@@ -908,3 +908,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Added static regression assertions for both categories. No production business/order/customer data was inserted or modified; `index.html` remains untouched.
 - Database policy/function verification passed: all five procurement tables retain RLS; Grocery/Daily Needs active-subscription and ownership conditions are present; the purchase RPC retains SECURITY DEFINER, empty search_path and authenticated-only execute ACL. Security Advisor reports only the existing Auth leaked-password protection warning. No unused indexes were removed.
 - GitHub static validation and Pages deployment for these latest shopkeeper changes remain pending. Authenticated end-to-end tests across all 11 shop types remain pending, so the 11-category suite is not yet marked 100% complete.
+
+
+### Daily Needs procurement and 11-category workspace deployment — CI passed (2026-11-02)
+- Supabase migration `20261102122011_extend_grocery_procurement_to_daily_needs` is applied and recorded in migration history (147 applied migrations). Database verification confirmed RLS remains enabled on all five supplier/purchase/expense tables, write policies now accept only active Grocery or Daily Needs shops owned by the signed-in user, and the private purchase RPC remains SECURITY DEFINER with empty search_path and execute granted only to authenticated plus owner.
+- Supabase Security Advisor still reports only the existing Auth leaked-password protection warning. The 43 unused-index notices remain informational; no indexes were removed.
+- Static validation passed on commit `6521739abdba892bc5f2c656dc8b46f9e695904d` (run `41444030828`). Custom website deployment passed (run `41444030821`); GitHub Pages build and deployment passed (run `41444031150`). Artifact completeness and inline JavaScript checks passed.
+- The shopkeeper page is published at `https://smartdigitalseva05-hash.github.io/smart-grocery-store-pro/shopkeeper.html`. This verifies deployment, not a real authenticated transaction test.
+- All 11 business-type configurations are present. Daily Needs procurement and Other Businesses product/service wording are now added. Full 11-tenant authenticated end-to-end testing remains pending, so no blanket 100% feature-complete claim is made.
