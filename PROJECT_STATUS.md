@@ -450,3 +450,35 @@ The next five owner-approved features have moved from **Pending** to **In Progre
 - Supabase Security Advisor still reports leaked-password protection disabled (plan-gated on current Free tier).
 - No production changes made in this follow-up. No bucket configuration, Storage policies, API settings, customer files, payment data, or application pages were modified.
 - **Next:** inspect Owner/Edge Function logo-upload call paths and existing bucket objects; then confirm API exposed schemas through project settings and prepare dedicated test identities for Storage and RLS negative API tests.
+
+
+## Security Shield continuation update — 2026-11-02 (evidence-based)
+
+Security-first execution lock remains in force. Do not begin business-category or feature-module work until all 10 Security Shield features pass their evidence gates. No feature is promoted to fully Completed by this update.
+
+### Storage surface inventory — read-only follow-up
+- Live Storage inventory: `product-images` is public-read, 5 MiB limit, JPEG/PNG/WebP allowlist, with 1 existing object (JPEG, 47,438 bytes) under a UUID shop folder.
+- `shop-logos` is public-read, has no configured size/MIME restriction, and currently has 0 objects.
+- Repository inspection: `shopkeeper.html` uploads/deletes only in `product-images`; `owner.html` and `digital-service-request.html` contain no Storage upload references. GitHub code search for `shop-logos` returned no matches.
+- No bucket settings or Storage policies changed. Do not add a `shop-logos` write policy or change bucket configuration until all upload paths and any future use are explicitly designed and tested.
+- Existing `product-images` object metadata is present; no object content was downloaded or exposed.
+
+### Owner / MFA / audit UI inspection
+- `owner.html` uses email/password sign-in and reads the latest 100 `audit_logs` records for display.
+- No MFA enrollment, AAL2 assurance check, or step-up/re-authentication flow was found in the inspected Owner page.
+- This is evidence that Super Admin Lock remains incomplete; do not enable MFA enforcement until enrollment, recovery, and server-side sensitive-action checks are implemented and tested.
+
+### Razorpay source reinspection
+- Checkout and payment-verification Edge Functions require a user session (`verify_jwt=true` at deployment and `withSupabase({auth:"user"})` in source).
+- Webhook is intentionally deployed with JWT verification disabled and validates the raw-body HMAC-SHA256 signature before processing.
+- Checkout and verification still emit wildcard CORS (`Access-Control-Allow-Origin: *`). Do not narrow until legitimate deployed origins and browser regression tests are established.
+- Source inspection is not an end-to-end replay/concurrency/idempotency test. Payment Shield remains incomplete.
+
+### Exposed-schema configuration
+- The project SQL runtime does not expose the PostgREST `pgrst.db_schemas` setting (`current_setting` returned NULL in the prior audit), and project metadata tools do not expose the Data API allowlist. Dashboard confirmation remains outstanding: Integrations → Data API → Exposed schemas.
+- Do not infer that the `private` schema is or is not exposed; do not revoke schema USAGE until this is confirmed and callers are mapped.
+
+### Current gate
+- This update is inventory and source review only; it changes no production data, bucket policy, payment flow, auth policy, or `index.html`.
+- Security Shield full-feature count remains **0/10 fully verified**. The previously applied private trigger-function EXECUTE revocation remains a completed sub-control only.
+- Next: confirm exposed schemas in Dashboard; build isolated authenticated test identities and negative cross-tenant API tests; then implement only the smallest evidence-backed remediation with migration + automated verification.
