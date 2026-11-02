@@ -77,9 +77,9 @@
 
 ## Current active work
 
-**Active module — Security Shield (10 mandatory controls).**
+**Active module — Smart Business Pro website completion.**
 
-The execution lock remains active. Only Security Shield implementation, verification, safe maintenance and regression work may proceed. Business category and other feature modules remain paused until all 10 controls meet their evidence gates.
+Continue the 11-category registration, customer storefront, shopkeeper workspace and Owner experience using available GitHub/Supabase access. Preserve implemented security protections. Owner-only MFA enrollment, paid-plan-only Auth settings, real Razorpay transactions and off-site restore credentials are deferred and must not block available website work. Keep those gates visibly incomplete rather than pretending they passed.
 
 ## 11 Business Categories
 
@@ -112,16 +112,20 @@ The execution lock remains active. Only Security Shield implementation, verifica
 - Current shop data query shows 1 registered shop and it is `grocery`. The other 10 business types have no registered shop rows yet, so their real shop flows cannot be verified from live shop data.
 - Next category-module implementation task: formalize and enforce a single 11-key business-type mapping across registration, owner filters, shopkeeper workspace routing, and customer discovery, while keeping product categories scoped to the relevant shop/business type.
 
-### Not yet confirmed as complete
-- Category-aware registration for all 11 types exists as a shared form; confirm each type is persisted and correctly routed. Separate per-category forms are not required unless the product design calls for them.
-- Category-specific shop dashboard and permissions.
-- Category-wise product add/edit/delete.
-- Category-wise order management and order status.
-- Owner panel category controls and management.
-- Customer-facing category-wise shop/product discovery.
-- End-to-end testing of all 11 category flows.
+### Implemented in source; remaining live verification
+- Registration presents all 11 business types; the database CHECK constraint accepts exactly the same 11 keys, including `office_company`.
+- Shopkeeper workspace contains a configuration for all 11 categories. Specialist panels cover restaurant, hotel, office/company, electronics, medical and digital services; garments variants and jewellery details have dedicated loaders. Grocery and Daily Needs use the shared retail catalogue with category-specific starter products.
+- All 22 shopkeeper forms have submit handlers; static inspection found no duplicate element IDs. The shop credit ledger client is append-only.
+- Owner dashboard contains category controls and global business search. Customer storefront has a business-category filter and filters products by the selected shop's `business_type`.
+- Unknown/unrecognized category values now fall back to the generic Other Business workspace instead of accidentally receiving Grocery tools.
+- Static regression tests now verify all 11 category keys across registration, shopkeeper, Owner and portal pages; customer storefront category filtering; specialist panels; form submit handlers; and append-only credit-ledger UI.
 
-**Important:** A visible category card or dropdown option does not mean that category's complete business system is implemented. Do not mark a module complete until its functionality is implemented and checked.
+### Live verification still pending
+- The live database currently has only one registered shop and it is Grocery. There are no real non-Grocery shops to exercise their CRUD flows. Do not create fake production shops or customer data just to claim tests passed.
+- Full authenticated browser/API tests for all 11 categories remain pending; external/physical testing is deferred as instructed.
+- Advanced third-party integrations (official government portals, payment settlement integrations, pharmacy regulatory workflows, statutory payroll calculations, automated warranty claims, hotel online payments/availability sync and tax invoicing) are outside the currently implemented website scope and remain deferred.
+
+**Important:** Static checks prove code structure and wiring, not full end-to-end operation with real users and data.
 
 ## Security & Protection Module — audit started
 
@@ -144,18 +148,12 @@ The execution lock remains active. Only Security Shield implementation, verifica
 
 ## Development order
 
-1. Preserve and improve all security controls that can be implemented and verified through connected GitHub/Supabase access.
-2. Defer Owner-only, plan-gated and external-credential gates without falsely marking them Completed.
-3. Continue completing the 11 business-category workflows, registration, shopkeeper, customer and Owner experiences; verify each available code/API path.
-4. Run regression, Security Advisor and deployment checks after each safe batch; keep index.html protected.
-3. Registration Module — save each shop with the correct category.
-4. Shop Dashboard Module — show the correct tools for each shop.
-5. Product Module — category/shop-specific product management.
-6. Order Module — customer orders and status handling.
-7. Customer Module — browse shops and products by category.
-8. Owner Module — manage all shops and categories.
-9. Payment Module — Razorpay subscription/payment flow.
-10. Testing Module — test each module and all 11 category flows.
+1. Preserve and improve security controls that can be implemented and verified through connected GitHub/Supabase access.
+2. Keep Owner-only, plan-gated and external-credential gates Deferred; do not falsely mark them Completed.
+3. Complete the 11-category registration, shopkeeper, customer discovery and Owner management flows.
+4. Verify all available code/API paths; do not insert fake production shops or orders for testing.
+5. Complete payment, order and subscription paths without changing live payment behavior without signed test evidence.
+6. Run static regression, Security Advisor and GitHub Pages deployment checks after each safe batch; keep index.html protected.
 
 ## Module completion checklist
 
