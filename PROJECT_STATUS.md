@@ -510,3 +510,10 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Five app routines that write audit events are SECURITY DEFINER functions owned by `postgres`; Owner page uses SELECT only. Direct authenticated INSERT test failed as expected with SQLSTATE 42501 and created no row.
 - This prevents ordinary client sessions from fabricating audit events. Event coverage, privileged-operator tamper resistance, retention and alerting remain unverified; Audit Trail is still In Progress.
 - No existing audit rows or business/payment data were changed; `index.html` remains untouched.
+
+
+### Post-migration CI and role-guard review — 2026-11-02
+- GitHub Actions passed on commit `5e4de566de5012f826f5863c0ca020dac7f27f10`: Static project validation, static Pages deployment, and Pages build/deployment all completed successfully (runs 41388913703, 41388913725, 41388913171).
+- Supabase migration history confirms `restrict_direct_audit_log_writes` is applied (version 20261102043013).
+- Reviewed `private.is_super_admin()` and `private.is_shop_owner(uuid)`: both use `auth.uid()` and active `profiles` role/ownership checks; no user-editable metadata claim is used for role authorization.
+- Reviewed `public.prevent_role_escalation()`: rejects new Super Admin accounts, restricts role/activation changes to existing active Super Admin, protects the last active Super Admin, and disables owned shops when a shopkeeper is disabled/demoted. Source review only; negative API test for profile role escalation remains outstanding.
