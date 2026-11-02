@@ -50,6 +50,21 @@ a{color:#8ce2b3}
 <section id="loginPanel" class="panel auth"><h1>Shopkeeper sign in</h1><p class="muted">Sign in with the shopkeeper account approved by the Owner. <a href="./apply-shop.html" style="color:#7dd3fc">Apply for a shop</a></p><form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><button id="loginButton" type="submit">Sign in</button></form><button id="forgotPasswordButton" type="button" class="secondary" style="margin-top:10px;width:100%">Forgot Password?</button><div id="loginMessage" class="notice" role="status"></div><form id="recoveryForm" class="hidden" style="margin-top:14px"><h2 style="font-size:18px">Set a new password</h2><label class="field">New password<input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></label><label class="field">Confirm new password<input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="8" required></label><button id="saveNewPasswordButton" type="submit">Update Password</button><div id="recoveryMessage" class="notice" role="status"></div></form></section>
 <section id="app" class="hidden">
 <div class="panel"><div class="row"><div><h1>My shop</h1><div class="sub">Only shops linked to your signed-in account are shown.</div></div><div style="min-width:220px;flex:1;max-width:360px"><select id="shopSelect" aria-label="Choose shop"></select></div></div><div id="shopInfo" class="notice"></div></div>
+<section class="panel" id="publicShopProfile">
+ <h2>Customer-facing shop details</h2>
+ <p class="sub">These details appear on your own customer QR/link page.</p>
+ <div class="formgrid">
+  <label class="field">Shop address<input id="publicShopAddress" maxlength="300" placeholder="Street, area, landmark"></label>
+  <label class="field">City / town<input id="publicShopCity" maxlength="100" placeholder="City or town"></label>
+  <label class="field">Opening time<input id="publicShopOpening" type="time"></label>
+  <label class="field">Closing time<input id="publicShopClosing" type="time"></label>
+  <label class="field">Map latitude<input id="publicShopLatitude" type="number" min="-90" max="90" step="any" placeholder="Optional latitude"></label>
+  <label class="field">Map longitude<input id="publicShopLongitude" type="number" min="-180" max="180" step="any" placeholder="Optional longitude"></label>
+ </div>
+ <p class="sub">For an exact map pin, enter both latitude and longitude from your map app.</p>
+ <button id="savePublicShopProfile" type="button">Save customer-facing details</button>
+ <div id="publicShopProfileMessage" class="notice" role="status"></div>
+</section>
 <div class="panel" id="businessWorkspace"><h1 id="workspaceTitle">Business workspace</h1><p class="muted" id="workspaceType"></p><div id="workspaceFeatures" class="products"></div><div class="notice">Your business type is fixed after application to protect your business setup. Contact Super Admin for a correction.</div></div>
 <section class="panel" id="shopGrowthTools">
 <div class="row"><div><h1>Shop Growth Toolkit</h1><div class="sub">Promote your shop, monitor stock and understand recent activity.</div></div><button id="growthRefresh" class="secondary" type="button">Refresh insights</button></div>
@@ -381,7 +396,7 @@ a{color:#8ce2b3}
   const {data:profile,error:pe}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
   if(pe||!profile||profile.role!=="shopkeeper"||!profile.is_active){await db.auth.signOut();showLogin(pe?.message||"This account is not an active shopkeeper account.");return}
   $("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("topActions").classList.remove("hidden");
-  const {data,error:se}=await db.from("shops").select("id,name,business_type,city,status,is_active,subscription_expires_at").eq("owner_id",session.user.id).order("created_at",{ascending:false});
+  const {data,error:se}=await db.from("shops").select("id,name,business_type,address,city,opening_time,closing_time,latitude,longitude,status,is_active,subscription_expires_at").eq("owner_id",session.user.id).order("created_at",{ascending:false});
   if(se){say("shopInfo",se.message,true);return}
   shops=data||[];
   const sel=$("shopSelect");sel.replaceChildren();
@@ -924,6 +939,13 @@ async function loadShopData(){
   const nextShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!nextShop)return;
   if(currentShop?.id!==nextShop.id)selectedHotelBookingRequestId=null;
   currentShop=nextShop;
+  $("publicShopAddress").value=currentShop.address||"";
+  $("publicShopCity").value=currentShop.city||"";
+  $("publicShopOpening").value=currentShop.opening_time||"";
+  $("publicShopClosing").value=currentShop.closing_time||"";
+  $("publicShopLatitude").value=currentShop.latitude??"";
+  $("publicShopLongitude").value=currentShop.longitude??"";
+  say("publicShopProfileMessage","Update these details for your customers.");
   renderBusinessWorkspace(currentShop);
   await loadRestaurantTables();
   await loadRestaurantReservations();
@@ -1409,6 +1431,26 @@ async function loadShopData(){
 
  $("creditEntryForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||!canManageProducts()){say("creditMessage","An active shop subscription is required to manage the ledger.",true);return}const name=$("creditCustomerName").value.trim(),phone=$("creditCustomerPhone").value.trim(),type=$("creditEntryType").value,amount=Number($("creditAmount").value),date=$("creditDate").value,notes=$("creditNotes").value.trim();if(name.length<1||!["credit_sale","payment_received","adjustment"].includes(type)||!Number.isFinite(amount)||amount<=0||amount>100000000||!date){say("creditMessage","Check customer, entry type, amount and date.",true);return}$("creditSave").disabled=true;const {error}=await db.from("shop_credit_ledger").insert({shop_id:currentShop.id,customer_name:name,customer_phone:phone||null,entry_type:type,amount,entry_date:date,notes:notes||null});$("creditSave").disabled=false;if(error){say("creditMessage","Entry not saved: "+error.message,true);return}$("creditEntryForm").reset();$("creditDate").value=new Date().toISOString().slice(0,10);say("creditMessage","Ledger entry saved.");await loadCustomerCredit()});$("creditRefresh").addEventListener("click",loadCustomerCredit);
 
+ $("savePublicShopProfile").addEventListener("click",async()=>{
+  if(!currentShop)return say("publicShopProfileMessage","Select a shop first.",true);
+  const address=$("publicShopAddress").value.trim(),city=$("publicShopCity").value.trim();
+  const opening=$("publicShopOpening").value||null,closing=$("publicShopClosing").value||null;
+  const latRaw=$("publicShopLatitude").value.trim(),lngRaw=$("publicShopLongitude").value.trim();
+  const latitude=latRaw===""?null:Number(latRaw),longitude=lngRaw===""?null:Number(lngRaw);
+  if(!address||!city)return say("publicShopProfileMessage","Address and city are required.",true);
+  if((latitude===null)!==(longitude===null))return say("publicShopProfileMessage","Enter both map coordinates or leave both blank.",true);
+  if(latitude!==null&&(!Number.isFinite(latitude)||latitude < -90||latitude > 90))return say("publicShopProfileMessage","Latitude must be between -90 and 90.",true);
+  if(longitude!==null&&(!Number.isFinite(longitude)||longitude < -180||longitude > 180))return say("publicShopProfileMessage","Longitude must be between -180 and 180.",true);
+  const button=$("savePublicShopProfile");button.disabled=true;
+  try{
+   const result=await db.from("shops").update({address:address,city:city,opening_time:opening,closing_time:closing,latitude:latitude,longitude:longitude}).eq("id",currentShop.id).select("id,address,city,opening_time,closing_time,latitude,longitude").single();
+   if(result.error)throw result.error;
+   Object.assign(currentShop,result.data);
+   const index=shops.findIndex(x=>x.id===currentShop.id);if(index>=0)Object.assign(shops[index],result.data);
+   say("publicShopProfileMessage","Shop details saved successfully.");
+  }catch(error){say("publicShopProfileMessage","Could not save: "+(error.message||"Please try again."),true)}
+  finally{button.disabled=false}
+ });
  $("shopSelect").addEventListener("change",loadShopData);
  $("ordersRefresh").addEventListener("click",loadOrders);
  $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
