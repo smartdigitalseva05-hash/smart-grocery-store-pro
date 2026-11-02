@@ -16,7 +16,7 @@
 | 5 | Secret Vault | **In Progress** | Static scan passed for common secret patterns in public files; complete Git-history scan, server-secret inventory and rotation review. Never publish secret values. |
 | 6 | Attack Protection | **In Progress** | Static checks pass, but broad server-side validation/XSS/CSRF/SQLi/IDOR/upload/redirect testing remains. Checkout and verification Edge Functions currently use wildcard CORS; restrict only after caller-origin inventory and regression tests. |
 | 7 | Real-Time Alerts | **In Progress** | End-to-end alert generation, trusted delivery, deduplication, recipient authorization and delivery tests are not verified. |
-| 8 | Backup & Recovery | **In Progress** | Backup entitlement/configuration, encryption, retention and successful restore drill are not verified. Current project tier is Free; confirm actual available capability before claiming completion. |
+| 8 | Backup & Recovery | **Blocked (managed daily backups on Free tier); manual export path In Progress** | Supabase docs say daily managed backups are Pro/Team/Enterprise; Free projects must use CLI db dump and off-site exports. Database exports do not include Storage objects. Build and verify manual DB + Storage backup and restore. |
 | 9 | Audit Trail | **In Progress** | audit_logs table and policies exist; prove trusted-only writes, immutable/tamper-resistant behavior, event coverage, retention and Owner-only reads. |
 | 10 | Payment Shield | **In Progress** | Razorpay checkout/verify JWT and webhook raw-body HMAC checks exist; complete invalid-signature, amount/order mismatch, duplicate/replay and concurrent-delivery tests. |
 
@@ -398,3 +398,10 @@ The next five owner-approved features have moved from **Pending** to **In Progre
 - Public schema view catalog returned no views in the targeted query. PostgreSQL row_security is ON. API-exposed schema list was not available from pg_settings; verify it in Supabase API settings before treating private as non-exposed.
 - Backup docs reviewed against current Free tier: Supabase's official guide says daily automatic backups are for Pro/Team/Enterprise, and recommends Free projects regularly export with Supabase CLI db dump and keep off-site copies. Storage objects are not included in database backups. Therefore Backup & Recovery is currently **Blocked for managed daily backups on Free tier**, but a manual database + Storage export/restore plan can be implemented and tested. Official docs: https://supabase.com/docs/guides/platform/backups
 - No production schema, privileges, Auth settings, functions, secrets, or user/business/payment data were changed in this read-only audit.
+
+
+## Backup implementation constraint — 2026-11-02
+
+- Managed daily Supabase backups are not included on this project's Free tier. A manual recovery plan is required: export database with Supabase CLI db dump, export Storage objects separately, encrypt and store copies off-site, record backup date/checksum, and restore into a separate safe project before claiming Backup & Recovery Completed.
+- Do not use the production restore action as a test; it can cause downtime and roll back current records. A restore drill must target a separate non-production project.
+- Current status: managed daily backups are Blocked by plan; manual export/restore implementation is In Progress.
