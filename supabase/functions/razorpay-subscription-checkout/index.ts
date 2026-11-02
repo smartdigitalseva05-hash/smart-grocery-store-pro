@@ -1,5 +1,6 @@
 import { withSupabase } from "npm:@supabase/server@1";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { readBodyLimited } from "./security-utils.js";
 function createAdminClient() {
   const raw = Deno.env.get("SUPABASE_SECRET_KEYS") || "";
   let secretKey = "";
@@ -32,8 +33,12 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   const userClient = ctx.supabase;
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return reply(401, { error: "Invalid or expired session. Please sign in again." });
+  const limitedBody = await readBodyLimited(req, 16 * 1024);
+  if (limitedBody.error === "too_large") return reply(413, { error: "Request body exceeds the 16 KiB limit." });
+  if (limitedBody.error) return reply(400, { error: "Invalid request body headers." });
   let rawBody: unknown;
-  try { rawBody = await req.json(); } catch { return reply(400, { error: "Invalid JSON body." }); }
+  try { rawBody = JSON.parse(new TextDecoder().decode(limitedBody.bytes)); }
+  catch { return reply(400, { error: "Invalid JSON body." }); }
   if (!rawBody || typeof rawBody !== "object" || Array.isArray(rawBody)) return reply(400, { error: "Request body must be a JSON object." });
   const body = rawBody as { shop_id?: string; plan_id?: string; billing_cycle?: string };
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
