@@ -1,7 +1,7 @@
 # Smart Business Pro — Security Shield Specification
 
 **Priority:** Critical / mandatory for every module  
-**Status:** Architecture requirements recorded; implementation and verification are still pending.
+**Status:** Mandatory architecture recorded; the 10-feature Security Shield is the only active implementation module until all controls pass evidence-based verification. See the execution lock in PROJECT_STATUS.md.
 
 ## Security objective
 Use defense in depth and zero-trust authorization to reduce the risk of account takeover, unauthorized access, data exposure, payment fraud, and destructive actions. No system can honestly be guaranteed 100% unhackable; security must be continuously tested and maintained.
