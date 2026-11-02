@@ -539,3 +539,14 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Transactional negative test (rolled back): temporarily granted table privileges only inside the test transaction, created one temporary row, confirmed a normal description edit was accepted, and confirmed attempts to change `shop_id` and `created_by` were rejected with SQLSTATE 42501. The temporary row did not persist; temporary grants were rolled back.
 - Important current-state finding: authenticated has no SELECT/INSERT/UPDATE/DELETE table privileges on `grocery_expenses`, so the table is not currently writable/readable by ordinary clients through table grants. No privileges were added permanently. Do not grant access until an actual feature caller is designed and tested.
 - Existing expense data was preserved; `index.html` unchanged. This remediation is a verified sub-control, not completion of Database Fortress or the 10-feature Security Shield.
+
+
+### Unused SECURITY DEFINER trial helper lockdown — applied and verified (2026-11-02)
+- Full tracked client source scan across all HTML/JS/TS files and all three Razorpay Edge Functions found no caller for `private.is_active_free_trial(uuid)`. A database routine-body scan also found zero callers.
+- The function was SECURITY DEFINER, returned a boolean for an arbitrary shop ID, and had direct EXECUTE for authenticated users. Added and applied migration `supabase/migrations/20261102200000_revoke_unused_free_trial_helper_execute.sql` to revoke EXECUTE from PUBLIC, anon and authenticated.
+- Verified live function privileges: anon=false, authenticated=false, service_role=false. A direct call under `SET LOCAL ROLE authenticated` failed with SQLSTATE 42501 as intended. No function body or trial data was changed.
+- This removes an unused callable surface; it does not complete Zero-Trust or Database Fortress.
+
+### Latest CI snapshot — 2026-11-02
+- Static project validation passed on commit `258b12bd75839fab7a48cff8455da3297223b988` (run 41389708281).
+- Static Pages deployment and Pages build/deployment for that same commit were still in progress at the time of this update. Previous commit `b53e08a3ec738a9c28bfe8714bd64e3c513d7b34` passed all three CI workflows.
