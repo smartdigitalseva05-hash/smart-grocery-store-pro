@@ -28,11 +28,11 @@ function read(file) {
 }
 for (const page of pages) {
   const html = read(page);
-  const ids = [...html.matchAll(/\\bid=["']([^"']+)["']/g)].map(m => m[1]);
+  const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(m => m[1]);
   const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
   assert(duplicateIds.length === 0, page + ": duplicate element IDs: " + [...new Set(duplicateIds)].join(", "));
   let scriptIndex = 0;
-  for (const match of html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)) {
+  for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     const attrs = match[1] || "";
     const code = match[2] || "";
     if (!code.trim() || /type=["']module["']/i.test(attrs)) continue;
@@ -43,9 +43,9 @@ for (const page of pages) {
   }
 
   // Catch broken static local links and assets before publishing to GitHub Pages.
-  for (const match of html.matchAll(/\\b(?:href|src)=["']([^"']+)["']/gi)) {
+  for (const match of html.matchAll(/\b(?:href|src)=["']([^"']+)["']/gi)) {
     const raw = match[1].trim();
-    if (!raw || /^(?:#|[a-z][a-z0-9+.-]*:|\\/\\/)/i.test(raw)) continue;
+    if (!raw || /^(?:#|[a-z][a-z0-9+.-]*:|\/\/)/i.test(raw)) continue;
     const pathname = decodeURIComponent(raw.split(/[?#]/, 1)[0]);
     if (!pathname) continue;
     const target = path.resolve(root, path.dirname(page), pathname);
@@ -54,10 +54,10 @@ for (const page of pages) {
   }
 
   // External links opened in a new tab must not expose window.opener.
-  for (const match of html.matchAll(/<a\\b[^>]*>/gi)) {
+  for (const match of html.matchAll(/<a\b[^>]*>/gi)) {
     const tag = match[0];
     if (/target=["']_blank["']/i.test(tag)) {
-      assert(/rel=["'][^"']*\\bnoopener\\b/i.test(tag), page + ": target=_blank anchor is missing rel=noopener");
+      assert(/rel=["'][^"']*\bnoopener\b/i.test(tag), page + ": target=_blank anchor is missing rel=noopener");
     }
   }
 }
@@ -66,10 +66,10 @@ for (const file of publicScripts) read(file);
 const publicFiles = [...pages, ...publicScripts];
 const secretPatterns = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
-  /\\bsb_secret_[A-Za-z0-9_-]{16,}/,
-  /(?:SUPABASE_)?SERVICE_ROLE_KEY\\s*[:=]\\s*["'][^"']{12,}["']/i,
-  /RAZORPAY_KEY_SECRET\\s*[:=]\\s*["'][^"']{8,}["']/i,
-  /\\brzp_live_[A-Za-z0-9]{12,}/i
+  /\bsb_secret_[A-Za-z0-9_-]{16,}/,
+  /(?:SUPABASE_)?SERVICE_ROLE_KEY\s*[:=]\s*["'][^"']{12,}["']/i,
+  /RAZORPAY_KEY_SECRET\s*[:=]\s*["'][^"']{8,}["']/i,
+  /\brzp_live_[A-Za-z0-9]{12,}/i
 ];
 for (const file of publicFiles) {
   const source = read(file);
