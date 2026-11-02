@@ -517,3 +517,9 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Supabase migration history confirms `restrict_direct_audit_log_writes` is applied (version 20261102043013).
 - Reviewed `private.is_super_admin()` and `private.is_shop_owner(uuid)`: both use `auth.uid()` and active `profiles` role/ownership checks; no user-editable metadata claim is used for role authorization.
 - Reviewed `public.prevent_role_escalation()`: rejects new Super Admin accounts, restricts role/activation changes to existing active Super Admin, protects the last active Super Admin, and disables owned shops when a shopkeeper is disabled/demoted. Source review only; negative API test for profile role escalation remains outstanding.
+
+
+### UPDATE policy predicate comparison — 2026-11-02
+- Compared `USING` and `WITH CHECK` expressions for all public UPDATE policies. Eleven policies differ; ten differences add destination-row integrity constraints (for example, same-shop product/room/employee references or amount bounds).
+- The remaining exception is `grocery_expenses_update`: `WITH CHECK` omits the active Grocery shop + unexpired-subscription predicate present in `USING`, and the table has no trigger protecting `shop_id`. Keep this as a specific Database Fortress remediation candidate; do not alter until an isolated test confirms intended expense-edit behavior.
+- No RLS policy was changed in this review.
