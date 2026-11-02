@@ -1,6 +1,45 @@
 # Smart Business Pro — Project Status
 
-**Last updated:** 2026-11-01
+
+## OWNER DIRECTIVE — SECURITY-FIRST EXECUTION LOCK (2026-11-02)
+
+**Permanent project priority:** The 10-feature Security Shield is the only active implementation module until all ten controls are implemented, independently verified, and deployment/security review is complete. Do not start or expand category, shopkeeper, Owner dashboard, payment UI, analytics, or other feature work before that gate passes. Only security work and safe maintenance/regression fixes are allowed during this lock.
+
+**Do not confuse documentation or a visible UI with a working security control.** A feature may be marked Completed only with implementation evidence plus passing automated/API tests for its acceptance criteria. Keep blocked/plan-gated items open and state the dependency. Do not claim 10/10 until every row below is Completed.
+
+| # | Mandatory security feature | Current evidence-based status (2026-11-02) | Remaining completion gate |
+|---|---|---|---|
+| 1 | Zero-Trust Security | **In Progress** | Complete request-by-request server authorization review and negative tests for signed-out, customer, shopkeeper, shop owner and Super Admin, including cross-shop IDOR/BOLA. |
+| 2 | Super Admin Lock | **In Progress** | Owner page currently shows email/password login; MFA enrollment/enforcement and AAL2 step-up on sensitive server-side operations are not verified. Implement and test role/session revocation safely. |
+| 3 | Database Fortress | **In Progress** | Structural baseline: 41/41 public tables have RLS and policies; 0 missing UPDATE WITH CHECK in targeted scan. Complete grants, policy predicate, RPC/view/Storage review and role-isolation API tests. |
+| 4 | Anti-Brute-Force | **In Progress** | No app-level limiter was evident in inspected Razorpay handlers. Verify Auth limits and implement atomic distributed limits for sensitive endpoints; test concurrency, lockout and recovery. |
+| 5 | Secret Vault | **In Progress** | Static scan passed for common secret patterns in public files; complete Git-history scan, server-secret inventory and rotation review. Never publish secret values. |
+| 6 | Attack Protection | **In Progress** | Static checks pass, but broad server-side validation/XSS/CSRF/SQLi/IDOR/upload/redirect testing remains. Checkout and verification Edge Functions currently use wildcard CORS; restrict only after caller-origin inventory and regression tests. |
+| 7 | Real-Time Alerts | **In Progress** | End-to-end alert generation, trusted delivery, deduplication, recipient authorization and delivery tests are not verified. |
+| 8 | Backup & Recovery | **In Progress** | Backup entitlement/configuration, encryption, retention and successful restore drill are not verified. Current project tier is Free; confirm actual available capability before claiming completion. |
+| 9 | Audit Trail | **In Progress** | audit_logs table and policies exist; prove trusted-only writes, immutable/tamper-resistant behavior, event coverage, retention and Owner-only reads. |
+| 10 | Payment Shield | **In Progress** | Razorpay checkout/verify JWT and webhook raw-body HMAC checks exist; complete invalid-signature, amount/order mismatch, duplicate/replay and concurrent-delivery tests. |
+
+### Verified baseline (not a 10/10 completion claim)
+- GitHub Actions static validator passed **283 checks** across 14 HTML pages, 1 public JS file and all 11 business categories on commit ab83f827e611403b6d786fddef5d0a90669a9a31 (run 41377126260). This is static validation, not end-to-end security proof.
+- Supabase catalog audit found **41/41 public tables with RLS enabled and at least one policy**; targeted structural scan found no UPDATE policy missing WITH CHECK. Role-based negative API tests remain required.
+- Three Razorpay Edge Functions are active: checkout and verification require JWT; webhook uses verify_jwt=false and verifies Razorpay raw-body HMAC in its handler. Checkout and verification currently allow wildcard CORS.
+- Supabase Security Advisor still reports leaked-password protection disabled. Current project tier is Free; official Supabase docs state this control is plan-gated to Pro and above: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+- The customer storefront index.html remains protected and must not be edited as part of this work unless the Owner explicitly approves it.
+
+### Execution order while the lock is active
+1. Complete and test Super Admin Lock and Zero-Trust server authorization.
+2. Complete Database Fortress role/tenant isolation tests and remediate findings.
+3. Implement/test Anti-Brute-Force and Attack Protection, including safe CORS allowlisting.
+4. Complete Secret Vault and credential-history/rotation review.
+5. Implement/test Real-Time Alerts and Audit Trail integrity/coverage.
+6. Complete Payment Shield negative/replay/concurrency tests.
+7. Verify backup capability and perform a safe restore drill; resolve plan-gated controls explicitly.
+8. Run full regression, Security Advisor, static/API suite and deployment verification; only then mark Security Shield 10/10 Completed and unlock the next project module.
+
+**No destructive production changes, mass session revocation, payment behavior changes, broad CORS restrictions, or lockout rules may be deployed without a reviewed recovery path and verified test coverage. Preserve existing user/business/payment data.**
+
+**Last updated:** 2026-11-02
 
 ## Current active work
 
