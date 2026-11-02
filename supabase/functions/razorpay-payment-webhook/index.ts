@@ -1,5 +1,6 @@
 import { withSupabase } from "npm:@supabase/server@1";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { readBodyLimited, hmacHex, safeEqual } from "./security-utils.js";
 function createAdminClient() {
   const raw = Deno.env.get("SUPABASE_SECRET_KEYS") || "";
   let secretKey = "";
@@ -18,24 +19,18 @@ function createAdminClient() {
 function reply(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
-async function hmacHex(secret: string, body: string): Promise<string> {
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const signature = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body)));
-  return Array.from(signature).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0; for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
 const handler = withSupabase({ auth: "none" }, async (req) => {
   if (req.method !== "POST") return reply(405, { error: "Method not allowed" });
   const webhookSecret = Deno.env.get("RAZORPAY_WEBHOOK_SECRET") || "";
   if (!webhookSecret) return reply(500, { error: "Webhook secret is not configured." });
-  const rawBody = await req.text();
+  const bodyResult = await readBodyLimited(req, 1024 * 1024);
+  if (bodyResult.error === "too_large") return reply(413, { error: "Webhook body exceeds the 1 MiB limit." });
+  if (bodyResult.error) return reply(400, { error: "Invalid webhook content length." });
+  const rawBodyBytes = bodyResult.bytes;
+  const rawBody = new TextDecoder().decode(rawBodyBytes);
   const supplied = req.headers.get("X-Razorpay-Signature") || "";
   if (!/^[a-f0-9]{64}$/i.test(supplied)) return reply(400, { error: "Missing or invalid webhook signature." });
-  const expected = await hmacHex(webhookSecret, rawBody);
+  const expected = await hmacHex(webhookSecret, rawBodyBytes);
   if (!safeEqual(expected, supplied.toLowerCase())) return reply(400, { error: "Webhook signature verification failed." });
   let parsedEvent: unknown;
   try { parsedEvent = JSON.parse(rawBody); } catch { return reply(400, { error: "Invalid webhook JSON." }); }
