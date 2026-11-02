@@ -363,6 +363,12 @@ a{color:#8ce2b3}
 <label class="field">Product image URL (HTTPS, optional)<input id="pImageUrl" type="url" maxlength="2048" placeholder="https://example.com/product.jpg" inputmode="url" autocomplete="url"></label>\n<label class="field">Or upload product photo (JPG, PNG, WebP · max 5 MB)<input id="pImageFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
 </div><label class="field">Description<textarea id="pDescription" maxlength="1000"></textarea></label><button id="addButton" type="submit">Save product</button></form><div id="productMessage" class="notice" role="status"></div></div>
 <div class="panel"><div class="row"><div><h1>My products</h1><div class="sub">Manage availability and stock for the selected shop.</div></div><button id="exportProducts" class="secondary" type="button">Export products CSV</button><button id="productsRefresh" class="secondary">Refresh products</button></div><div id="productList" class="products"></div><div id="listMessage" class="notice" role="status"></div></div>
+<section class="panel" id="customerDirectoryPanel">
+ <div class="row"><div><h1>Customer Contact Book</h1><div class="sub">Read-only contacts derived from this shop's latest 100 orders. No cross-shop customer search or account changes.</div></div><button id="customerDirectoryRefresh" class="secondary" type="button">Refresh contacts</button></div>
+ <label class="field">Search phone, city or address<input id="customerDirectorySearch" type="search" maxlength="120" placeholder="Search this shop's recent customers…"></label>
+ <div class="row"><div><div class="sub">Unique customer contacts</div><h2 id="customerDirectoryCount">0</h2></div><div><div class="sub">Orders represented</div><h2 id="customerDirectoryOrders">0</h2></div></div>
+ <div id="customerDirectoryList" class="products"></div><div id="customerDirectoryMessage" class="notice" role="status"></div>
+</section>
 <div class="panel"><div class="row"><div><h1>Incoming orders</h1><div class="sub">Orders belonging to the selected shop only.</div></div><button id="ordersRefresh" class="secondary">Refresh orders</button></div><div id="ordersMessage" class="notice" role="status"></div><div id="orderList" class="order-list"></div></div>
 </section><p class="foot">Shopkeeper access is enforced by Supabase Auth and Row Level Security. Never share your password. Owner-only controls are not available in this workspace.</p>
 <div id="quickFindOverlay" class="quick-find-overlay" aria-hidden="true">
@@ -383,7 +389,7 @@ a{color:#8ce2b3}
   const DAILY_NEEDS_PRODUCTS=[{"name":"Bathing Soap","category":"Personal Care","price":38,"emoji":"🧼"},{"name":"Hand Wash","category":"Personal Care","price":75,"emoji":"🧴"},{"name":"Toothpaste","category":"Personal Care","price":65,"emoji":"🪥"},{"name":"Toothbrush","category":"Personal Care","price":25,"emoji":"🪥"},{"name":"Shampoo","category":"Personal Care","price":95,"emoji":"🧴"},{"name":"Hair Oil","category":"Personal Care","price":75,"emoji":"🧴"},{"name":"Face Wash","category":"Personal Care","price":95,"emoji":"🧴"},{"name":"Body Lotion","category":"Personal Care","price":135,"emoji":"🧴"},{"name":"Sanitary Pads","category":"Personal Care","price":95,"emoji":"🧴"},{"name":"Baby Diapers","category":"Baby Care","price":180,"emoji":"🍼"},{"name":"Baby Wipes","category":"Baby Care","price":75,"emoji":"🍼"},{"name":"Baby Soap","category":"Baby Care","price":45,"emoji":"🍼"},{"name":"Detergent Powder","category":"Home Cleaning","price":95,"emoji":"🧹"},{"name":"Detergent Bar","category":"Home Cleaning","price":25,"emoji":"🧹"},{"name":"Dishwash Liquid","category":"Home Cleaning","price":85,"emoji":"🧽"},{"name":"Floor Cleaner","category":"Home Cleaning","price":95,"emoji":"🧹"},{"name":"Toilet Cleaner","category":"Home Cleaning","price":90,"emoji":"🧹"},{"name":"Phenyl","category":"Home Cleaning","price":65,"emoji":"🧹"},{"name":"Garbage Bags","category":"Home Cleaning","price":55,"emoji":"🗑️"},{"name":"Tissue Box","category":"Home Cleaning","price":65,"emoji":"🧻"},{"name":"Room Freshener","category":"Home Cleaning","price":125,"emoji":"🌿"},{"name":"Mosquito Repellent","category":"Home Cleaning","price":95,"emoji":"🦟"},{"name":"LED Bulb","category":"Household Utilities","price":90,"emoji":"💡"},{"name":"AA Batteries (2 pack)","category":"Household Utilities","price":45,"emoji":"🔋"},{"name":"Matchbox","category":"Household Utilities","price":2,"emoji":"🔥"},{"name":"Candles (pack)","category":"Household Utilities","price":35,"emoji":"🕯️"},{"name":"Aluminium Foil","category":"Kitchen Essentials","price":75,"emoji":"🍽️"},{"name":"Food Storage Containers","category":"Kitchen Essentials","price":120,"emoji":"🥡"},{"name":"Scrub Pad","category":"Kitchen Essentials","price":15,"emoji":"🧽"},{"name":"Steel Scrubber","category":"Kitchen Essentials","price":20,"emoji":"🧽"},{"name":"Kitchen Towels","category":"Kitchen Essentials","price":45,"emoji":"🧻"},{"name":"Drinking Water 1L","category":"Beverages","price":20,"emoji":"💧"},{"name":"Tea Powder","category":"Beverages","price":125,"emoji":"☕"},{"name":"Instant Coffee","category":"Beverages","price":145,"emoji":"☕"},{"name":"Biscuits","category":"Snacks","price":30,"emoji":"🍪"},{"name":"Namkeen","category":"Snacks","price":45,"emoji":"🥨"},{"name":"Packaged Snacks","category":"Snacks","price":20,"emoji":"🍿"},{"name":"Notebook","category":"Stationery","price":35,"emoji":"📒"},{"name":"Ball Pen","category":"Stationery","price":10,"emoji":"🖊️"},{"name":"Pencil Pack","category":"Stationery","price":20,"emoji":"✏️"},{"name":"Eraser","category":"Stationery","price":5,"emoji":"🧽"},{"name":"School Glue","category":"Stationery","price":25,"emoji":"🧴"},{"name":"Garment Hangers (set)","category":"Household Utilities","price":60,"emoji":"👕"},{"name":"Cotton Cloth","category":"Household Utilities","price":45,"emoji":"🧺"},{"name":"Dustpan","category":"Household Utilities","price":55,"emoji":"🧹"}];
   const activeStarterProducts=()=>currentShop?.business_type==="daily_needs"?DAILY_NEEDS_PRODUCTS:STARTER_PRODUCTS;
 
- let shops=[],currentShop=null,currentTrial=null,ordersChannel=null,orderPollTimer=null;let restaurantMenuOptions=[],selectedHotelBookingRequestId=null;
+ let shops=[],currentShop=null,currentTrial=null,ordersChannel=null,orderPollTimer=null;let restaurantMenuOptions=[],selectedHotelBookingRequestId=null,recentShopOrders=[];
  const say=(id,msg,bad=false)=>{$(id).textContent=msg;$(id).classList.toggle("error",bad)};
  const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(Number(n||0));
  function safeImageUrl(value){try{const u=new URL(String(value||"").trim());return u.protocol==="https:"?u.href:""}catch{return ""}}
@@ -1073,12 +1079,49 @@ async function loadShopData(){
   // Safety refresh in case the device temporarily loses its realtime connection.
   orderPollTimer=setInterval(()=>{if(document.visibilityState==="visible"&&currentShop&&currentShop.id===shopId)loadOrders()},60000);
  }
+ function renderCustomerDirectory(rows=recentShopOrders){
+  const list=$("customerDirectoryList"),query=$("customerDirectorySearch").value.trim().toLowerCase();
+  list.replaceChildren();
+  const contacts=new Map();
+  for(const order of rows||[]){
+   const address=order.shipping_address&&typeof order.shipping_address==="object"?order.shipping_address:{};
+   const phone=String(address.phone||"").trim();
+   const digits=phone.replace(/\D/g,"");
+   const city=String(address.city||"").trim();
+   const fullAddress=String(address.full_address||address.address||"").trim();
+   const key=digits||[fullAddress.toLowerCase(),city.toLowerCase()].filter(Boolean).join("|");
+   if(!key)continue;
+   const current=contacts.get(key)||{phone,city,address:fullAddress,count:0,lastOrder:order.created_at};
+   current.count++;
+   if(new Date(order.created_at)>new Date(current.lastOrder))current.lastOrder=order.created_at;
+   if(!current.phone&&phone)current.phone=phone;
+   if(!current.city&&city)current.city=city;
+   if(!current.address&&fullAddress)current.address=fullAddress;
+   contacts.set(key,current);
+  }
+  const all=[...contacts.values()].sort((a,b)=>new Date(b.lastOrder)-new Date(a.lastOrder));
+  const filtered=all.filter(c=>(c.phone+" "+c.city+" "+c.address).toLowerCase().includes(query));
+  $("customerDirectoryCount").textContent=String(all.length);
+  $("customerDirectoryOrders").textContent=String((rows||[]).length);
+  if(!filtered.length){$("customerDirectoryMessage").textContent=all.length?"No customers match this search.":"Customer contacts will appear after this shop receives orders.";return}
+  $("customerDirectoryMessage").textContent="Showing "+filtered.length+" of "+all.length+" contacts from this shop's latest "+(rows||[]).length+" orders.";
+  for(const c of filtered){
+   const card=document.createElement("article");card.className="product";
+   const title=document.createElement("strong");title.textContent=c.phone||"Customer contact";
+   const meta=document.createElement("div");meta.className="sub";meta.textContent=c.count+" order(s) · Last order "+(c.lastOrder?new Date(c.lastOrder).toLocaleDateString():"—");
+   card.append(title,meta);
+   if(c.city||c.address){const location=document.createElement("div");location.className="sub";location.textContent=[c.address,c.city].filter(Boolean).join(" · ");card.append(location)}
+   if(c.phone){const actions=document.createElement("div");actions.className="product-actions";const call=document.createElement("a");call.href="tel:"+c.phone.replace(/[^0-9+]/g,"");call.textContent="Call customer";actions.append(call);card.append(actions)}
+   list.append(card);
+  }
+ }
  async function loadOrders(){
   const list=$("orderList");list.replaceChildren();
   if(!currentShop){say("ordersMessage","Select a shop first.");return}
   say("ordersMessage","Loading orders…");
   const {data,error}=await db.from("orders").select("id,order_number,status,payment_method,payment_status,total,created_at,shipping_address,items:order_items(quantity,total_price,product:products(name))").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100);
-  if(error){say("ordersMessage",error.message,true);return}
+  if(error){say("ordersMessage",error.message,true);recentShopOrders=[];renderCustomerDirectory([]);return}
+  recentShopOrders=data||[];renderCustomerDirectory(recentShopOrders);
   if(!data?.length){say("ordersMessage","No orders for this shop yet.");return}
   say("ordersMessage",data.length+" recent order(s) loaded.");
   for(const o of data){
@@ -1452,7 +1495,7 @@ async function loadShopData(){
   finally{button.disabled=false}
  });
  $("shopSelect").addEventListener("change",loadShopData);
- $("ordersRefresh").addEventListener("click",loadOrders);
+ $("ordersRefresh").addEventListener("click",loadOrders);$("customerDirectoryRefresh").addEventListener("click",loadOrders);$("customerDirectorySearch").addEventListener("input",()=>renderCustomerDirectory());
  $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
  $("trialButton").addEventListener("click",startFreeTrial);$("subscriptionButton").addEventListener("click",prepareSubscription);$("reload").addEventListener("click",boot);$("exportProducts").addEventListener("click",exportMyProducts);$("productsRefresh").addEventListener("click",loadProducts);
  $("logout").addEventListener("click",async()=>{await db.auth.signOut();showLogin("Signed out.")});
