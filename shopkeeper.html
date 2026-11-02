@@ -880,12 +880,12 @@ async function exportBusinessReports(){
  const button=$("exportBusinessReport");button.disabled=true;say("exportBusinessReportMessage","Preparing shop-scoped CSV reports…");
  try{
   const [p,o]=await Promise.all([
-   db.from("products").select("name,category,price,stock,is_available,created_at").eq("shop_id",currentShop.id).order("name").limit(5000),
+   db.from("products").select("name,price,stock,is_available,created_at,category:categories(name)").eq("shop_id",currentShop.id).order("name").limit(5000),
    db.from("orders").select("id,total,status,payment_status,created_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(5000)
   ]);
   if(p.error)throw p.error;if(o.error)throw o.error;
   const stamp=new Date().toISOString().slice(0,10),slug=String(currentShop.business_name||"shop").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"shop";
-  downloadCsvFile(slug+"-inventory-"+stamp+".csv",["Product","Category","Price","Stock","Available","Created"],(p.data||[]).map(x=>[x.name,x.category,x.price,x.stock,x.is_available?"Yes":"No",x.created_at]));
+  downloadCsvFile(slug+"-inventory-"+stamp+".csv",["Product","Category","Price","Stock","Available","Created"],(p.data||[]).map(x=>[x.name,x.category?.name||"",x.price,x.stock,x.is_available?"Yes":"No",x.created_at]));
   downloadCsvFile(slug+"-orders-"+stamp+".csv",["Order ID","Total","Status","Payment Status","Created"],(o.data||[]).map(x=>[x.id,x.total,x.status,x.payment_status,x.created_at]));
   say("exportBusinessReportMessage","Exported "+(p.data||[]).length+" products and "+(o.data||[]).length+" orders into two CSV files. Data is limited to the selected shop.");
  }catch(error){say("exportBusinessReportMessage","Export failed: "+(error.message||"Could not load shop data."),true)}
