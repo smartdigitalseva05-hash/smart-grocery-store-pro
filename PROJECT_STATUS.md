@@ -565,3 +565,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Transactional trigger test passed: created a temporary order, changed pending → processing, observed exactly 1 audit row and 1 order_status_history row for that order, then rolled back the entire transaction. No order or audit data persisted from the test.
 - The earlier public SECURITY DEFINER catalog scan now shows only legacy trigger/helper routines with direct anon/authenticated EXECUTE revoked; no direct public RPC access was found in the inspected ACLs. Their attached triggers/callers remain under review; do not delete or move them without dependency mapping.
 - Existing production audit rows remain unchanged. This confirms the Audit Trail write path still functions after client INSERT revocation; event coverage and tamper/retention requirements remain open.
+
+
+### Payment Audit Trail coverage — implemented and transaction-tested (2026-11-02)
+- Added and applied `supabase/migrations/20261102220000_audit_payment_state_changes.sql`.
+- A private SECURITY DEFINER trigger now records payment creation and changes to security-relevant payment fields (owner/order/subscription linkage, amount, currency, status, gateway, gateway IDs, verified flag). It deliberately excludes raw `gateway_payload` from audit JSON.
+- Trigger function has empty `search_path`; direct EXECUTE is revoked from PUBLIC/anon/authenticated. The `audit_logs` table remains non-writable directly by ordinary authenticated clients.
+- Transactional test passed: changed the existing pending payment to `success`/verified inside a transaction, observed one matching `payment` audit event, then rolled back. Follow-up read confirmed the real payment remains `pending`/unverified and no payment audit row persisted from the test.
+- This improves payment event traceability but does not prove full payment security (webhook signature/replay/idempotency tests remain pending) or complete Audit Trail coverage for every privileged mutation.
