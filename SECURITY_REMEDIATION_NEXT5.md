@@ -120,3 +120,12 @@
 - Catalog verification confirms all three triggers are installed. Their shared function is `SECURITY DEFINER` with an empty search path, and direct EXECUTE is denied to `anon` and `authenticated`.
 - Total trigger-based audit coverage is now 31 public tables. Only allowlisted security fields are captured; contact details are excluded.
 - The matching SQL source file still needs to be synchronized into the GitHub migrations directory, and the new triggers still need a controlled behavior/API test before the Audit Trail feature can be marked Completed.
+
+## Payment abuse protection update — 2026-11-02 08:16 UTC
+
+- Applied Supabase migration `20261102081537` (`add_payment_endpoint_rate_limits`). It creates a private rate-limit event store and a server-only RPC. The public wrapper is executable by `service_role` only; SQL privilege checks confirm `anon=false`, `authenticated=false`, `service_role=true`.
+- Checkout is limited to 5 requests per account per rolling 15 minutes; payment verification is limited to 10 per account per rolling 15 minutes. Advisory transaction locks serialize requests for the same account/action. Old event rows are pruned after 24 hours.
+- SQL threshold tests passed: checkout request 6 was rejected with PT429 after 5 accepted requests; verification request 11 was rejected after 10 accepted requests. Synthetic test rows were removed in the sequential tests. A concurrent stress test remains pending.
+- Deployed checkout v12 and verification v10. Both retain JWT verification, restrict CORS to the production GitHub Pages origin, require JSON, cap request bodies at 16 KiB, and fail closed with HTTP 503 if the rate-limit service is unavailable.
+- The GitHub regression suite now checks the CORS allowlist, body cap, JSON content type and rate-limit enforcement. Full live HTTP tests and actual Razorpay transaction tests remain open.
+- SQL source-file synchronization for the newly applied audit and payment-rate-limit migrations remains a repository maintenance gate; the live Supabase migration history records both changes.
