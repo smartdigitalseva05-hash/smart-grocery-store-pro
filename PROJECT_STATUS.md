@@ -707,3 +707,10 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Verified `audit_logs` has authenticated SELECT privilege, no anon SELECT privilege, and one SELECT RLS policy backed by `private.is_super_admin()` (active Super Admin + AAL2 + currently verified TOTP). Realtime therefore uses the same Owner-only database authorization rather than a public channel.
 - Static validation passed on commit `0014f4ae21f3999f438bded141c783477295ec09` (run 41394868277); the final status-document commit `f4898c8e33c714e8a0e9c2d56d906e51c7144f16` passed static validation (41394929524), Pages deploy (41394929544) and Pages build/deployment (41394928912).
 - Live WebSocket receipt cannot be positively tested until the real Owner account enrolls and verifies TOTP; no verified factor is currently enrolled. This is in-app live audit alerting only. Failed-login alerts, out-of-app delivery, retry/deduplication and delivery monitoring remain open, so Real-Time Alerts is not Completed.
+
+
+### Supabase Auth abuse-log evidence and alerting limitation — 2026-11-02
+- Read-only review of the project's unified Auth logs for the last 24 hours found 7 `invalid_credentials` responses (HTTP 400) and 4 `over_email_send_rate_limit` responses (HTTP 429) for recovery-email requests. This confirms Supabase's recovery-email rate limiter is actively returning 429s; it does not prove a configurable password-login lockout policy.
+- `auth.audit_log_entries` currently has 0 rows and no trigger. The Auth login/recovery events are visible in the external `auth_audit_logs` / `auth_logs` log streams, not as database rows that the current `audit_logs` Realtime subscription can consume.
+- Therefore the Owner's live audit feed covers database audit events only. Failed-login alerts require a supported log-drain/management-API integration and a configured trusted destination; do not claim failed-login alerting is complete.
+- No email addresses, IP addresses, user agents or raw log payloads were copied into the project status. Log queries were read-only.
