@@ -66,6 +66,7 @@ a{color:#8ce2b3}
  <div id="publicShopProfileMessage" class="notice" role="status"></div>
 </section>
 <div class="panel" id="businessWorkspace"><h1 id="workspaceTitle">Business workspace</h1><p class="muted" id="workspaceType"></p><div id="workspaceFeatures" class="products"></div><div class="notice">Your business type is fixed after application to protect your business setup. Contact Super Admin for a correction.</div></div>
+<section class="panel" id="advancedAlertsPanel"><div class="row"><div><h1>⚡ Advanced Smart Alerts</h1><div class="sub">Shop-specific reminders and risk signals. Only this selected shop's records are checked.</div></div><button id="advancedAlertsRefresh" class="secondary" type="button">Refresh alerts</button></div><div id="advancedAlertsList" class="products"><div class="notice">Alerts load after selecting a shop.</div></div><div id="advancedAlertsMessage" class="notice" role="status"></div></section>
 <section class="panel" id="shopGrowthTools">
 <div class="row"><div><h1>Shop Growth Toolkit</h1><div class="sub">Promote your shop, monitor stock and understand recent activity.</div></div><button id="growthRefresh" class="secondary" type="button">Refresh insights</button></div>
 <div class="formgrid" style="margin-top:12px">
@@ -891,7 +892,8 @@ async function loadGrowthInsights(){
  renderShopQr();
 }
 function bindGrowthTools(){
- $("growthRefresh").addEventListener("click",loadGrowthInsights);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
+ $("growthRefresh").addEventListener("click",loadGrowthInsights);
+ $("advancedAlertsRefresh").addEventListener("click",loadAdvancedAlerts);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
  $("shareShopWhatsApp").addEventListener("click",()=>{const msg=[$("whatsAppPromo").value.trim()||("Hello! Visit "+currentShop.name+" to view our products."),shopPublicUrl()].join("\n\n");window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");say("whatsAppMessage","WhatsApp opened. Review and send the message yourself.")});
  $("copyShopLink").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(shopPublicUrl());say("qrMessage","Shop link copied.")}catch{say("qrMessage","Copy not supported. "+shopPublicUrl(),true)}});
  $("downloadShopQr").addEventListener("click",()=>{const c=$("shopQr").querySelector("canvas");if(!c){say("qrMessage","Generate the QR first.",true);return}const a=document.createElement("a");a.href=c.toDataURL("image/png");a.download="shop-qr.png";a.click()});
@@ -959,6 +961,74 @@ async function loadGroceryProcurement(){
   if(!rows.length){const e=document.createElement("p");e.className="sub";e.textContent="No expenses recorded for this month yet.";list.append(e)}
  }
 }
+
+async function loadAdvancedAlerts(){
+ const host=$("advancedAlertsList"),msg=$("advancedAlertsMessage");if(!host||!currentShop)return;
+ host.replaceChildren();msg.textContent="Checking advanced reminders…";
+ const type=currentShop.business_type,today=new Date();today.setHours(0,0,0,0);
+ const iso=today.toISOString().slice(0,10),soon=new Date(today);soon.setDate(soon.getDate()+30);const soonISO=soon.toISOString().slice(0,10);
+ const add=(title,detail,severity="info")=>{const card=document.createElement("article");card.className="product";const head=document.createElement("div");head.className="row";const strong=document.createElement("strong");strong.textContent=title;const pill=document.createElement("span");pill.className="pill";pill.textContent=severity==="high"?"Action needed":severity==="warn"?"Attention":"Reminder";head.append(strong,pill);const p=document.createElement("div");p.className="sub";p.textContent=detail;card.append(head,p);host.append(card)};
+ const query=async(table,columns)=>{const r=await db.from(table).select(columns).eq("shop_id",currentShop.id).limit(250);if(r.error)throw new Error(table+": "+r.error.message);return r.data||[]};
+ try{
+  if(["grocery","daily_needs","other"].includes(type)){
+   const rows=await query("products","id,name,stock,is_available");
+   const low=rows.filter(x=>Number(x.stock||0)<=5);
+   add("Low-stock watch",low.length?low.length+" product(s) at or below 5 units: "+low.slice(0,5).map(x=>x.name+" ("+x.stock+")").join(", "):"No products are at or below 5 units.");
+   add("Catalogue availability",rows.filter(x=>!x.is_available).length+" product(s) currently marked unavailable.");
+  }else if(type==="garments"){
+   const rows=await query("garment_product_variants","sku,size_label,color_name,stock,is_available");
+   const low=rows.filter(x=>Number(x.stock||0)<=2);
+   add("Size/colour stock risk",low.length?low.length+" variant(s) have 2 or fewer units: "+low.slice(0,6).map(x=>(x.sku||"SKU")+" "+(x.size_label||"")+" "+(x.color_name||"")+" ("+x.stock+")").join(", "):"No size/colour variants are at or below 2 units.");
+   add("Variant availability",rows.filter(x=>!x.is_available).length+" variant(s) are marked unavailable.");
+  }else if(type==="jewellery"){
+   const rows=await query("jewellery_product_details","item_code,metal_type,purity,metal_rate_per_gram,rate_recorded_at,hallmark_number");
+   const stale=rows.filter(x=>x.metal_rate_per_gram!=null&&(!x.rate_recorded_at||Date.now()-new Date(x.rate_recorded_at).getTime()>7*86400000));
+   add("Metal-rate freshness",stale.length?stale.length+" item(s) have a metal rate older than 7 days or no timestamp. Review today's rate before quoting.":"No saved metal rates appear older than 7 days.");
+   add("Hallmark reference",rows.filter(x=>!x.hallmark_number).length+" item(s) have no hallmark number recorded. Verify documentation where applicable.");
+  }else if(type==="restaurant"){
+   const [tickets,reservations]=await Promise.all([query("restaurant_kitchen_tickets","ticket_number,status,created_at"),query("restaurant_reservations","customer_name,reservation_at,status,party_size")]);
+   const pending=tickets.filter(x=>!["served","completed","cancelled"].includes(String(x.status).toLowerCase()));
+   const upcoming=reservations.filter(x=>new Date(x.reservation_at)>=today&&!["cancelled","completed"].includes(String(x.status).toLowerCase()));
+   add("Kitchen queue",pending.length+" ticket(s) are not yet served/completed.");
+   add("Upcoming table reservations",upcoming.length+" upcoming reservation(s) need table/staff readiness.");
+  }else if(type==="hotel"){
+   const [tasks,bookings]=await Promise.all([query("hotel_housekeeping_tasks","task_type,status,due_at,room_id"),query("hotel_reservations","booking_number,guest_name,check_in,check_out,status")]);
+   const open=tasks.filter(x=>!["completed","cancelled"].includes(String(x.status).toLowerCase()));
+   const due=bookings.filter(x=>x.check_in>=iso&&x.check_in<=soonISO&&!["cancelled","checked_out"].includes(String(x.status).toLowerCase()));
+   add("Housekeeping queue",open.length+" housekeeping task(s) remain open.");
+   add("Next 30-day arrivals",due.length+" booking(s) start within the next 30 days.");
+  }else if(type==="office_company"){
+   const [leave,tasks,pay]=await Promise.all([query("office_leave_requests","leave_type,start_date,end_date,status"),query("office_tasks","title,due_at,status,priority"),query("office_payroll_records","period_end,status,net_amount")]);
+   const pending=leave.filter(x=>String(x.status).toLowerCase()==="pending");
+   const overdue=tasks.filter(x=>x.due_at&&x.due_at.slice(0,10)<iso&&!["completed","cancelled"].includes(String(x.status).toLowerCase()));
+   const unpaid=pay.filter(x=>!["paid","cancelled"].includes(String(x.status).toLowerCase()));
+   add("Leave approvals",pending.length+" leave request(s) are awaiting review.");
+   add("Overdue tasks",overdue.length+" task(s) are past their due date and still open.");
+   add("Payroll follow-up",unpaid.length+" payroll record(s) are not marked paid. Verify before settlement.");
+  }else if(type==="electronics"){
+   const [devices,jobs]=await Promise.all([query("electronics_inventory","device_name,warranty_end,device_status"),query("electronics_service_jobs","customer_name,device_name,status,due_at")]);
+   const warranty=devices.filter(x=>x.warranty_end&&x.warranty_end>=iso&&x.warranty_end<=soonISO);
+   const overdue=jobs.filter(x=>x.due_at&&x.due_at.slice(0,10)<iso&&!["delivered","cancelled"].includes(String(x.status).toLowerCase()));
+   add("Warranty expiry",warranty.length+" device warranty/warranties end within 30 days.");
+   add("Repair job deadlines",overdue.length+" open repair job(s) have passed their due date.");
+  }else if(type==="medical"){
+   const rows=await query("medical_inventory_batches","medicine_name,batch_number,expiry_date,quantity,batch_status");
+   const expired=rows.filter(x=>x.expiry_date<iso&&Number(x.quantity)>0);
+   const soonRows=rows.filter(x=>x.expiry_date>=iso&&x.expiry_date<=soonISO&&Number(x.quantity)>0);
+   add("Expired stock — immediate review",expired.length+" batch(es) are expired with quantity remaining. Follow applicable pharmacy rules; do not dispense.",expired.length?"high":"info");
+   add("Expiry within 30 days",soonRows.length+" batch(es) with stock expire within 30 days.",soonRows.length?"warn":"info");
+  }else if(type==="digital_services"){
+   const rows=await query("digital_service_applications","service_name,applicant_name,expected_date,application_status");
+   const overdue=rows.filter(x=>x.expected_date&&x.expected_date<iso&&!["completed","delivered","closed","cancelled"].includes(String(x.application_status).toLowerCase()));
+   const upcoming=rows.filter(x=>x.expected_date&&x.expected_date>=iso&&x.expected_date<=soonISO&&!["completed","delivered","closed","cancelled"].includes(String(x.application_status).toLowerCase()));
+   add("Overdue applications",overdue.length+" application(s) passed their expected date and are not marked complete.",overdue.length?"warn":"info");
+   add("Upcoming service deadlines",upcoming.length+" application(s) are due within 30 days.");
+  }else{add("Smart alerts","No advanced alert profile is configured for this business category yet.")}
+  if(!host.children.length)add("All clear","No additional alert was generated from the available records.");
+  msg.textContent="Checked "+type.replace(/_/g," ")+" records for the selected shop. Alerts are reminders, not automatic actions.";
+ }catch(error){msg.textContent="Some alerts could not load: "+(error.message||"Unknown error");msg.classList.add("error")}
+}
+
 async function loadShopData(){
   const nextShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!nextShop)return;
   if(currentShop?.id!==nextShop.id)selectedHotelBookingRequestId=null;
@@ -1005,6 +1075,7 @@ async function loadShopData(){
   await subscribeShopOrders();
   await Promise.all([loadCategories(),loadProducts(),loadOrders()]);
   await loadGrowthInsights();
+  await loadAdvancedAlerts();
  }
  async function loadPlans(){
   const sel=$("planSelect");sel.replaceChildren();
