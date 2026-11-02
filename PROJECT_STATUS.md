@@ -850,3 +850,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Added regression assertions for all 11 dedicated category URL slugs, portal links, and category-aware registration routing.
 - Fixed category registration handoff: the dedicated landing-page URL now maps its slug (for example `daily-needs`, `office-company`, `digital-services`) to the exact database business_type key before the application is submitted. Unknown URL values are ignored and the user can still choose manually.
 - Preserved the existing `index.html` customer storefront. The code is committed, but GitHub Pages deployment and a live browser registration test have not yet been confirmed; do not mark those as passed.
+
+
+### Shopkeeper customer contact book — implemented, verification pending (2026-11-02)
+- Added a read-only Customer Contact Book to `shopkeeper.html`, derived only from the selected shop's latest 100 orders already returned by the shop-scoped order query.
+- Groups contacts by normalized phone number (or address/city fallback), shows order count and latest order date, and supports search by phone, city or address plus a call link where a phone exists.
+- No customer account mutation, cross-shop discovery, additional personal-data collection, database schema change or production data mutation was added. The existing `index.html` storefront remains untouched.
+- Added static regression assertions for the customer contact panel, search, renderer and selected-shop scoping. GitHub Actions static validation and Pages deployment for this change are still pending; customer display behavior also needs a real shopkeeper browser test with a shop that has orders.
+- Customer Module remains **In Progress**, not Completed: customer account controls belong in the audited Owner workflow, and full cross-category/shop privacy tests remain outstanding.
