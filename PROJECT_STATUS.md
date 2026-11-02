@@ -880,4 +880,12 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - The Pages workflow still pinned the older approved `index.html` blob, so deployment correctly stopped. Updated only the workflow's approved baseline to the current reviewed `index.html` blob `750eb7dc79fee71e4874219f48add4887b55f203`; `index.html` itself was not modified in this work.
 - Added `business-category.html` to the Pages workflow's required-file checks and published artifact, so the 11 portal category links will not point to an omitted file after deployment.
 - Normalized all 11 category slug map keys in `apply-shop.html` to satisfy the existing exact static regression assertions; category behavior is unchanged.
-- Earlier CI attempts exposed validator issues (unquoted category keys and the stale storefront baseline); the source mapping and workflow guard are now corrected. The latest static validation and deployment runs must pass before claiming publication.
+- Earlier CI attempts exposed validator issues (unquoted category keys and the stale storefront baseline); both were corrected. Final verification passed on commit `972a7716ccc35e457af5bb9d5fe027829b74d076`: static validation `41442985401`, custom Pages deployment `41442985377`, and Pages build/deployment `41442984697` all succeeded. The deployment job also passed its storefront-baseline guard, Edge Function type-check, website/inline-JS validation and published-artifact completeness check.
+
+
+### Shopkeeper module CI and Pages deployment verification — passed (2026-11-02)
+- Static validation passed on commit `972a7716ccc35e457af5bb9d5fe027829b74d076` (run `41442985401`), including secret-history scan, website/category validation, and payment helper tests.
+- Custom GitHub Pages deployment passed on the same commit (run `41442985377`). The existing customer storefront baseline guard passed; Edge Function type-check, website/inline-JavaScript validation, required artifact file checks, upload and deployment all succeeded.
+- GitHub Pages build/deployment passed (run `41442984697`). The workflow now includes `business-category.html` in the published artifact.
+- Shopkeeper Customer Contact Book, full product detail editor and order filters are committed. No production customer/order rows were changed; `index.html` was not edited.
+- Real authenticated shopkeeper browser testing across all 11 business categories remains pending. Therefore Product, Order and Customer modules remain **In Progress**, not Completed.
