@@ -41,8 +41,24 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <main>
 <header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Private Super Admin Control Panel</div></div><div id="topActions" class="actions hidden"><button id="ownerQuickSearchOpen" type="button" class="secondary quick-find-open" aria-haspopup="dialog" aria-controls="quickFindOverlay">🎛️ All-in-One Control <span style="opacity:.8;font-size:12px">Search · Ctrl K</span></button><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
 <section id="loginPanel" class="panel auth">
-<h1>Super Admin sign in</h1><p class="muted">Use your existing Supabase Owner account. Access is checked by the database, not by a browser-stored role.</p>
+<h1>Super Admin sign in</h1><p class="muted">Use your existing Supabase Owner account. Access is checked by the database, not by a browser-stored role. Authenticator MFA is required before the Owner dashboard opens.</p>
 <form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><div class="actions" style="margin-top:17px"><button id="loginButton" type="submit">Sign in securely</button></div></form><div id="loginMessage" class="notice" role="status"></div>
+<div id="ownerMfaPanel" class="hidden" style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border)">
+ <h2 style="margin:0 0 8px">🔐 Super Admin authenticator verification</h2>
+ <p id="mfaMessage" class="notice" role="status">Verifying your second factor…</p>
+ <div id="mfaQrSection" class="hidden" style="margin:14px 0;padding:14px;background:#fff;border-radius:12px;color:#111">
+  <img id="mfaQr" alt="Authenticator enrollment QR code" style="display:block;width:220px;max-width:100%;height:auto;margin:0 auto 12px">
+  <div style="font-weight:700;margin-bottom:5px">Manual setup key</div>
+  <code id="mfaSecret" style="display:block;overflow-wrap:anywhere;user-select:all"></code>
+ </div>
+ <button id="mfaStart" type="button" class="secondary">Set up authenticator</button>
+ <div id="mfaChallenge" class="hidden" style="margin-top:12px">
+  <label class="field">6-digit authenticator code<input id="mfaCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000"></label>
+  <button id="mfaVerify" type="button">Verify code and open Owner dashboard</button>
+ </div>
+ <p class="muted" style="margin-top:14px">Keep your authenticator available on a second trusted device or store the setup key in a secure password manager. Never share the QR code or setup key. If you lose every authenticator, account recovery must be performed by the project administrator through Supabase Auth.</p>
+ <button id="mfaSignOut" type="button" class="secondary">Sign out</button>
+</div>
 </section>
 <section id="dashboard" class="hidden">
 <div class="panel shop-section" id="ownerCommandCenter">
@@ -107,9 +123,50 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  const $ = id => document.getElementById(id);
  const loginPanel=$("loginPanel"), dashboard=$("dashboard"), topActions=$("topActions");
+ let ownerMfaFactorId=null, ownerMfaMode=null, checkingOwnerSession=false;
  const money = n => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(n||0));
  function message(id,text,error=false){$(id).textContent=text;$(id).classList.toggle("error",error)}
- function showLogin(text=""){loginPanel.classList.remove("hidden");dashboard.classList.add("hidden");topActions.classList.add("hidden");message("loginMessage",text)}
+ function showLogin(text=""){
+   loginPanel.classList.remove("hidden");dashboard.classList.add("hidden");topActions.classList.add("hidden");
+   $("loginForm").classList.remove("hidden");$("loginMessage").classList.remove("hidden");$("ownerMfaPanel").classList.add("hidden");
+   message("loginMessage",text);
+ }
+ async function startOwnerMfaEnrollment(){
+   message("mfaMessage","Preparing authenticator enrollment…");
+   $("mfaStart").disabled=true;
+   try{
+     if(ownerMfaFactorId&&ownerMfaMode==="enroll"){
+       const {error:removeError}=await client.auth.mfa.unenroll({factorId:ownerMfaFactorId});
+       if(removeError)throw removeError;
+       ownerMfaFactorId=null;
+     }
+     const {data,error}=await client.auth.mfa.enroll({factorType:"totp",friendlyName:"Smart Business Pro Owner"});
+     if(error)throw error;
+     ownerMfaFactorId=data.id;ownerMfaMode="enroll";
+     $("mfaQr").src=data.totp.qr_code;
+     $("mfaSecret").textContent=data.totp.secret;
+     $("mfaQrSection").classList.remove("hidden");
+     $("mfaChallenge").classList.remove("hidden");
+     $("mfaStart").classList.add("hidden");
+     message("mfaMessage","Scan the QR code with an authenticator app, then enter its current 6-digit code. The setup key is sensitive.");
+   }catch(error){message("mfaMessage",error.message||"Authenticator enrollment failed.",true)}
+   finally{$("mfaStart").disabled=false}
+ }
+ async function verifyOwnerMfa(){
+   const code=$("mfaCode").value.replace(/\\D/g,"").slice(0,6);
+   if(!ownerMfaFactorId||code.length!==6){message("mfaMessage","Enter the 6-digit authenticator code.",true);return}
+   $("mfaVerify").disabled=true;message("mfaMessage","Verifying second factor…");
+   try{
+     const {data:challenge,error:challengeError}=await client.auth.mfa.challenge({factorId:ownerMfaFactorId});
+     if(challengeError)throw challengeError;
+     const {error:verifyError}=await client.auth.mfa.verify({factorId:ownerMfaFactorId,challengeId:challenge.id,code});
+     if(verifyError)throw verifyError;
+     $("mfaCode").value="";
+     message("mfaMessage","Second factor verified. Checking the refreshed secure session…");
+     await checkSession();
+   }catch(error){message("mfaMessage",error.message||"Authenticator verification failed.",true)}
+   finally{$("mfaVerify").disabled=false}
+ }
  async function loadSummary(){
    message("dashboardMessage","Checking Owner permissions…");
    const {data,error}=await client.rpc("owner_dashboard_summary");
@@ -433,18 +490,49 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    }
  }
  async function checkSession(){
-   const {data:{session},error}=await client.auth.getSession();
-   if(error||!session){showLogin(error?.message||"");return}
-   // Fail closed: never render the Owner dashboard for a non-Owner account.
-   const {data:profile,error:profileError}=await client.from("profiles").select("role,is_active").eq("id",session.user.id).single();
-   if(profileError||!profile||profile.role!=="super_admin"||profile.is_active!==true){
-     await client.auth.signOut();
-     showLogin(profileError?.message||"Access denied. Only an active Super Admin can open the Owner dashboard. Please use the Shopkeeper Login for shop management.");
-     return;
-   }
-   loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
-   $("ownerEmail").textContent=session.user.email||"Signed-in Owner";
-   await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers(),loadCustomers(),loadOwnerOrders(),loadGlobalProducts(),loadCatalog(),loadPayments(),loadAuditLogs()]);
+   if(checkingOwnerSession)return;
+   checkingOwnerSession=true;
+   try{
+     const {data:{session},error}=await client.auth.getSession();
+     if(error||!session){showLogin(error?.message||"");return}
+     // Fail closed: never render the Owner dashboard for a non-Owner account.
+     const {data:profile,error:profileError}=await client.from("profiles").select("role,is_active").eq("id",session.user.id).single();
+     if(profileError||!profile||profile.role!=="super_admin"||profile.is_active!==true){
+       await client.auth.signOut();
+       showLogin(profileError?.message||"Access denied. Only an active Super Admin can open the Owner dashboard. Please use the Shopkeeper Login for shop management.");
+       return;
+     }
+     const {data:assurance,error:assuranceError}=await client.auth.mfa.getAuthenticatorAssuranceLevel();
+     if(assuranceError){showLogin("Could not verify the MFA session: "+assuranceError.message);return}
+     if(assurance.currentLevel==="aal2"&&assurance.nextLevel==="aal1"){
+       await client.auth.signOut();
+       showLogin("Your authenticator factor changed. Sign in again and complete MFA verification.");
+       return;
+     }
+     if(assurance.currentLevel!=="aal2"||assurance.nextLevel!=="aal2"){
+       loginPanel.classList.remove("hidden");dashboard.classList.add("hidden");topActions.classList.add("hidden");
+       $("loginForm").classList.add("hidden");$("loginMessage").classList.add("hidden");$("ownerMfaPanel").classList.remove("hidden");
+       $("mfaQrSection").classList.add("hidden");$("mfaChallenge").classList.add("hidden");$("mfaStart").classList.remove("hidden");
+       const {data:factors,error:factorError}=await client.auth.mfa.listFactors();
+       if(factorError){message("mfaMessage","Could not list authenticator factors: "+factorError.message,true);return}
+       const verified=(factors?.totp||[]).find(f=>f.status==="verified");
+       const unverified=(factors?.totp||[]).find(f=>f.status==="unverified");
+       if(verified){
+         ownerMfaFactorId=verified.id;ownerMfaMode="challenge";
+         $("mfaStart").classList.add("hidden");
+         $("mfaChallenge").classList.remove("hidden");
+         message("mfaMessage","Your authenticator is enrolled. Enter its current 6-digit code to continue.");
+       }else{
+         ownerMfaFactorId=unverified?.id||null;ownerMfaMode="enroll";
+         $("mfaStart").textContent=unverified?"Restart incomplete authenticator setup":"Set up authenticator";
+         message("mfaMessage",unverified?"An unfinished authenticator setup was found. Restart it to generate a fresh QR code.":"Set up an authenticator app before accessing Owner controls.");
+       }
+       return;
+     }
+     loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
+     $("ownerEmail").textContent=session.user.email||"Signed-in Owner";
+     await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers(),loadCustomers(),loadOwnerOrders(),loadGlobalProducts(),loadCatalog(),loadPayments(),loadAuditLogs()]);
+   }catch(error){showLogin(error.message||"Owner session verification failed.")}finally{checkingOwnerSession=false}
  }
  $("loginForm").addEventListener("submit",async e=>{
    e.preventDefault();$("loginButton").disabled=true;message("loginMessage","Signing in…");
@@ -453,6 +541,10 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    if(error){message("loginMessage",error.message,true);return}
    await checkSession();
  });
+  $("mfaStart").addEventListener("click",startOwnerMfaEnrollment);
+ $("mfaVerify").addEventListener("click",verifyOwnerMfa);
+ $("mfaSignOut").addEventListener("click",async()=>{await client.auth.signOut();ownerMfaFactorId=null;ownerMfaMode=null;showLogin("Signed out.")});
+ $("mfaCode").addEventListener("input",()=>{$("mfaCode").value=$("mfaCode").value.replace(/\\D/g,"").slice(0,6)});
  $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers()])});
  $("shopsRefresh").addEventListener("click",loadShops);
  $("websitesRefresh").addEventListener("click",loadBusinessWebsites);
