@@ -72,6 +72,7 @@ a{color:#8ce2b3}
 <div class="formgrid" style="margin-top:12px">
 <div class="product"><strong>Shop QR Code</strong><p class="sub">Scan to open this shop's online catalogue.</p><div id="shopQr" style="background:#fff;border-radius:12px;padding:12px;display:inline-block;min-width:180px;min-height:180px"></div><div class="product-actions"><button id="downloadShopQr" type="button" class="secondary">Download QR</button><button id="copyShopLink" type="button" class="secondary">Copy shop link</button></div><div id="qrMessage" class="notice"></div></div>
 <div class="product"><strong>WhatsApp Shop Promotion</strong><p class="sub">Prepare a message; you choose recipients and send it yourself.</p><label class="field">Offer / message<textarea id="whatsAppPromo" maxlength="500" rows="3" placeholder="Fresh groceries available today!"></textarea></label><div class="product-actions"><button id="shareShopWhatsApp" type="button">Share on WhatsApp</button></div><div id="whatsAppMessage" class="notice"></div></div></div>
+<div class="product" style="margin-top:12px"><div class="row"><div><strong>Advanced Business Reports</strong><div class="sub">Download shop-scoped inventory and recent sales reports for accounting and offline review.</div></div><button id="exportBusinessReport" class="secondary" type="button">Export CSV reports</button></div><div id="exportBusinessReportMessage" class="notice" role="status"></div></div>
 <div class="product" style="margin-top:12px"><strong>Smart Sales Analytics</strong><div class="formgrid"><div><div class="sub">Recent orders</div><h2 id="metricOrders">—</h2></div><div><div class="sub">Paid / collected revenue</div><h2 id="metricRevenue">—</h2></div><div><div class="sub">Delivered orders</div><h2 id="metricDelivered">—</h2></div><div><div class="sub">Products listed</div><h2 id="metricProducts">—</h2></div></div><div id="analyticsMessage" class="notice"></div></div>
 <div class="product" style="margin-top:12px"><strong>Best-selling products</strong><p class="sub">Ranked by units in the latest 100 orders. Cancelled orders are excluded.</p><div id="bestSellerList" class="products"></div><div id="bestSellerMessage" class="notice"></div></div>
 <div class="product" style="margin-top:12px"><div class="row"><div><strong>Low Stock Alerts</strong><div class="sub">Show products at or below your selected threshold.</div></div><label class="field">Alert at or below<input id="lowStockLimit" type="number" min="0" max="10000" value="5"></label></div><div id="lowStockList" class="products"></div></div>
@@ -863,6 +864,34 @@ async function loadDigitalApplications(){
 
 function shopPublicUrl(){const u=new URL("./index.html",window.location.href);u.searchParams.set("shop_id",currentShop.id);return u.href}
 function renderShopQr(){const t=$("shopQr");t.replaceChildren();if(!currentShop)return;if(!window.QRCode){say("qrMessage","QR library unavailable. Refresh with internet access.",true);return}new QRCode(t,{text:shopPublicUrl(),width:180,height:180,colorDark:"#10251d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});say("qrMessage","QR generated for this shop catalogue.")}
+
+function csvCell(value){
+ const raw=String(value??"");
+ const safe=/^[=+@\\-\\t\\r]/.test(raw)?"'"+raw:raw;
+ return '"'+safe.replace(/"/g,'""')+'"';
+}
+function downloadCsvFile(filename,headers,rows){
+ const csv=[headers,...rows].map(row=>row.map(csvCell).join(",")).join("\\r\\n");
+ const blob=new Blob(["\\ufeff",csv],{type:"text/csv;charset=utf-8"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function exportBusinessReports(){
+ if(!currentShop||!canManageProducts()){say("exportBusinessReportMessage","Active shop subscription required to export business reports.",true);return}
+ const button=$("exportBusinessReport");button.disabled=true;say("exportBusinessReportMessage","Preparing shop-scoped CSV reports…");
+ try{
+  const [p,o]=await Promise.all([
+   db.from("products").select("name,category,price,stock,is_available,created_at").eq("shop_id",currentShop.id).order("name").limit(5000),
+   db.from("orders").select("id,total,status,payment_status,created_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(5000)
+  ]);
+  if(p.error)throw p.error;if(o.error)throw o.error;
+  const stamp=new Date().toISOString().slice(0,10),slug=String(currentShop.business_name||"shop").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"shop";
+  downloadCsvFile(slug+"-inventory-"+stamp+".csv",["Product","Category","Price","Stock","Available","Created"],(p.data||[]).map(x=>[x.name,x.category,x.price,x.stock,x.is_available?"Yes":"No",x.created_at]));
+  downloadCsvFile(slug+"-orders-"+stamp+".csv",["Order ID","Total","Status","Payment Status","Created"],(o.data||[]).map(x=>[x.id,x.total,x.status,x.payment_status,x.created_at]));
+  say("exportBusinessReportMessage","Exported "+(p.data||[]).length+" products and "+(o.data||[]).length+" orders into two CSV files. Data is limited to the selected shop.");
+ }catch(error){say("exportBusinessReportMessage","Export failed: "+(error.message||"Could not load shop data."),true)}
+ finally{button.disabled=false}
+}
+
 async function loadGrowthInsights(){
  if(!currentShop)return;
  const [pRes,oRes]=await Promise.all([db.from("products").select("id,name,stock,is_available").eq("shop_id",currentShop.id),db.from("orders").select("id,total,status,payment_status,created_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100)]);
@@ -893,6 +922,7 @@ async function loadGrowthInsights(){
 }
 function bindGrowthTools(){
  $("growthRefresh").addEventListener("click",loadGrowthInsights);
+ $("exportBusinessReport").addEventListener("click",exportBusinessReports);
  $("advancedAlertsRefresh").addEventListener("click",loadAdvancedAlerts);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
  $("shareShopWhatsApp").addEventListener("click",()=>{const msg=[$("whatsAppPromo").value.trim()||("Hello! Visit "+currentShop.name+" to view our products."),shopPublicUrl()].join("\n\n");window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");say("whatsAppMessage","WhatsApp opened. Review and send the message yourself.")});
  $("copyShopLink").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(shopPublicUrl());say("qrMessage","Shop link copied.")}catch{say("qrMessage","Copy not supported. "+shopPublicUrl(),true)}});
