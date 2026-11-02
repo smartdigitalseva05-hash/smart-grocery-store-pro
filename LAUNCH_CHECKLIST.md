@@ -109,3 +109,10 @@ These items are not represented as completed:
 - Current Supabase catalog snapshot: 41 public tables; all 41 have RLS enabled and policies. No RLS-disabled table, policy-less RLS table, or UPDATE policy missing WITH CHECK was found in the targeted query.
 - Seven public/anon mutation policies exist; they are structurally constrained to account ownership/admin checks or bounded customer-request inserts, and direct order inserts are denied. Negative API tests remain required.
 - Supabase Free tier currently blocks leaked-password protection (official docs: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). The current Security Advisor warning remains a launch security gate.
+
+
+## Static validation result — 2026-11-02
+
+- Expanded static validation passed on commit `ab83f827e611403b6d786fddef5d0a90669a9a31`, GitHub Actions run `41377126260`: **283 checks across 14 HTML pages, 1 public script and 11 business categories**.
+- The new checks cover local links/assets, target=_blank opener safety and common private credential patterns in public HTML/JS, in addition to the earlier syntax, duplicate-ID and category checks.
+- GitHub Pages deployment/build for this exact commit was pending at the time of this update. Do not assume the latest code is live until those runs succeed.
