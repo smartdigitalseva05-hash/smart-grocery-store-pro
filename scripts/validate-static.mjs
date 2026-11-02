@@ -105,6 +105,15 @@ for (const slug of categorySlugs) {
 }
 assert(categoryLanding.includes('id="apply"'), "Category landing page is missing category-aware registration link.");
 assert(categoryLanding.includes('encodeURIComponent(current.slug)'), "Category registration link must preserve selected category.");
+assert(registration.includes("const categorySlugMap="), "Registration must map dedicated category URL slugs to database category keys.");
+for (const [slug,key] of Object.entries({
+  grocery:"grocery","daily-needs":"daily_needs",garments:"garments",jewellery:"jewellery",
+  restaurant:"restaurant",hotel:"hotel","office-company":"office_company",electronics:"electronics",
+  medical:"medical","digital-services":"digital_services","other-businesses":"other"
+})) {
+  assert(registration.includes('"' + slug + '":"' + key + '"'),
+    "Registration URL category mapping is missing: " + slug + " -> " + key);
+}
 
 assert(workspace.includes("const cfg=types[shop.business_type]||types.other;"),
   "Unknown business types must use the generic workspace, never inherit Grocery tools.");
