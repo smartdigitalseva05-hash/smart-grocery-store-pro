@@ -606,3 +606,11 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - The temporary shop owner successfully INSERTed a `product-images` object into their own active shop folder, confirming the positive owner path.
 - Transaction rolled back. Follow-up checks show 0 persisted test Auth users, 0 test shops and 0 test Storage objects. Existing bucket settings, policies and files were not changed.
 - This verifies cross-tenant Storage write isolation for `product-images` at SQL role level. It does not replace full Storage HTTP API tests or cover `shop-logos` (which intentionally has no write policy).
+
+
+### Customer/order/payment row isolation and profile privilege tests — passed with rollback (2026-11-02)
+- Order visibility test using a temporary Auth customer and order: unrelated customer saw 0 rows; order-owning customer saw 1; owning shopkeeper saw 1. Transaction rolled back.
+- Payment visibility test using a temporary pending payment attached to the temporary order: unrelated customer saw 0; payment-owning customer saw 1; owning shopkeeper saw 1; Super Admin at AAL1 saw 0; Super Admin at AAL2 saw 1. Payment insert also exercised the protected payment trigger and new audit trigger; all changes were rolled back.
+- Follow-up checks confirmed 0 persisted temporary Auth users, orders, payments or audit rows.
+- Profile privilege test: authenticated customer could update their own `full_name`, but direct `role` escalation was blocked by missing column UPDATE privilege (SQLSTATE 42501). Test transaction rolled back.
+- These SQL role simulations now cover two-tenant `shops`/`products`, customer-vs-shopkeeper `orders`, payment owner/shopkeeper/Super Admin AAL2 visibility, profile role-field protection, and Storage upload isolation. Authenticated HTTP/PostgREST negative tests and full table-by-table coverage are still outstanding; Zero-Trust and Database Fortress remain In Progress.
