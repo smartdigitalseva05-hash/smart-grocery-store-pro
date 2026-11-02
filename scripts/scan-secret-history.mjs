@@ -9,8 +9,8 @@ const patch = execFileSync(
 const detectors = [
   ['Supabase secret key', /sb_secret_[A-Za-z0-9_-]{20,}/g],
   ['Razorpay live/test key', /rzp_(?:live|test)_[A-Za-z0-9]{12,}/g],
-  ['Razorpay secret assignment', /RAZORPAY_KEY_SECRET\\s*[:=]\\s*["'][^"']{12,}["']/gi],
-  ['Supabase service-role assignment', /SUPABASE_SERVICE_ROLE_KEY\\s*[:=]\\s*["'][^"']{12,}["']/gi],
+  ['Razorpay secret assignment', /RAZORPAY_KEY_SECRET\s*[:=]\s*["'][^"']{12,}["']/gi],
+  ['Supabase service-role assignment', /SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*["'][^"']{12,}["']/gi],
   ['AWS access key', /AKIA[0-9A-Z]{16}/g],
   ['Google API key', /AIza[0-9A-Za-z_-]{35}/g],
   ['GitHub personal access token', /(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,})/g],
@@ -22,8 +22,8 @@ const findings = new Set();
 const chunks = patch.split(/^diff --git /m);
 
 for (const chunk of chunks) {
-  const firstLine = chunk.split('\\n', 1)[0];
-  const pathMatch = firstLine.match(/^a\\/(.+?) b\\/(.+)$/);
+  const firstLine = chunk.split('\n', 1)[0];
+  const pathMatch = firstLine.match(/^a\/(.+?) b\/(.+)$/);
   if (!pathMatch) continue;
 
   const filePath = pathMatch[2];
@@ -34,7 +34,7 @@ for (const chunk of chunks) {
     if (pattern.test(chunk)) findings.add(filePath + ' — ' + label);
   }
 
-  const jwtPattern = /eyJ[A-Za-z0-9_-]{20,}\\.([A-Za-z0-9_-]{20,})\\.[A-Za-z0-9_-]{10,}/g;
+  const jwtPattern = /eyJ[A-Za-z0-9_-]{20,}\.([A-Za-z0-9_-]{20,})\.[A-Za-z0-9_-]{10,}/g;
   for (const match of chunk.matchAll(jwtPattern)) {
     try {
       const payload = JSON.parse(Buffer.from(match[1], 'base64url').toString('utf8'));
