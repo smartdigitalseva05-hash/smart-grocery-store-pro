@@ -83,3 +83,13 @@
 - `audit_logs` currently has admin SELECT and admin INSERT policies. Verify that only trusted server-side paths can create audit events, that sensitive events are covered, and that users cannot alter/delete records.
 - MFA enforcement configuration and successful backup restoration remain unverified. The Security Advisor still flags leaked-password protection as disabled.
 - No production settings, data, schema, Edge Functions, secrets, or HTML pages were modified during this read-only follow-up.
+
+
+## Follow-up audit — 2026-11-02
+
+- Current Supabase catalog query found 41 public tables, with RLS enabled and at least one policy on every table; no UPDATE policy was missing WITH CHECK.
+- Seven public/anon mutation policies were enumerated. The policies are constrained to authenticated row ownership/private Super Admin authorization or narrowly scoped customer-request INSERT rules; direct order INSERT is denied. Negative API tests are still needed to prove these conditions across actual roles and sessions.
+- Four non-internal triggers exist on `shops`, including protected activation changes, business-type immutability for non-admins, and subscription-expiry tamper protection.
+- Supabase project is ACTIVE_HEALTHY on the Free tier. Supabase official documentation states leaked-password protection is available on Pro and above; this item is plan-gated until the tier supports it and the setting is verified: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+- The expanded static validator now checks local links/assets, new-tab opener safety and common private credential patterns. Commit: `4bdedaa0c065102fc55555c7d9b12525dd08033b`; GitHub Actions verification is required before marking it complete.
+- No production schema, policies, Auth settings, Edge Functions, secrets or business/payment records were modified by this audit.
