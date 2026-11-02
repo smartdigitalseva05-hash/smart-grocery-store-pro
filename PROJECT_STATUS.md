@@ -523,3 +523,9 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Compared `USING` and `WITH CHECK` expressions for all public UPDATE policies. Eleven policies differ; ten differences add destination-row integrity constraints (for example, same-shop product/room/employee references or amount bounds).
 - The remaining exception is `grocery_expenses_update`: `WITH CHECK` omits the active Grocery shop + unexpired-subscription predicate present in `USING`, and the table has no trigger protecting `shop_id`. Keep this as a specific Database Fortress remediation candidate; do not alter until an isolated test confirms intended expense-edit behavior.
 - No RLS policy was changed in this review.
+
+
+### Remaining private SECURITY DEFINER helper review — 2026-11-02
+- A catalog scan of authenticated-executable private SECURITY DEFINER functions that do not reference `auth.uid()` identified six boolean helpers: five public-shop/category availability checks and `is_active_free_trial(uuid)`.
+- The five public availability helpers return only whether a shop is currently active for a category and are intentionally used by public/customer-facing policies or intake paths. `is_active_free_trial(uuid)` also returns a boolean for an arbitrary shop ID, has authenticated EXECUTE privilege, and was not found in current RLS policy expressions or other database function bodies. Its direct application caller and Data API exposure are not yet confirmed.
+- Treat `is_active_free_trial` as a potential unnecessary information-disclosure surface, not a confirmed exploitable endpoint. Keep its privilege unchanged until Data API exposed schemas and all app callers are verified; then revoke direct client EXECUTE if unused and add a negative API test.
