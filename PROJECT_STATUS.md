@@ -889,3 +889,12 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - GitHub Pages build/deployment passed (run `41442984697`). The workflow now includes `business-category.html` in the published artifact.
 - Shopkeeper Customer Contact Book, full product detail editor and order filters are committed. No production customer/order rows were changed; `index.html` was not edited.
 - Real authenticated shopkeeper browser testing across all 11 business categories remains pending. Therefore Product, Order and Customer modules remain **In Progress**, not Completed.
+
+
+### 11-category shopkeeper coverage — Daily Needs and Other Businesses advanced (2026-11-02)
+- Daily Needs now has a category-specific supplier and purchase workspace, including supplier register, stock purchases that atomically update product stock, supplier payments, stock movement history and monthly expense register.
+- Applied Supabase migration `20261102122011_extend_grocery_procurement_to_daily_needs`. Existing write policies now allow only Grocery or Daily Needs shop owners with active shop status and active subscription; creator identity checks are preserved. The purchase RPC remains SECURITY DEFINER with empty search_path, signed-in-user check, shop ownership check, active subscription check, product ownership row lock and stock-overflow protection.
+- Updated the shopkeeper UI to show the procurement tools only for Grocery and Daily Needs, with category-specific labels. The UI never enables the panel for other shop types.
+- Other Businesses now has explicit product/service catalogue wording and category-specific item creation labels. Its existing category taxonomy, product/service listings, orders, customer contact book, credit ledger, QR link and analytics remain shared shop-scoped tools. Appointment booking and regulated-industry workflows are not claimed as implemented.
+- Added static regression assertions for both categories. No production business/order/customer data was inserted or modified; `index.html` remains untouched.
+- Database policy/function verification, Security Advisor and Pages CI are the next gates. Authenticated end-to-end tests across all 11 shop types remain pending, so the 11-category suite is not yet marked 100% complete.
