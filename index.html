@@ -303,7 +303,7 @@ async function initialize() {
         $("forgotPassword").classList.add("hidden");
         $("authModal").classList.remove("hidden");
       }
-      loadCustomerStore();
+      if (event === "SIGNED_OUT") loadCustomerStore();
     });
 
     await loadDeliveryFee();
