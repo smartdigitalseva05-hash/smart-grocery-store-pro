@@ -84,36 +84,18 @@ const owner = read("owner.html");
 const portal = read("portal.html");
 const storefront = read("index.html");
 const categoryLanding = read("business-category.html");
-for (const [key, label] of categories) {
+for (const [key] of categories) {
   assert(registration.includes('value="' + key + '"'), "Registration is missing business type: " + key);
   assert(workspace.includes(key + ":{name:"), "Shopkeeper workspace is missing category config: " + key);
   assert(owner.includes('key:"' + key + '"'), "Owner category controls are missing: " + key);
-  assert(portal.includes("<h3>" + label + "</h3>"), "Portal category card is missing: " + label);
 }
-assert(storefront.includes('id="businessTypeFilter"'), "Customer storefront is missing its business-category filter.");
-assert(storefront.includes("p.shop?.business_type === selectedBusinessType"),
-  "Customer storefront must filter products by the selected shop business type.");
-
-const categorySlugs = [
-  "grocery", "daily-needs", "garments", "jewellery", "restaurant", "hotel",
-  "office-company", "electronics", "medical", "digital-services", "other-businesses"
-];
-for (const slug of categorySlugs) {
-  assert(categoryLanding.includes('"' + slug + '"'), "Dedicated category landing page is missing: " + slug);
-  assert(portal.includes("business-category.html?category=" + slug),
-    "Portal category card is missing its dedicated URL: " + slug);
-}
-assert(categoryLanding.includes('id="apply"'), "Category landing page is missing category-aware registration link.");
-assert(categoryLanding.includes('encodeURIComponent(current.slug)'), "Category registration link must preserve selected category.");
-assert(registration.includes("const categorySlugMap="), "Registration must map dedicated category URL slugs to database category keys.");
-for (const [slug,key] of Object.entries({
-  grocery:"grocery","daily-needs":"daily_needs",garments:"garments",jewellery:"jewellery",
-  restaurant:"restaurant",hotel:"hotel","office-company":"office_company",electronics:"electronics",
-  medical:"medical","digital-services":"digital_services","other-businesses":"other"
-})) {
-  assert(registration.includes('"' + slug + '":"' + key + '"'),
-    "Registration URL category mapping is missing: " + slug + " -> " + key);
-}
+// Customer accounts are permanently connected to one shop; customers must not browse category-wide shop listings.
+assert(storefront.includes("connected_shop_id"), "Customer storefront must use the permanent connected-shop binding.");
+assert(storefront.includes("profile.connected_shop_id"), "Customer storefront must load the customer's connected shop.");
+assert(!storefront.includes('id="businessTypeFilter"'), "Customer storefront must not expose a business-category filter.");
+assert(categoryLanding.includes("Customers cannot browse shops by business category"),
+  "Category landing page must explain that customers join through a shopkeeper QR/link.");
+assert(categoryLanding.includes("./portal.html"), "Category landing page must link back to the business portal.");
 
 assert(workspace.includes("const cfg=types[shop.business_type]||types.other;"),
   "Unknown business types must use the generic workspace, never inherit Grocery tools.");
