@@ -216,6 +216,7 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
    <input id="pincode" placeholder="6-digit pincode" maxlength="6">
    <input id="phone" placeholder="Mobile number">
    <input id="notes" placeholder="Order notes (optional)">
+    <input id="couponCode" maxlength="32" placeholder="Coupon code (optional)" autocomplete="off">
   </div>
   <div class="modal-actions">
    <button class="btn" id="checkoutBtn">Checkout</button>
@@ -999,24 +1000,27 @@ $("checkoutBtn").onclick = async () => {
     }));
 
     const {data: orderId, error: orderError} = await db.rpc(
-            "place_order_with_notes",
+            "place_order_with_coupon",
       {
         p_shop_id: cart[0].shop_id,
         p_address_id: addressData.id,
         p_items: items,
-        p_notes: $("notes").value.trim().slice(0, 500)
+        p_notes: $("notes").value.trim().slice(0, 500),
+        p_coupon_code: $("couponCode").value.trim().toUpperCase() || null
       }
     );
 
     if (orderError) throw orderError;
 
+    const {data:orderSummary}=await db.from("orders").select("subtotal,shipping_fee,discount_amount,total,coupon_code").eq("id",orderId).single();
     cart = [];
     updateCart();
     checkoutMode = false;
     $("checkoutFields").classList.add("hidden");
     $("cartModal").classList.add("hidden");
+    $("couponCode").value="";
 
-    notify("Order placed successfully! Order ID: " + orderId);
+    notify("Order placed! Total: "+money(orderSummary?.total??0)+(orderSummary?.discount_amount>0?" · Coupon "+orderSummary.coupon_code+" saved "+money(orderSummary.discount_amount):"")+" · Order ID: "+orderId);
     await loadProducts();
 
   } catch (e) {
