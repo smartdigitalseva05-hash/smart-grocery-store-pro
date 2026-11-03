@@ -1236,7 +1236,7 @@ async function saveUniversalAdvancedRecord(event){
 
 async function loadStorefrontManager(){
  if(!currentShop)return;
- const link=location.origin+location.pathname.replace(/[^/]*$/,"")+"storefront.html?shop="+encodeURIComponent(currentShop.id);
+ const link=location.origin+location.pathname.replace(/[^/]*$/,"")+"index.html?shop_id="+encodeURIComponent(currentShop.id);
  $("sfPublicLink").textContent=link;$("sfOpenLink").href=link;
  const {data:s,error}=await db.from("shop_storefront_settings").select("*").eq("shop_id",currentShop.id).maybeSingle();
  if(error)say("sfMessage","Settings load failed: "+error.message,true);
