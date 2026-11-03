@@ -968,9 +968,69 @@ async function loadShopkeepers(){
  masterTools.querySelectorAll("[data-master-jump]").forEach(button=>button.addEventListener("click",()=>{const targetId=button.dataset.masterJump;const target=targetId==="allManuals"?document.getElementById("ownerWorkspacePanel_allManuals"):document.getElementById(targetId);if(target){const panel=target.closest("[data-workspace-panel]");if(panel){const tab=[...document.querySelectorAll("#ownerWorkspaceTabs button")].find(x=>x.getAttribute("aria-selected")==="true");const wanted=document.querySelector('#ownerWorkspaceTabs button:nth-child('+( [...document.querySelectorAll("#ownerWorkspaceTabs button")].indexOf([...document.querySelectorAll("#ownerWorkspaceTabs button")].find(b=>b.textContent.includes(targetId==="ownerApplicationHub"?"Applications":targetId==="ownerShopkeeperControl"?"Shopkeepers":targetId==="ownerOrderControl"?"Orders":targetId==="ownerPaymentControl"?"Payments":targetId==="ownerAuditControl"?"Security & Audit":"All Manuals")))+1)+')');wanted?.click();}target.scrollIntoView({behavior:"smooth",block:"start"});}}));
  renderMasterTasks();renderMasterIncidents();updateChecklistStatus();
 
+
+ // Owner notification inbox with searchable local alerts and unread controls.
+ const ownerNotifications=document.createElement("section");
+ ownerNotifications.id="ownerNotifications";
+ ownerNotifications.className="panel shop-section";
+ ownerNotifications.innerHTML=`
+  <div class="row"><div><h2>🔔 Owner Notification Center</h2><div class="sub">Search, filter and manage your admin alerts.</div></div><span id="ownerNotificationUnread" class="pill">0 unread</span></div>
+  <div class="actions" style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0">
+   <input id="ownerNotificationSearch" type="search" placeholder="🔎 Search notifications..." aria-label="Search notifications" style="flex:1;min-width:190px">
+   <select id="ownerNotificationFilter" aria-label="Filter notifications" style="max-width:190px"><option value="all">All notifications</option><option value="unread">Unread</option><option value="read">Read</option><option value="urgent">Urgent</option><option value="important">Important</option><option value="info">Information</option></select>
+  </div>
+  <div class="panel" style="margin-bottom:14px"><h3>＋ Add admin reminder</h3><div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px"><input id="ownerNotificationTitle" maxlength="120" placeholder="Notification title"><select id="ownerNotificationLevel"><option value="info">Information</option><option value="important">Important</option><option value="urgent">Urgent</option></select></div><textarea id="ownerNotificationBody" maxlength="1000" rows="3" style="width:100%;margin-top:8px" placeholder="Notification details..."></textarea><button id="ownerNotificationAdd" type="button" style="margin-top:8px">Save reminder</button><span id="ownerNotificationStatus" class="muted" role="status" aria-live="polite" style="margin-left:8px"></span></div>
+  <div class="actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button id="ownerNotificationReadAll" class="secondary" type="button">Mark all read</button><button id="ownerNotificationExport" class="secondary" type="button">Export CSV</button><button id="ownerNotificationClearRead" class="secondary" type="button">Clear read reminders</button></div>
+  <div id="ownerNotificationList" aria-live="polite"></div>
+  <p class="muted" style="font-size:12px;margin-top:12px">These are browser-local admin reminders, not automatic Supabase, payment or shopkeeper push notifications. They stay on this device only. Do not store OTPs, passwords, API keys or sensitive customer details here.</p>`;
+ if(!Array.isArray(masterState.notifications))masterState.notifications=[];
+ const notificationList=ownerNotifications.querySelector("#ownerNotificationList");
+ const notificationSearch=ownerNotifications.querySelector("#ownerNotificationSearch");
+ const notificationFilter=ownerNotifications.querySelector("#ownerNotificationFilter");
+ function renderOwnerNotifications(){
+  const query=notificationSearch.value.trim().toLowerCase(),filter=notificationFilter.value;
+  const unread=masterState.notifications.filter(n=>!n.read).length;
+  ownerNotifications.querySelector("#ownerNotificationUnread").textContent=unread+" unread";
+  notificationList.replaceChildren();
+  const filtered=masterState.notifications.filter(n=>{
+   const hay=(n.title+" "+n.body+" "+n.level).toLowerCase();
+   return (!query||hay.includes(query))&&(filter==="all"||(filter==="unread"&&!n.read)||(filter==="read"&&n.read)||n.level===filter);
+  });
+  if(!filtered.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No matching notifications.";notificationList.append(empty);return;}
+  filtered.forEach(n=>{
+   const card=document.createElement("article");card.className="panel";card.style.cssText="margin:9px 0;padding:13px;border-left:4px solid "+(n.level==="urgent"?"#fb7185":n.level==="important"?"#fbbf24":"#38bdf8")+";opacity:"+(n.read?".72":"1");
+   const head=document.createElement("div");head.style.cssText="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap";
+   const title=document.createElement("strong");title.textContent=(n.read?"":"● ")+n.title;
+   const meta=document.createElement("span");meta.className="muted";meta.textContent=n.level.toUpperCase()+" · "+new Date(n.at).toLocaleString();
+   head.append(title,meta);
+   const body=document.createElement("p");body.style.whiteSpace="pre-wrap";body.textContent=n.body;
+   const actions=document.createElement("div");actions.className="actions";actions.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+   const read=document.createElement("button");read.type="button";read.className="secondary";read.textContent=n.read?"Mark unread":"Mark read";read.addEventListener("click",()=>{n.read=!n.read;saveMasterState();renderOwnerNotifications();});
+   const del=document.createElement("button");del.type="button";del.className="secondary";del.textContent="Delete";del.addEventListener("click",()=>{masterState.notifications=masterState.notifications.filter(x=>x.id!==n.id);saveMasterState();renderOwnerNotifications();});
+   actions.append(read,del);card.append(head,body,actions);notificationList.append(card);
+  });
+ }
+ notificationSearch.addEventListener("input",renderOwnerNotifications);
+ notificationFilter.addEventListener("change",renderOwnerNotifications);
+ ownerNotifications.querySelector("#ownerNotificationAdd").addEventListener("click",()=>{
+  const title=ownerNotifications.querySelector("#ownerNotificationTitle"),body=ownerNotifications.querySelector("#ownerNotificationBody"),status=ownerNotifications.querySelector("#ownerNotificationStatus");
+  if(!title.value.trim()){status.textContent="Enter a title.";title.focus();return;}
+  masterState.notifications.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),title:title.value.trim(),body:body.value.trim(),level:ownerNotifications.querySelector("#ownerNotificationLevel").value,at:new Date().toISOString(),read:false});
+  title.value="";body.value="";status.textContent="Reminder saved on this device.";saveMasterState();renderOwnerNotifications();
+ });
+ ownerNotifications.querySelector("#ownerNotificationReadAll").addEventListener("click",()=>{masterState.notifications.forEach(n=>n.read=true);saveMasterState();renderOwnerNotifications();});
+ ownerNotifications.querySelector("#ownerNotificationClearRead").addEventListener("click",()=>{masterState.notifications=masterState.notifications.filter(n=>!n.read);saveMasterState();renderOwnerNotifications();});
+ ownerNotifications.querySelector("#ownerNotificationExport").addEventListener("click",()=>{
+  const rows=[["Title","Details","Priority","Created","Read"],...masterState.notifications.map(n=>[n.title,n.body,n.level,n.at,n.read?"Yes":"No"])];
+  const csv=rows.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="owner-notifications.csv";a.click();URL.revokeObjectURL(url);
+ });
+ renderOwnerNotifications();
+
  const definitions=[
   {id:"overview",label:"🏠 Overview",nodes:[command,overview]},
   {id:"masterTools",label:"🧠 Master Tools",nodes:[masterTools]},
+  {id:"notifications",label:"🔔 Notifications",nodes:[ownerNotifications]},
   {id:"searchGuides",label:"🔎 Global Search",nodes:[searchGuides]},
   {id:"allManuals",label:"📚 All Manuals",nodes:[allManuals]},
   {id:"ownerShopsControl",label:"🏪 Shops"},
