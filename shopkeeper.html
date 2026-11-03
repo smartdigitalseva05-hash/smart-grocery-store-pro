@@ -97,6 +97,8 @@ a{color:#8ce2b3}
   <label class="field">Ends at<input id="couponEnds" type="datetime-local"></label>
  </div><button id="couponSave" type="submit">Create coupon</button><div id="couponMessage" class="notice" role="status"></div></form>
  <div id="couponList" class="products"></div>
+ <hr style="border-color:var(--line);margin:18px 0">
+ <h2>⭐ Customer product reviews</h2><p class="sub">Only reviews from delivered orders can be submitted. Approve a review before it appears to customers.</p><div id="productReviewList" class="products"></div><div id="productReviewMessage" class="notice" role="status"></div>
 </section>
 
 <section class="panel" id="publicShopProfile">
@@ -1246,6 +1248,7 @@ async function loadStorefrontManager(){
  (zr.data||[]).forEach(z=>{const a=document.createElement("article");a.className="product";const t=document.createElement("strong");t.textContent=z.zone_name+" · "+z.pincode;const m=document.createElement("div");m.className="sub";m.textContent="₹"+z.delivery_fee+" fee · min ₹"+z.minimum_order_amount+" · "+(z.estimated_delivery_minutes?z.estimated_delivery_minutes+" min":"ETA not set")+" · "+(z.is_active?"Active":"Paused");const b=document.createElement("button");b.className="danger";b.type="button";b.textContent="Delete";b.onclick=async()=>{if(!confirm("Delete this delivery zone?"))return;const {error}=await db.from("shop_delivery_zones").delete().eq("id",z.id).eq("shop_id",currentShop.id);if(error)say("zoneMessage",error.message,true);else loadStorefrontManager()};a.append(t,m,b);zl.append(a)});
  const cl=$("couponList");cl.replaceChildren();if(cr.error)say("couponMessage",cr.error.message,true);
  (cr.data||[]).forEach(z=>{const a=document.createElement("article");a.className="product";const t=document.createElement("strong");t.textContent=z.code+" · "+(z.discount_type==="percentage"?z.discount_value+"%":"₹"+z.discount_value);const m=document.createElement("div");m.className="sub";m.textContent="Minimum ₹"+z.minimum_order_amount+" · Used "+z.used_count+(z.usage_limit?"/"+z.usage_limit:"")+" · "+(z.is_active?"Active":"Paused");const b=document.createElement("button");b.className="secondary";b.type="button";b.textContent=z.is_active?"Pause":"Activate";b.onclick=async()=>{const {error}=await db.from("shop_coupons").update({is_active:!z.is_active}).eq("id",z.id).eq("shop_id",currentShop.id);if(error)say("couponMessage",error.message,true);else loadStorefrontManager()};a.append(t,m,b);cl.append(a)});
+ await loadProductReviews();
 }
 async function saveStorefrontSettings(e){
  e.preventDefault();if(!currentShop||!canManageProducts())return say("sfMessage","Active subscription required.",true);
@@ -1260,6 +1263,25 @@ async function saveDeliveryZone(e){
  if(name.length<2||!/^[0-9]{6}$/.test(pin)||!Number.isFinite(fee)||fee<0||!Number.isFinite(min)||min<0||(eta!==null&&(!Number.isInteger(eta)||eta<1||eta>10080)))return say("zoneMessage","Check name, six-digit pincode, fee and ETA.",true);
  const {error}=await db.from("shop_delivery_zones").upsert({shop_id:currentShop.id,zone_name:name,pincode:pin,delivery_fee:fee,minimum_order_amount:min,estimated_delivery_minutes:eta,is_active:true},{onConflict:"shop_id,pincode"});if(error)return say("zoneMessage",error.message,true);$("deliveryZoneForm").reset();$("zoneFee").value="0";$("zoneMinimum").value="0";say("zoneMessage","Delivery zone saved.");await loadStorefrontManager();
 }
+
+async function loadProductReviews(){
+ if(!currentShop)return;
+ const host=$("productReviewList");host.replaceChildren();say("productReviewMessage","Loading customer reviews…");
+ const {data,error}=await db.from("shop_product_reviews").select("id,product_id,order_id,rating,review_text,is_approved,created_at,product:products(name)").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100);
+ if(error)return say("productReviewMessage","Review load failed: "+error.message,true);
+ if(!data?.length)return say("productReviewMessage","No product reviews yet.");
+ say("productReviewMessage",data.length+" review(s).");
+ for(const review of data){
+  const card=document.createElement("article");card.className="product";
+  const title=document.createElement("strong");title.textContent=(review.product?.name||"Product")+" · "+review.rating+"/5";
+  const body=document.createElement("p");body.className="sub";body.textContent=review.review_text||"No written comment.";
+  const meta=document.createElement("div");meta.className="sub";meta.textContent=new Date(review.created_at).toLocaleString()+" · "+(review.is_approved?"Published":"Awaiting approval");
+  const button=document.createElement("button");button.type="button";button.className=review.is_approved?"secondary":"";button.textContent=review.is_approved?"Unpublish":"Approve";
+  button.addEventListener("click",async()=>{button.disabled=true;const {error:updateError}=await db.from("shop_product_reviews").update({is_approved:!review.is_approved}).eq("id",review.id).eq("shop_id",currentShop.id);if(updateError){say("productReviewMessage",updateError.message,true);button.disabled=false;return}await loadProductReviews()});
+  card.append(title,body,meta,button);host.append(card);
+ }
+}
+
 async function saveCoupon(e){
  e.preventDefault();if(!currentShop||!canManageProducts())return say("couponMessage","Active subscription required.",true);
  const code=$("couponCode").value.trim().toUpperCase(),type=$("couponType").value,value=Number($("couponValue").value),minimum=Number($("couponMinimum").value||0),maximum=$("couponMaximum").value===""?null:Number($("couponMaximum").value),limit=$("couponLimit").value===""?null:Number($("couponLimit").value),starts=$("couponStarts").value?new Date($("couponStarts").value).toISOString():null,ends=$("couponEnds").value?new Date($("couponEnds").value).toISOString():null;
