@@ -348,10 +348,10 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      const profilePhone=String(profile.phone||"").trim();
      const profileActions=document.createElement("div");profileActions.className="shop-actions";
      if(profilePhone){
-       const tel=document.createElement("a");tel.href="tel:"+profilePhone.replace(/[^+\\d]/g,"");tel.textContent="📞 Call shopkeeper · "+profilePhone;tel.style.cssText="display:inline-block;padding:9px 12px;border-radius:10px;background:#14532d;color:#dcfce7;text-decoration:none;font-weight:750";
+       const tel=document.createElement("a");tel.href="tel:"+profilePhone.replace(/[^+\d]/g,"");tel.textContent="📞 Call shopkeeper · "+profilePhone;tel.style.cssText="display:inline-block;padding:9px 12px;border-radius:10px;background:#14532d;color:#dcfce7;text-decoration:none;font-weight:750";
        profileActions.append(tel);
-       const wa=document.createElement("a");wa.href="https://wa.me/"+profilePhone.replace(/\\D/g,"");wa.target="_blank";wa.rel="noopener noreferrer";wa.textContent="WhatsApp";wa.style.cssText="display:inline-block;padding:9px 12px;border-radius:10px;background:#166534;color:#dcfce7;text-decoration:none;font-weight:750";
-       if(profilePhone.replace(/\\D/g,"").length>=10)profileActions.append(wa);
+       const wa=document.createElement("a");wa.href="https://wa.me/"+profilePhone.replace(/\D/g,"");wa.target="_blank";wa.rel="noopener noreferrer";wa.textContent="WhatsApp";wa.style.cssText="display:inline-block;padding:9px 12px;border-radius:10px;background:#166534;color:#dcfce7;text-decoration:none;font-weight:750";
+       if(profilePhone.replace(/\D/g,"").length>=10)profileActions.append(wa);
      }else{const missing=document.createElement("span");missing.className="sub";missing.textContent="Profile mobile number not added";profileActions.append(missing)}
      card.append(profileActions);
      if(linked.length){
@@ -359,15 +359,15 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
          const block=document.createElement("div");block.style.cssText="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#0a1524";
          const shopTitle=document.createElement("div");shopTitle.className="shop-name";shopTitle.textContent=shop.name||"Unnamed shop";
          const shopAddress=document.createElement("div");shopAddress.className="sub";shopAddress.style.cssText="margin-top:6px;white-space:pre-wrap";
-         shopAddress.textContent="📍 "+[shop.address,shop.city].filter(Boolean).join(", ")||"Address not added";
+         shopAddress.textContent="📍 "+([shop.address,shop.city].filter(Boolean).join(", ")||"Address not added");
          const shopPhone=String(shop.phone||profilePhone).trim();
          const shopMeta=document.createElement("div");shopMeta.className="sub";shopMeta.style.marginTop="6px";
          shopMeta.textContent="Mobile: "+(shopPhone||"Not available")+" · "+(shop.status||"unknown")+" · "+(shop.is_active?"Shop active":"Shop inactive")+(shop.subscription_expires_at?" · Expires "+new Date(shop.subscription_expires_at).toLocaleDateString():"");
          block.append(shopTitle,shopAddress,shopMeta);
          const actions=document.createElement("div");actions.className="shop-actions";
          if(shopPhone){
-           const call=document.createElement("a");call.href="tel:"+shopPhone.replace(/[^+\\d]/g,"");call.textContent="📞 Call";call.style.cssText="display:inline-block;padding:8px 11px;border-radius:9px;background:#14532d;color:#dcfce7;text-decoration:none;font-weight:700";actions.append(call);
-           if(shopPhone.replace(/\\D/g,"").length>=10){const messageLink=document.createElement("a");messageLink.href="https://wa.me/"+shopPhone.replace(/\\D/g,"");messageLink.target="_blank";messageLink.rel="noopener noreferrer";messageLink.textContent="WhatsApp";messageLink.style.cssText="display:inline-block;padding:8px 11px;border-radius:9px;background:#166534;color:#dcfce7;text-decoration:none;font-weight:700";actions.append(messageLink)}
+           const call=document.createElement("a");call.href="tel:"+shopPhone.replace(/[^+\d]/g,"");call.textContent="📞 Call";call.style.cssText="display:inline-block;padding:8px 11px;border-radius:9px;background:#14532d;color:#dcfce7;text-decoration:none;font-weight:700";actions.append(call);
+           if(shopPhone.replace(/\D/g,"").length>=10){const messageLink=document.createElement("a");messageLink.href="https://wa.me/"+shopPhone.replace(/\D/g,"");messageLink.target="_blank";messageLink.rel="noopener noreferrer";messageLink.textContent="WhatsApp";messageLink.style.cssText="display:inline-block;padding:8px 11px;border-radius:9px;background:#166534;color:#dcfce7;text-decoration:none;font-weight:700";actions.append(messageLink)}
          }
          const hasCoords=Number.isFinite(Number(shop.latitude))&&Number.isFinite(Number(shop.longitude))&&shop.latitude!==null&&shop.longitude!==null;
          const mapQuery=hasCoords?shop.latitude+","+shop.longitude:[shop.address,shop.city].filter(Boolean).join(", ");
