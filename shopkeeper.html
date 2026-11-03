@@ -455,7 +455,7 @@ a{color:#8ce2b3}
 <label class="field">Offer text<input id="pOffer" maxlength="100" placeholder="Optional"></label>
 <label class="field">Product image URL (HTTPS, optional)<input id="pImageUrl" type="url" maxlength="2048" placeholder="https://example.com/product.jpg" inputmode="url" autocomplete="url"></label>\n<label class="field">Or upload product photo (JPG, PNG, WebP · max 5 MB)<input id="pImageFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
 </div><label class="field">Description<textarea id="pDescription" maxlength="1000"></textarea></label><button id="addButton" type="submit">Save product</button></form><div id="productMessage" class="notice" role="status"></div></div>
-<div class="panel"><div class="row"><div><h1>My products</h1><div class="sub">Manage availability and stock for the selected shop.</div></div><button id="exportProducts" class="secondary" type="button">Export products CSV</button><button id="productsRefresh" class="secondary">Refresh products</button></div><div id="productList" class="products"></div><div id="listMessage" class="notice" role="status"></div></div>
+<div class="panel"><div class="row"><div><h1>My products</h1><div class="sub">Manage availability and stock for the selected shop.</div></div><button id="autoProductPhotos" class="secondary" type="button">🖼️ Find missing product photos</button><button id="exportProducts" class="secondary" type="button">Export products CSV</button><button id="productsRefresh" class="secondary">Refresh products</button></div><div id="productList" class="products"></div><div id="listMessage" class="notice" role="status"></div></div>
 <section class="panel" id="customerDirectoryPanel">
  <div class="row"><div><h1>Customer Contact Book</h1><div class="sub">Read-only contacts derived from this shop's latest 100 orders. No cross-shop customer search or account changes.</div></div><button id="customerDirectoryRefresh" class="secondary" type="button">Refresh contacts</button></div>
  <label class="field">Search phone, city or address<input id="customerDirectorySearch" type="search" maxlength="120" placeholder="Search this shop's recent customers…"></label>
@@ -1625,6 +1625,42 @@ async function loadShopData(){
   document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
   say("listMessage","Exported "+data.length+" product(s) to CSV.");
  }
+ async function autoFillMissingProductPhotos(){
+  const btn=$("autoProductPhotos");
+  if(!currentShop){say("listMessage","Select an approved shop first.",true);return}
+  if(!canManageProducts()){say("listMessage","An active subscription is required to update product photos.",true);return}
+  if(!window.confirm("Find licensed, product-specific photos for every product in this selected shop that has no photo? Existing photos and product availability will not be changed."))return;
+  btn.disabled=true;
+  let updated=0,unmatched=0,failed=0,checked=0;
+  try{
+   const {data,error}=await db.from("products").select("id,name,category_id,images").eq("shop_id",currentShop.id).order("name");
+   if(error)throw error;
+   const rows=data||[];
+   const missing=rows.filter(p=>{
+    let images=p.images;if(typeof images==="string"){try{images=JSON.parse(images)}catch{images=[]}}
+    const first=Array.isArray(images)?images[0]:null;
+    const url=typeof first==="string"?first:first?.url;
+    return !safeImageUrl(url);
+   });
+   if(!missing.length){say("listMessage","All "+rows.length+" products in this shop already have an image.");return}
+   const categoryNames=new Map([...$("pCategory").options].map(o=>[o.value,o.textContent.trim()]));
+   say("listMessage","Starting licensed photo search for "+missing.length+" product(s) in "+(currentShop.name||"this shop")+"…");
+   for(const p of missing){
+    checked++;
+    const category=categoryNames.get(p.category_id)||"";
+    const photo=await findCommonsPhoto(p.name,category);
+    if(photo){
+     const {error:updateError}=await db.from("products").update({images:[photo]}).eq("id",p.id).eq("shop_id",currentShop.id);
+     if(updateError)failed++;else updated++;
+    }else unmatched++;
+    say("listMessage","Photo search "+checked+"/"+missing.length+" · Added "+updated+" · No reliable match "+unmatched+" · Save errors "+failed);
+    if(checked<missing.length)await new Promise(resolve=>setTimeout(resolve,450));
+   }
+   say("listMessage","Finished this shop: "+updated+" product photo(s) added with source/licence details; "+unmatched+" had no reliable match; "+failed+" save errors. Existing photos and availability were left unchanged.");
+   await loadProducts();
+  }catch(error){say("listMessage","Photo search stopped: "+(error.message||"Unknown error"),true)}
+  finally{btn.disabled=false}
+ }
  async function loadProducts(){
   const list=$("productList");
   if(!currentShop){list.replaceChildren();say("listMessage","Select an approved shop first.");return}list.replaceChildren();say("listMessage","Loading your products…");
@@ -1925,7 +1961,7 @@ async function loadShopData(){
  $("shopSelect").addEventListener("change",loadShopData);
  $("ordersRefresh").addEventListener("click",loadOrders);$("applyOrderFilters").addEventListener("click",loadOrders);$("clearOrderFilters").addEventListener("click",()=>{$("orderStatusFilter").value="";$("orderSearch").value="";loadOrders()});$("customerDirectoryRefresh").addEventListener("click",loadOrders);$("customerDirectorySearch").addEventListener("input",()=>renderCustomerDirectory());
  $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
- $("trialButton").addEventListener("click",startFreeTrial);$("subscriptionButton").addEventListener("click",prepareSubscription);$("reload").addEventListener("click",boot);$("exportProducts").addEventListener("click",exportMyProducts);$("productsRefresh").addEventListener("click",loadProducts);
+ $("trialButton").addEventListener("click",startFreeTrial);$("subscriptionButton").addEventListener("click",prepareSubscription);$("reload").addEventListener("click",boot);$("exportProducts").addEventListener("click",exportMyProducts);$("productsRefresh").addEventListener("click",loadProducts);$("autoProductPhotos").addEventListener("click",autoFillMissingProductPhotos);
  $("logout").addEventListener("click",async()=>{await db.auth.signOut();showLogin("Signed out.")});
  db.auth.onAuthStateChange((_event,session)=>{if(!session)showLogin("Session ended. Sign in again.")});
  boot();
