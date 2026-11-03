@@ -146,6 +146,7 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
   </div>
 
   <div id="status" class="notice">Connecting to store...</div>
+  <button id="switchToCustomerAccount" class="btn btn-light hidden" type="button" style="margin:10px 0">Switch to customer account</button>
   <div class="grid" id="productGrid"></div>
 </section>
 
@@ -352,9 +353,11 @@ async function loadCustomerStore() {
     return;
   }
   if (profile.role !== "customer") {
-    showError("Please use a customer account to shop. Shopkeeper and Super Admin accounts cannot join customer stores.");
+    showError("This link is for customers. Your current account is a "+(profile.role==="shopkeeper"?"Shopkeeper":profile.role==="super_admin"||profile.role==="owner"?"Super Admin":"non-customer")+" account. Sign out, then log in or create a separate customer account to shop. Your shopkeeper/admin account and permissions will not be changed.");
+    $("switchToCustomerAccount").classList.remove("hidden");
     return;
   }
+  $("switchToCustomerAccount").classList.add("hidden");
 
   let targetShopId = profile.connected_shop_id || null;
   let joinedFromThisLink = false;
@@ -968,6 +971,8 @@ $("logoutBtn").onclick = async () => {
   updateAccount();
   notify("Logged out successfully.");
 };
+
+$("switchToCustomerAccount").addEventListener("click",async()=>{const button=$("switchToCustomerAccount");button.disabled=true;button.textContent="Signing out...";try{const {error}=await db.auth.signOut();if(error)throw error;currentUser=null;cart=[];updateCart();updateAccount();$("switchToCustomerAccount").classList.add("hidden");openAuth();$("authNotice").textContent="Please log in with a customer account, or create a new customer account. Do not use your shopkeeper/admin login here.";await loadCustomerStore()}catch(e){showError("Could not switch account: "+e.message)}finally{button.disabled=false;button.textContent="Switch to customer account"}});
 
 /* =========================================
    9. CHECKOUT AND PLACE ORDER
