@@ -9,7 +9,7 @@
 <section id="app" class="hidden"><div class="panel"><div class="row"><div><h1>Order history</h1><div class="sub">Your orders, item details and delivery status.</div></div></div><div id="ordersMessage" class="notice" role="status"></div><div id="ordersList"></div></div></section>
 <p class="foot">Orders are loaded for the signed-in customer only. Access is enforced by database Row Level Security. Order cancellation is processed by the database RPC and cannot be reversed here.</p>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script><script>
 (()=>{
  const URL="https://wqlopfftzvsjsxmrmxeq.supabase.co",KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
  const db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
