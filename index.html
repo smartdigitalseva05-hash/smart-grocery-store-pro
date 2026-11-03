@@ -241,8 +241,10 @@ let currentUser = null;
 let products = [];
 let productRatings = new Map();
 let cart = [];
-let requestedShopId = new URLSearchParams(location.search).get("shop_id");
+const shopParams = new URLSearchParams(location.search);
+let requestedShopId = shopParams.get("shop_id");
 const shopLinkId = requestedShopId;
+const shopLinkSlug = shopParams.get("shop");
 let signupMode = false;
 let resetMode = false;
 let checkoutMode = false;
@@ -334,7 +336,7 @@ async function loadCustomerStore() {
     $("storeHeroTitle").textContent = "Join your local shop";
     $("publicStoreName").textContent = "Login to connect to a shop";
     $("status").classList.remove("error");
-    $("status").textContent = shopLinkId
+    $("status").textContent = (shopLinkId || shopLinkSlug)
       ? "Sign in or create a customer account to connect permanently to this shop. After joining, this account will always see this shop only."
       : "Open the shopkeeper's QR code or store link, then log in to connect your account.";
     return;
@@ -358,19 +360,17 @@ async function loadCustomerStore() {
   let joinedFromThisLink = false;
 
   // Validate the QR/link before permanently binding the customer account.
-  if (!targetShopId && shopLinkId) {
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidPattern.test(shopLinkId)) {
-      showError("This shop QR/link is invalid. Please scan the original QR code from the shopkeeper.");
-      return;
+  if (!targetShopId && (shopLinkId || shopLinkSlug)) {
+    let linkQuery = db.from("shops").select("id").eq("status","active").eq("is_active",true);
+    if (shopLinkSlug) {
+      if (!/^[a-z0-9-]{1,100}$/i.test(shopLinkSlug)) { showError("This shop link is invalid. Please ask the shopkeeper for the latest link."); return; }
+      linkQuery = linkQuery.eq("slug",shopLinkSlug);
+    } else {
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidPattern.test(shopLinkId)) { showError("This shop link is invalid. Please ask the shopkeeper for the latest link."); return; }
+      linkQuery = linkQuery.eq("id",shopLinkId);
     }
-
-    const {data:linkShop,error:linkShopError} = await db.from("shops")
-      .select("id")
-      .eq("id",shopLinkId)
-      .eq("status","active")
-      .eq("is_active",true)
-      .maybeSingle();
+    const {data:linkShop,error:linkShopError} = await linkQuery.maybeSingle();
 
     if (linkShopError || !linkShop) {
       showError("This shop QR/link is invalid or the shop is inactive. Please contact the shopkeeper for a fresh QR code.");
@@ -409,7 +409,7 @@ async function loadCustomerStore() {
         targetShopId = latest?.connected_shop_id || null;
       }
     }
-    joinedFromThisLink = targetShopId === shopLinkId;
+    joinedFromThisLink = targetShopId === linkShop.id;
   }
 
   if (!targetShopId) {
@@ -423,10 +423,10 @@ async function loadCustomerStore() {
   }
 
   requestedShopId = targetShopId;
-  const openedDifferentShopLink = Boolean(shopLinkId && shopLinkId !== targetShopId);
+  const openedDifferentShopLink = Boolean((shopLinkId && shopLinkId !== targetShopId) || (shopLinkSlug && shopLinkSlug !== store.slug));
 
   const {data:store,error:storeError}=await db.from("shops")
-    .select("id,name,business_type,address,city,status,is_active,opening_time,closing_time,latitude,longitude")
+    .select("id,name,slug,business_type,address,city,status,is_active,opening_time,closing_time,latitude,longitude")
     .eq("id",requestedShopId)
     .eq("status","active")
     .eq("is_active",true)
