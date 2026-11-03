@@ -126,9 +126,6 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
 </section>
 
 <div class="search-row">
-  <select id="businessTypeFilter" aria-label="Choose business category">
-    <option value="grocery">Grocery</option><option value="daily_needs">Daily Needs</option><option value="garments">Garments</option><option value="jewellery">Jewellery</option><option value="restaurant">Restaurant</option><option value="hotel">Hotel</option><option value="office_company">Office / Company</option><option value="electronics">Electronics</option><option value="medical">Medical</option><option value="digital_services">Digital Services</option><option value="other">Other Businesses</option><option value="all">All Business Categories</option>
-  </select>
   <input id="searchInput" placeholder="🔍 Search products and services...">
   <select id="sortSelect">
     <option value="default">Sort: Recommended</option>
@@ -139,13 +136,6 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
 </div>
 
 <section id="productsSection">
-  <div class="section-title">
-    <h2>Shop by Category</h2>
-  </div>
-  <div class="categories" id="categories">
-    <button class="cat active" data-category="all">All Products</button>
-  </div>
-
   <div class="section-title">
     <h2>Popular Products & Services</h2>
     <span class="small" id="productCount">Loading...</span>
@@ -244,11 +234,9 @@ const SUPABASE_KEY = "sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
 let db = null;
 let currentUser = null;
 let products = [];
-let categories = [];
 let cart = [];
-let selectedCategory = "all";
-let selectedBusinessType = new URLSearchParams(location.search).get("shop_id") ? "all" : "grocery";
-const requestedShopId = new URLSearchParams(location.search).get("shop_id");
+let requestedShopId = new URLSearchParams(location.search).get("shop_id");
+const shopLinkId = requestedShopId;
 let signupMode = false;
 let resetMode = false;
 let checkoutMode = false;
@@ -315,61 +303,122 @@ async function initialize() {
         $("forgotPassword").classList.add("hidden");
         $("authModal").classList.remove("hidden");
       }
-      if (currentUser) loadProducts();
+      loadCustomerStore();
     });
 
     await loadDeliveryFee();
 
-    // Fail closed: every customer storefront must be opened through a shop-specific link/QR.
-    if (!requestedShopId) {
-      categories = [];
-      products = [];
-      $("categories").replaceChildren();
-      $("storeHeroTitle").textContent = "Open your store link to get started";
-      $("status").textContent = "This page is not linked to a specific shop. Scan the shopkeeper's QR code or open the store link shared by that shop.";
-      $("status").classList.remove("error");
-      renderProducts();
-      return;
-    }
-
-    const {data:store,error:storeError}=await db.from("shops")
-      .select("id,name,business_type,address,city,status,is_active,opening_time,closing_time,latitude,longitude")
-      .eq("id",requestedShopId)
-      .eq("status","active")
-      .eq("is_active",true)
-      .maybeSingle();
-    if (storeError || !store) {
-      showError("This store link is invalid or the shop is not currently active.");
-      products = [];
-      categories = [];
-      $("categories").replaceChildren();
-      renderProducts();
-      return;
-    }
-    selectedBusinessType = store.business_type || "all";
-    $("storeHeroTitle").textContent = "How can we help you today?";
-    $("publicStoreName").textContent = store.name;
-    $("publicStoreAddress").textContent = [store.address,store.city].filter(Boolean).join(", ");
-    const timeLabel=value=>{if(!value)return "";const [h,m]=value.split(":").map(Number);return new Intl.DateTimeFormat("en-IN",{hour:"numeric",minute:"2-digit",hour12:true,timeZone:"Asia/Kolkata"}).format(new Date(Date.UTC(2020,0,1,h-5,m-30)))};
-    const opening=timeLabel(store.opening_time),closing=timeLabel(store.closing_time);
-    $("publicStoreHours").textContent=opening&&closing?"Opening hours: "+opening+" – "+closing:"Opening hours not provided yet.";
-    const parts=new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZone:"Asia/Kolkata"}).formatToParts(new Date());
-    const now=Number(parts.find(x=>x.type==="hour").value)*60+Number(parts.find(x=>x.type==="minute").value);
-    if(store.opening_time&&store.closing_time){
-      const [oh,om]=store.opening_time.split(":").map(Number),[ch,cm]=store.closing_time.split(":").map(Number),start=oh*60+om,end=ch*60+cm;
-      const isOpen=start===end?true:(end>start?now>=start&&now<end:now>=start||now<end);
-      $("publicStoreStatus").textContent=isOpen?"🟢 Open now":"🔴 Closed now";
-    }else{$("publicStoreStatus").textContent="Shop timing not provided. Please confirm availability with the shop."}
-    const mapQuery=store.latitude!==null&&store.longitude!==null?store.latitude+","+store.longitude:[store.address,store.city].filter(Boolean).join(", ");
-    $("publicStoreMap").href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(mapQuery);
-    $("publicStoreMap").classList.remove("hidden");
-    await loadCategories();
-    await loadProducts();
-    if(new URLSearchParams(location.search).get("reorder")) await loadRepeatOrder();
+    await loadCustomerStore();
 
   } catch (e) {
     showError("Connection error: " + e.message);
   }
+}
+
+
+async function loadCustomerStore() {
+  if (!db) return;
+  products = [];
+  renderProducts();
+
+  if (!currentUser) {
+    requestedShopId = shopLinkId;
+    $("storeHeroTitle").textContent = "Join your local shop";
+    $("publicStoreName").textContent = "Login to connect to a shop";
+    $("status").classList.remove("error");
+    $("status").textContent = shopLinkId
+      ? "Sign in or create a customer account to connect permanently to this shop. After joining, this account will always see this shop only."
+      : "Open the shopkeeper's QR code or store link, then log in to connect your account.";
+    return;
+  }
+
+  const {data:profile,error:profileError} = await db.from("profiles")
+    .select("role,connected_shop_id")
+    .eq("id",currentUser.id)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    showError("Your customer profile could not be loaded. Please refresh or sign in again.");
+    return;
+  }
+  if (profile.role !== "customer") {
+    showError("Please use a customer account to shop. Shopkeeper and Super Admin accounts cannot join customer stores.");
+    return;
+  }
+
+  let targetShopId = profile.connected_shop_id || null;
+  let joinedFromThisLink = false;
+
+  if (!targetShopId && shopLinkId) {
+    const {data:bound,error:bindError} = await db.from("profiles")
+      .update({connected_shop_id:shopLinkId})
+      .eq("id",currentUser.id)
+      .is("connected_shop_id",null)
+      .select("connected_shop_id")
+      .maybeSingle();
+
+    if (bindError) {
+      const {data:latest,error:latestError} = await db.from("profiles")
+        .select("connected_shop_id")
+        .eq("id",currentUser.id)
+        .maybeSingle();
+      if (latestError || !latest?.connected_shop_id) {
+        showError(bindError.message || "This shop could not be joined. Please check the shop link.");
+        return;
+      }
+      targetShopId = latest.connected_shop_id;
+    } else {
+      targetShopId = bound?.connected_shop_id || null;
+    }
+    joinedFromThisLink = targetShopId === shopLinkId;
+  }
+
+  if (!targetShopId) {
+    requestedShopId = null;
+    $("storeHeroTitle").textContent = "Open your shopkeeper's link to join";
+    $("publicStoreName").textContent = "No shop connected yet";
+    $("status").classList.remove("error");
+    $("status").textContent = "Your customer account is ready. Scan one shopkeeper's QR code or open their store link to connect. You can connect to only one shop.";
+    renderProducts();
+    return;
+  }
+
+  requestedShopId = targetShopId;
+  const openedDifferentShopLink = Boolean(shopLinkId && shopLinkId !== targetShopId);
+
+  const {data:store,error:storeError}=await db.from("shops")
+    .select("id,name,business_type,address,city,status,is_active,opening_time,closing_time,latitude,longitude")
+    .eq("id",requestedShopId)
+    .eq("status","active")
+    .eq("is_active",true)
+    .maybeSingle();
+
+  if (storeError || !store) {
+    showError("Your connected shop is unavailable or inactive. Contact the shopkeeper or platform support.");
+    return;
+  }
+
+  $("storeHeroTitle").textContent = "Shop only from " + store.name;
+  $("publicStoreName").textContent = store.name;
+  $("publicStoreAddress").textContent = [store.address,store.city].filter(Boolean).join(", ");
+  const timeLabel=value=>{if(!value)return "";const [h,m]=value.split(":").map(Number);return new Intl.DateTimeFormat("en-IN",{hour:"numeric",minute:"2-digit",hour12:true,timeZone:"Asia/Kolkata"}).format(new Date(Date.UTC(2020,0,1,h-5,m-30)))};
+  const opening=timeLabel(store.opening_time),closing=timeLabel(store.closing_time);
+  $("publicStoreHours").textContent=opening&&closing?"Opening hours: "+opening+" – "+closing:"Opening hours not provided yet.";
+  const parts=new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZone:"Asia/Kolkata"}).formatToParts(new Date());
+  const now=Number(parts.find(x=>x.type==="hour").value)*60+Number(parts.find(x=>x.type==="minute").value);
+  if(store.opening_time&&store.closing_time){
+    const [oh,om]=store.opening_time.split(":").map(Number),[ch,cm]=store.closing_time.split(":").map(Number),start=oh*60+om,end=ch*60+cm;
+    const isOpen=start===end?true:(end>start?now>=start&&now<end:now>=start||now<end);
+    $("publicStoreStatus").textContent=isOpen?"🟢 Open now":"🔴 Closed now";
+  }else{$("publicStoreStatus").textContent="Shop timing not provided. Please confirm availability with the shop."}
+  const mapQuery=store.latitude!==null&&store.longitude!==null?store.latitude+","+store.longitude:[store.address,store.city].filter(Boolean).join(", ");
+  $("publicStoreMap").href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(mapQuery);
+  $("publicStoreMap").classList.remove("hidden");
+
+  await loadProducts();
+  if (joinedFromThisLink) notify("You are now permanently connected to " + store.name + ". Only this shop's products will appear.");
+  else if (openedDifferentShopLink) notify("This account is already permanently connected to " + store.name + ". Other shop links cannot change it.");
+  if(new URLSearchParams(location.search).get("reorder")) await loadRepeatOrder();
 }
 
 async function loadRepeatOrder(){
@@ -416,31 +465,6 @@ async function loadDeliveryFee() {
   if (Number.isFinite(configured) && configured >= 0) {
     deliveryFee = configured;
   }
-}
-
-/* =========================================
-   4. LOAD CATEGORIES
-========================================= */
-
-async function loadCategories() {
-  if (!db) return;
-  if (!requestedShopId) { categories = []; $("categories").replaceChildren(); return; }
-
-  let categoryQuery = db.from("categories").select("id,name").eq("is_active", true);
-  if (selectedBusinessType !== "all") categoryQuery = categoryQuery.eq("business_type", selectedBusinessType);
-  const {data, error} = await categoryQuery.order("name");
-
-  if (error) {
-    console.warn("Category loading:", error.message);
-    return;
-  }
-
-  categories = data || [];
-  $("categories").innerHTML =
-    `<button class="cat active" data-category="all">All Products</button>` +
-    categories.map(c =>
-      `<button class="cat" data-category="${escapeHTML(c.id)}">${escapeHTML(c.name)}</button>`
-    ).join("");
 }
 
 /* =========================================
@@ -494,19 +518,11 @@ function imageOf(product) {
 }
 
 function renderProducts() {
-  let list = products.filter(p => {
-    const matchesCategory =
-      selectedCategory === "all" ||
-      p.category_id === selectedCategory;
-
-    const search = $("searchInput").value.toLowerCase();
-    const matchesSearch =
-      (p.name || "").toLowerCase().includes(search) ||
-      (p.description || "").toLowerCase().includes(search);
-
-    const matchesBusiness = selectedBusinessType === "all" || p.shop?.business_type === selectedBusinessType;
-    return matchesCategory && matchesSearch && matchesBusiness;
-  });
+  const search = $("searchInput").value.trim().toLowerCase();
+  let list = products.filter(p =>
+    (p.name || "").toLowerCase().includes(search) ||
+    (p.description || "").toLowerCase().includes(search)
+  );
 
   const sort = $("sortSelect").value;
   if (sort === "low") list.sort((a,b) => effectivePrice(a)-effectivePrice(b));
@@ -546,19 +562,8 @@ function effectivePrice(p) {
 }
 
 /* =========================================
-   5. CATEGORY AND SEARCH EVENTS
+   5. SEARCH EVENTS
 ========================================= */
-
-$("categories").addEventListener("click", e => {
-  const btn = e.target.closest("[data-category]");
-  if (!btn) return;
-
-  selectedCategory = btn.dataset.category;
-  document.querySelectorAll(".cat").forEach(b =>
-    b.classList.toggle("active", b === btn)
-  );
-  renderProducts();
-});
 
 $("customerNeeds").addEventListener("click", e => {
   const card=e.target.closest("[data-need]");
@@ -584,13 +589,6 @@ $("customerNeeds").addEventListener("click", e => {
 });
 
 $("searchInput").addEventListener("input", renderProducts);
-$("businessTypeFilter").addEventListener("change", async e => {
-  selectedBusinessType = e.target.value;
-  selectedCategory = "all";
-  document.querySelectorAll(".cat").forEach((b,i) => b.classList.toggle("active", i === 0));
-  await loadCategories();
-  renderProducts();
-});
 $("sortSelect").addEventListener("change", renderProducts);
 
 /* =========================================
@@ -805,7 +803,7 @@ $("submitAuth").onclick = async () => {
     if (result.data.session) {
       currentUser = result.data.user;
       updateAccount();
-      await loadProducts();
+      await loadCustomerStore();
     }
 
     $("authModal").classList.add("hidden");
