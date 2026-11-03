@@ -18,7 +18,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 @media(max-width:520px){main{margin:18px auto}.panel{padding:17px}.top{align-items:flex-start}.brand{font-size:17px}}
 
 /* Role-specific quick finder */
-.quick-find-open{background:#1d4ed8!important;color:#fff!important;border:1px solid #60a5fa!important}
+.quick-find-open{background:#1d4ed8!important;color:#fff!important;border:1px solid #60a5fa!important;position:fixed!important;right:16px;bottom:16px;z-index:9001;box-shadow:0 8px 28px #0008;border-radius:999px}
 .quick-find-overlay{position:fixed;inset:0;z-index:9999;background:#020617d9;display:none;align-items:flex-start;justify-content:center;padding:9vh 14px 20px;overflow:auto}
 .quick-find-overlay.is-open{display:flex}
 .quick-find-box{width:min(680px,100%);max-height:82vh;overflow:hidden;background:#101d30;border:1px solid #38506e;border-radius:18px;box-shadow:0 24px 80px #0009}
@@ -37,9 +37,9 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 @media(max-width:520px){.quick-find-overlay{padding:5vh 9px}.quick-find-box{max-height:88vh}.quick-find-results{max-height:66vh}}
 
 /* One-main-tab workspace navigation */
-.owner-workspace-tabs{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding:12px 2px;margin:10px 0 16px;scrollbar-width:thin}
+.owner-workspace-tabs{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding:12px 8px;margin:10px -8px 16px;scrollbar-width:thin;position:sticky;top:0;z-index:800;background:#0b1220f2;backdrop-filter:blur(12px);border-bottom:1px solid #26364d}
 .owner-workspace-tab{flex:0 0 auto;background:#1c2b40;color:#dbeafe;border:1px solid #38506e;padding:10px 13px;white-space:nowrap}
-.owner-workspace-tab.active,.owner-workspace-tab[aria-selected="true"]{background:#0c4a6e;color:#fff;border-color:#38bdf8;box-shadow:0 0 0 1px #38bdf855}
+.owner-workspace-tab.active,.owner-workspace-tab[aria-selected="true"]{background:#0c4a6e;color:#fff;border-color:#38bdf8;box-shadow:0 0 0 1px #38bdf855}.owner-workspace-tab.is-pinned{border-color:#fbbf24;color:#fde68a}.owner-workspace-tab.is-pinned::before{content:"📌 ";}
 .owner-workspace-panel[hidden]{display:none!important}
 .owner-workspace-inner{margin-top:0}
 #ownerUnifiedWorkspace{scroll-margin-top:14px}
@@ -48,7 +48,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Private Super Admin Control Panel</div></div><div id="topActions" class="actions hidden"><button id="ownerQuickSearchOpen" type="button" class="secondary quick-find-open" aria-haspopup="dialog" aria-controls="quickFindOverlay">🎛️ All-in-One Control <span style="opacity:.8;font-size:12px">Search · Ctrl K</span></button><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
+<header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Private Super Admin Control Panel</div></div><div id="topActions" class="actions hidden"><button id="ownerQuickSearchOpen" type="button" class="secondary quick-find-open" aria-haspopup="dialog" aria-controls="quickFindOverlay">📌 Global Search <span style="opacity:.8;font-size:12px">Ctrl K</span></button><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
 <section id="loginPanel" class="panel auth">
 <h1>Super Admin sign in</h1><p class="muted">Use your existing Supabase Owner account. Access is checked by the database, not by a browser-stored role. Authenticator MFA is required before the Owner dashboard opens.</p>
 <form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><div class="actions" style="margin-top:17px"><button id="loginButton" type="submit">Sign in securely</button></div></form><div id="loginMessage" class="notice" role="status"></div>
@@ -884,7 +884,7 @@ async function loadShopkeepers(){
  const overview=[...dashboard.children].find(el=>el.classList?.contains("panel")&&el!==command&&el.querySelector("#metrics"));
  const searchGuides=document.createElement("div");
  searchGuides.className="panel shop-section";
- searchGuides.innerHTML='<div class="row"><div><h1>🔎 Global Search</h1><div class="sub">Search the loaded Super Admin records and available controls.</div></div><button id="workspaceGlobalSearch" type="button" class="secondary">Open Global Search</button></div><p class="muted">Search results cover records loaded in this dashboard and available controls.</p>';
+ searchGuides.innerHTML='<div class="row"><div><h1>🔎 Global Search</h1><div class="sub">Search the loaded Super Admin records and available controls.</div></div><button id="workspaceGlobalSearch" type="button" class="secondary">📌 Open Pinned Global Search</button></div><p class="muted">Search results cover records loaded in this dashboard and available controls.</p>';
  const allManuals=document.createElement("div");
  allManuals.className="panel shop-section";
  allManuals.innerHTML='<div class="row"><div><h1>📚 All User Manuals</h1><div class="sub">One Super Admin tab containing all three separate guides: Customer, Shopkeeper and Owner.</div></div><a class="metric" href="manual-center.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">Open Full Manual Center ↗</a></div><div class="owner-manual-tabs" role="tablist" aria-label="Select user manual" style="display:flex;gap:8px;overflow-x:auto;padding:12px 2px;flex-wrap:nowrap"><button type="button" data-manual-role="customer" role="tab" aria-selected="true" style="white-space:nowrap">🛍️ Customer Manual</button><button type="button" data-manual-role="shopkeeper" role="tab" aria-selected="false" style="white-space:nowrap">🏪 Shopkeeper Manual</button><button type="button" data-manual-role="owner" role="tab" aria-selected="false" style="white-space:nowrap">🛡️ Owner Manual</button></div><div class="actions" style="margin:4px 0 10px"><a id="ownerManualOpenSelected" class="secondary" href="customer-manual-odia.html" target="_blank" rel="noopener">Open selected manual ↗</a><a class="secondary" href="super-admin-manual-english.html" target="_blank" rel="noopener">Owner Manual · English ↗</a><button id="ownerManualRefresh" type="button" class="secondary">Refresh manual ↻</button></div><p id="ownerManualStatus" class="muted" role="status" aria-live="polite">Customer Manual selected.</p><iframe id="ownerManualFrame" title="Selected customer, shopkeeper or owner manual" src="customer-manual-odia.html" style="width:100%;height:760px;min-height:520px;border:1px solid var(--border);border-radius:12px;background:#fff"></iframe>';
@@ -1029,9 +1029,9 @@ async function loadShopkeepers(){
 
  const definitions=[
   {id:"overview",label:"🏠 Overview",nodes:[command,overview]},
+  {id:"searchGuides",label:"📌 Global Search",nodes:[searchGuides]},
   {id:"masterTools",label:"🧠 Master Tools",nodes:[masterTools]},
   {id:"notifications",label:"🔔 Notifications",nodes:[ownerNotifications]},
-  {id:"searchGuides",label:"🔎 Global Search",nodes:[searchGuides]},
   {id:"allManuals",label:"📚 All Manuals",nodes:[allManuals]},
   {id:"ownerShopsControl",label:"🏪 Shops"},
   {id:"ownerCategoryControl",label:"🧭 11 Categories"},
@@ -1062,7 +1062,7 @@ async function loadShopkeepers(){
    }
    if(panel.children.length){content.appendChild(panel);panels.set(def.id,panel);}
    const btn=document.createElement("button");
-   btn.type="button";btn.className="owner-workspace-tab";btn.textContent=def.label;
+   btn.type="button";btn.className="owner-workspace-tab"+(def.id==="searchGuides"?" is-pinned":"");btn.textContent=def.label;
    btn.setAttribute("role","tab");btn.setAttribute("aria-selected","false");
    btn.addEventListener("click",()=>activate(def.id));
    nav.appendChild(btn);
