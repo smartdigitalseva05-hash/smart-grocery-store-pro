@@ -489,6 +489,24 @@ a{color:#8ce2b3}
  const say=(id,msg,bad=false)=>{$(id).textContent=msg;$(id).classList.toggle("error",bad)};
  const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(Number(n||0));
  function safeImageUrl(value){try{const u=new URL(String(value||"").trim());return u.protocol==="https:"?u.href:""}catch{return ""}}
+ async function findCommonsPhoto(productName,category=""){
+  const query=[productName,category,"product"].filter(Boolean).join(" ");
+  const endpoint="https://commons.wikimedia.org/w/api.php?"+new URLSearchParams({action:"query",generator:"search",gsrsearch:query,gsrnamespace:"6",gsrlimit:"6",prop:"imageinfo",iiprop:"url|extmetadata",iiurlwidth:"640",iiextmetadatafilter:"LicenseShortName|UsageTerms|Artist|Credit",format:"json",origin:"*"});
+  try{
+   const response=await fetch(endpoint,{headers:{"Accept":"application/json"}});
+   if(!response.ok)throw new Error("Wikimedia request failed");
+   const data=await response.json(),pages=Object.values(data.query?.pages||{});
+   const clean=v=>{const box=document.createElement("div");box.innerHTML=String(v||"");return (box.textContent||"").trim()};
+   for(const page of pages){
+    const info=page.imageinfo?.[0],meta=info?.extmetadata||{},license=clean(meta.LicenseShortName?.value||meta.UsageTerms?.value);
+    if(!info?.thumburl||!info?.descriptionurl||!license)continue;
+    if(!/(CC0|CC BY(?:-SA)?|Public domain|PD-|GPL|Free Art License)/i.test(license))continue;
+    const author=clean(meta.Attribution?.value||meta.Artist?.value||meta.Credit?.value||"Author not stated");
+    return {url:info.thumburl,source:"Wikimedia Commons",source_url:info.descriptionurl,author,license,license_url:meta.LicenseUrl?.value||"",title:page.title};
+   }
+  }catch(error){return null}
+  return null;
+ }
  function canManageProducts(){return !!currentShop&&currentShop.is_active===true&&currentShop.status==="active"&&!!currentShop.subscription_expires_at&&new Date(currentShop.subscription_expires_at).getTime()>Date.now()}
  function showLogin(msg=""){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("topActions").classList.add("hidden");say("loginMessage",msg)}
  const BUSINESS_ACCOUNT_LABELS={grocery:"Grocery Store Accounts",daily_needs:"Daily Needs Accounts",garments:"Garments & Fashion Accounts",jewellery:"Jewellery Store Accounts",restaurant:"Restaurant Accounts",hotel:"Hotel & Lodging Accounts",office_company:"Office & Company Accounts",electronics:"Electronics Store Accounts",medical:"Medical Store Accounts",digital_services:"Digital Seva Accounts",other:"Business Accounts"};
@@ -1557,23 +1575,31 @@ async function loadShopData(){
   if(!canManageProducts()){say("bulkStarterMessage","An active subscription is required before adding products.",true);return}
   const chosen=[...bulkStarterSelection].map(i=>activeStarterProducts()[i]).filter(Boolean);
   if(!chosen.length)return;
-  const btn=$("bulkImport");btn.disabled=true;say("bulkStarterMessage","Checking existing products and preparing hidden drafts…");
-  const {data:existing,error:readError}=await db.from("products").select("name").eq("shop_id",currentShop.id);
-  if(readError){say("bulkStarterMessage","Could not check existing products: "+readError.message,true);updateBulkStarterCount();return}
-  const existingNames=new Set((existing||[]).map(p=>String(p.name||"").trim().toLowerCase()));
-  const fresh=chosen.filter(p=>!existingNames.has(p.name.trim().toLowerCase()));
-  if(!fresh.length){say("bulkStarterMessage","All selected products already exist in this shop. No duplicates were added.",true);updateBulkStarterCount();return}
-  const categoryOptions=[...$("pCategory").options];
-  const rows=fresh.map(p=>{
-   const category=categoryOptions.find(o=>o.textContent.trim().toLowerCase()===p.category.toLowerCase());
-   const slug=p.name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,65)+"-"+crypto.randomUUID().slice(0,8);
-   return {shop_id:currentShop.id,category_id:category?.value||null,name:p.name,slug,description:p.category+" · Starter draft. Confirm actual local price, stock and photo before publishing.",price:p.price,sale_price:null,stock:0,images:[],is_available:false,offer_text:null};
-  });
-  const {error}=await db.from("products").insert(rows);
-  if(error){say("bulkStarterMessage","Nothing was imported. Check your active plan/product limit and try a smaller selection. "+error.message,true);updateBulkStarterCount();return}
-  fresh.forEach(p=>{const i=activeStarterProducts().findIndex(x=>x.name===p.name);if(i>=0)bulkStarterSelection.delete(i)});
-  say("bulkStarterMessage",fresh.length+" hidden draft(s) added. "+(chosen.length-fresh.length)+" duplicate(s) skipped. Add real stock, confirm price and upload photos before making products available.");
-  renderBulkStarterList();await loadProducts();
+  const btn=$("bulkImport");btn.disabled=true;say("bulkStarterMessage","Checking existing products…");
+  try{
+   const {data:existing,error:readError}=await db.from("products").select("name").eq("shop_id",currentShop.id);
+   if(readError)throw readError;
+   const existingNames=new Set((existing||[]).map(p=>String(p.name||"").trim().toLowerCase()));
+   const fresh=chosen.filter(p=>!existingNames.has(p.name.trim().toLowerCase()));
+   if(!fresh.length){say("bulkStarterMessage","All selected products already exist in this shop.",true);return}
+   const categoryOptions=[...$("pCategory").options],rows=[];
+   for(let start=0;start<fresh.length;start+=3){
+    const batch=fresh.slice(start,start+3),photos=await Promise.all(batch.map(p=>findCommonsPhoto(p.name,p.category)));
+    batch.forEach((p,index)=>{
+     const category=categoryOptions.find(o=>o.textContent.trim().toLowerCase()===p.category.toLowerCase());
+     const slug=p.name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,65)+"-"+crypto.randomUUID().slice(0,8);
+     const photo=photos[index];
+     rows.push({shop_id:currentShop.id,category_id:category?.value||null,name:p.name,slug,description:p.category+" · Starter draft. Verify local price and stock before publishing.",price:p.price,sale_price:null,stock:0,images:photo?[photo]:[],is_available:false,offer_text:null});
+    });
+    say("bulkStarterMessage","Finding licensed real photos… "+Math.min(start+batch.length,fresh.length)+"/"+fresh.length+" checked");
+   }
+   const {error}=await db.from("products").insert(rows);if(error)throw error;
+   fresh.forEach(p=>{const i=activeStarterProducts().findIndex(x=>x.name===p.name);if(i>=0)bulkStarterSelection.delete(i)});
+   const matched=rows.filter(x=>x.images.length).length;
+   say("bulkStarterMessage",fresh.length+" hidden drafts added; "+matched+" matched Wikimedia photos attached; "+(fresh.length-matched)+" need a manual photo match. "+(chosen.length-fresh.length)+" duplicates skipped.");
+   renderBulkStarterList();await loadProducts();
+  }catch(error){say("bulkStarterMessage","Import failed: "+(error.message||"Unknown error"),true)}
+  finally{btn.disabled=false;updateBulkStarterCount()}
  }
  function useStarterProduct(){const v=$("starterSelect").value;if(v===""){say("starterHint","Choose a product first.",true);return}const p=activeStarterProducts()[Number(v)];if(!p)return;$("pName").value=p.name;$("pPrice").value=String(p.price);$("pSale").value="";$("pStock").value="0";$("pOffer").value="";$("pImageUrl").value="";$("pImageFile").value="";$("pDescription").value=p.category+" · Starter catalogue suggestion; verify before publishing.";const o=[...$("pCategory").options].find(x=>x.textContent.trim().toLowerCase()===p.category.toLowerCase());$("pCategory").value=o?o.value:"";$("starterHint").textContent=p.name+" added to form. Set real stock and upload a photo.";say("productMessage","Template filled. Confirm price and stock before saving.");$("pName").focus()}
  async function loadCategories(){
@@ -1774,12 +1800,13 @@ async function loadShopData(){
   $("addButton").disabled=true;say("productMessage","Saving product…");
   const slug=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70)+"-"+crypto.randomUUID().slice(0,8);
   let imageRecord=imageUrl?{url:imageUrl}:null,uploadedPath=null;
+  if(!imageRecord&&!imageFile){say("productMessage","Searching Wikimedia Commons for a licensed real product photo…");imageRecord=await findCommonsPhoto(name,$("pCategory").selectedOptions[0]?.textContent||"");}
   if(imageFile){const ext=imageFile.type==="image/jpeg"?"jpg":imageFile.type==="image/png"?"png":"webp";uploadedPath=currentShop.id+"/"+crypto.randomUUID()+"."+ext;const {error:uploadError}=await db.storage.from("product-images").upload(uploadedPath,imageFile,{cacheControl:"3600",contentType:imageFile.type,upsert:false});if(uploadError){$("addButton").disabled=false;say("productMessage","Image upload failed: "+uploadError.message,true);return}const {data:publicData}=db.storage.from("product-images").getPublicUrl(uploadedPath);imageRecord={url:publicData.publicUrl,path:uploadedPath}}
   const payload={shop_id:currentShop.id,category_id:$("pCategory").value||null,name,slug,description:$("pDescription").value.trim()||null,price,sale_price:sale,stock,images:imageRecord?[imageRecord]:[],is_available:true,offer_text:$("pOffer").value.trim()||null};
   const {error}=await db.from("products").insert(payload);$("addButton").disabled=false;
   if(error&&uploadedPath){await db.storage.from("product-images").remove([uploadedPath])}
   if(error){say("productMessage",error.message,true);return}
-  $("productForm").reset();$("pStock").value="0";say("productMessage","Product saved successfully.");await loadProducts();
+  $("productForm").reset();$("pStock").value="0";say("productMessage",imageRecord?"Product saved with a Wikimedia photo and attribution.":"Product saved; no verified matching Wikimedia photo was found, so add a photo manually.");await loadProducts();
  });
  $("bulkStarterSearch").addEventListener("input",renderBulkStarterList);
  $("bulkSelectVisible").addEventListener("click",()=>{const q=$("bulkStarterSearch").value.trim().toLowerCase();activeStarterProducts().forEach((p,i)=>{if(!q||(p.name+" "+p.category).toLowerCase().includes(q))bulkStarterSelection.add(i)});renderBulkStarterList()});
