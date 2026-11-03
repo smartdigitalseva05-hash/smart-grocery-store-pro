@@ -529,7 +529,7 @@ async function boot(){
   const {data:profile,error:pe}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
   if(pe||!profile||profile.role!=="shopkeeper"||!profile.is_active){await db.auth.signOut();showLogin(pe?.message||"This account is not an active shopkeeper account.");return}
   $("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("topActions").classList.remove("hidden");
-  const {data,error:se}=await db.from("shops").select("id,name,business_type,address,city,opening_time,closing_time,latitude,longitude,status,is_active,subscription_expires_at").eq("owner_id",session.user.id).order("created_at",{ascending:false});
+  const {data,error:se}=await db.from("shops").select("id,name,slug,business_type,address,city,opening_time,closing_time,latitude,longitude,status,is_active,subscription_expires_at").eq("owner_id",session.user.id).order("created_at",{ascending:false});
   if(se){say("shopInfo",se.message,true);return}
   shops=data||[];
   const sel=$("shopSelect");sel.replaceChildren();
@@ -985,7 +985,7 @@ async function loadDigitalApplications(){
  });
 }
 
-function shopPublicUrl(shop=null){const selected=shop||shops.find(s=>s.id===$("shopSelect")?.value)||currentShop;if(!selected?.id)return "";const u=new URL("index.html","https://smartdigitalseva05-hash.github.io/smart-grocery-store-pro/");u.searchParams.set("shop_id",String(selected.id));return u.href}
+function shopPublicUrl(shop=null){const selected=shop||shops.find(s=>s.id===$("shopSelect")?.value)||currentShop;if(!selected?.id)return "";const u=new URL("index.html","https://smartdigitalseva05-hash.github.io/smart-grocery-store-pro/");if(selected.slug)u.searchParams.set("shop",String(selected.slug));else u.searchParams.set("shop_id",String(selected.id));return u.href}
 function refreshShopReferralLink(){const field=$("shopReferralLink");if(!field)return "";const selected=shops.find(s=>s.id===$("shopSelect")?.value)||currentShop;const link=shopPublicUrl(selected);field.value=link;field.placeholder=link?"":"Select an approved shop to create its unique link";const visible=$("shopReferralVisibleLink");if(visible){visible.replaceChildren();if(link){const a=document.createElement("a");a.href=link;a.target="_blank";a.rel="noopener noreferrer";a.textContent=link;a.style.cssText="color:#86efac;text-decoration:underline;overflow-wrap:anywhere";visible.append(a)}else visible.textContent="Shop select hone ke baad yahan link dikhega."}if(!link)say("shopReferralMessage","Shop select karein, phir Generate / Refresh link dabayein.",true);else say("shopReferralMessage","Selected shop ka unique customer link ready hai.");return link}
 function csvCell(value){
  const raw=String(value??"");
