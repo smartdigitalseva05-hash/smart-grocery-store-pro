@@ -474,7 +474,7 @@ a{color:#8ce2b3}
 </div></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" onerror="var qrFallback=document.createElement('script');qrFallback.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';document.head.appendChild(qrFallback)"></script>
 <script src="./password-security.js"></script>
 <script>
 (()=>{
@@ -982,8 +982,22 @@ async function loadDigitalApplications(){
  });
 }
 
-function shopPublicUrl(){if(!currentShop?.id)return "";const u=new URL("./index.html",window.location.href);u.searchParams.set("shop_id",currentShop.id);return u.href}
-function renderShopQr(){const t=$("shopQr");t.replaceChildren();if(!currentShop){$("shopQrName").textContent="Select a shop to generate its QR.";return}$("shopQrName").textContent="QR for: "+currentShop.name+" · Unique shop ID";if(!window.QRCode){say("qrMessage","QR library unavailable. Connect to the internet and refresh this page.",true);return}new QRCode(t,{text:shopPublicUrl(),width:220,height:220,colorDark:"#10251d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});say("qrMessage","Unique QR ready for "+currentShop.name+". Customers scanning it open only this shop.");}
+function shopPublicUrl(){if(!currentShop?.id)return "";const u=new URL("./index.html",window.location.href);u.searchParams.set("shop_id",String(currentShop.id));return u.href}
+function renderShopQr(){
+ const host=$("shopQr");if(!host)return;
+ host.replaceChildren();
+ if(!currentShop?.id){$("shopQrName").textContent="Select a shop to generate its QR.";return}
+ const shopId=String(currentShop.id),shopName=String(currentShop.name||"Selected shop");
+ const url=shopPublicUrl();
+ $("shopQrName").textContent="QR for: "+shopName+" · Unique shop ID";
+ if(!url){say("qrMessage","Shop link could not be created. Refresh and select this shop again.",true);return}
+ if(!window.QRCode){say("qrMessage","QR generator is loading or unavailable. Check internet and tap Refresh.",true);return}
+ try{
+  new QRCode(host,{text:url,width:240,height:240,colorDark:"#10251d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});
+  host.dataset.shopId=shopId;
+  say("qrMessage","Unique QR ready for "+shopName+". This QR contains only this shop's ID.");
+ }catch(error){host.replaceChildren();say("qrMessage","QR could not be generated: "+(error.message||"Please refresh and try again."),true)}
+}
 function shopQrFileName(){const slug=String(currentShop?.name||"shop").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"shop";return slug+"-shop-qr.png"}
 function printShopQr(){const host=$("shopQr"),canvas=host.querySelector("canvas"),image=host.querySelector("img"),src=canvas?canvas.toDataURL("image/png"):image?.src;if(!src)return say("qrMessage","QR is not ready yet. Refresh and try again.",true);const w=window.open("","_blank");if(!w)return say("qrMessage","Allow pop-ups to print this shop QR.",true);const heading=w.document.createElement("h2");heading.textContent=(currentShop?.name||"Shop")+" — Customer QR Code";const img=w.document.createElement("img");img.src=src;img.alt="QR code for "+(currentShop?.name||"shop");img.style.width="320px";img.style.height="320px";const note=w.document.createElement("p");note.textContent="Scan to open this shop's customer catalogue.";w.document.body.style.cssText="font-family:Arial,sans-serif;text-align:center;padding:28px;color:#111";w.document.body.append(heading,img,note);w.document.close();w.focus();w.print();}
 
@@ -1035,6 +1049,7 @@ async function loadFinancialSummary(){
 }
 async function loadGrowthInsights(){
  if(!currentShop)return;
+ renderShopQr();
  const [pRes,oRes]=await Promise.all([db.from("products").select("id,name,stock,is_available").eq("shop_id",currentShop.id),db.from("orders").select("id,total,status,payment_status,created_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100)]);
  if(pRes.error){say("analyticsMessage",pRes.error.message,true);return}if(oRes.error){say("analyticsMessage",oRes.error.message,true);return}
  const ps=pRes.data||[],os=oRes.data||[],done=os.filter(o=>o.status==="delivered"),paid=os.filter(o=>o.payment_status==="paid"&&o.status!=="cancelled"&&o.status!=="refunded");
@@ -1339,6 +1354,7 @@ async function loadShopData(){
   const nextShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!nextShop)return;
   if(currentShop?.id!==nextShop.id)selectedHotelBookingRequestId=null;
   currentShop=nextShop;
+  renderShopQr();
   $("publicShopAddress").value=currentShop.address||"";
   $("publicShopCity").value=currentShop.city||"";
   $("publicShopOpening").value=currentShop.opening_time||"";
