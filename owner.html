@@ -73,6 +73,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  <div class="grid" id="ownerControlTiles">
  <a class="metric" href="#ownerShopsControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🏪 Business approvals & status</strong><span>Approve, activate, deactivate and suspend shops</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerCategoryControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧭 All 11 business categories</strong><span>Category-wise controls and global business search</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
+ <a class="metric" href="#ownerApplicationHub" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🗂️ Shopkeeper Applications & Subscriptions</strong><span>One hub with separate tabs for applicants, approvals, paid subscriptions and expiry</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open all tabs →</span></a>
  <a class="metric" href="#ownerShopkeeperControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">👥 Shopkeeper accounts</strong><span>Review linked shopkeeper accounts and access</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerShopkeeperControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">📇 Shopkeeper Contact Directory</strong><span>All shopkeeper names, mobile numbers, addresses and map locations · Call / WhatsApp</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open directory →</span></a>
  <a class="metric" href="#ownerCustomerControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧑‍🤝‍🧑 Customer directory</strong><span>Search customer accounts using privacy-safe profile fields</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
@@ -106,6 +107,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <label class="field" for="businessGlobalSearch">Search all businesses / stores<input id="businessGlobalSearch" type="search" placeholder="Search shop name, city, phone, category or status…"></label>
 <div class="grid" id="businessTotals"><div class="metric"><span>Total businesses</span><strong id="businessTotalCount">0</strong></div><div class="metric"><span>Active businesses</span><strong id="businessActiveCount">0</strong></div><div class="metric"><span>Categories</span><strong id="businessCategoryCount">11</strong></div><div class="metric"><span>Search results</span><strong id="businessResultCount">0</strong></div></div>
 <div class="sub" style="margin-top:14px">Separate category tabs · Tap any category to open its shop list. Search results can open individual live shops.</div><div id="businessCategoryButtons" class="actions" role="tablist" aria-label="Business category tabs" style="margin-top:10px"></div><div id="businessWebsitesMessage" class="notice" role="status"></div><div id="businessWebsiteList" class="shop-list"></div></div>
+<div id="ownerApplicationHub" class="panel shop-section"><div class="row"><div><h1>🗂️ Shopkeeper Applications & Subscription Center</h1><div class="sub">All shop applications and subscription states in one secure Owner workspace. Paid status is highlighted only when the linked payment is verified.</div></div><button id="applicationHubRefresh" class="secondary" type="button">Refresh center</button></div><div class="grid" id="applicationHubMetrics"><div class="metric"><span>Shop applications</span><strong id="hubApplicationsCount">—</strong></div><div class="metric"><span>Awaiting approval</span><strong id="hubPendingCount">—</strong></div><div class="metric"><span>Approved shopkeepers</span><strong id="hubApprovedCount">—</strong></div><div class="metric"><span>Verified paid subscriptions</span><strong id="hubPaidCount">—</strong></div><div class="metric"><span>Payment pending</span><strong id="hubPaymentPendingCount">—</strong></div><div class="metric"><span>Expired / cancelled</span><strong id="hubExpiredCount">—</strong></div></div><label class="field" for="applicationHubSearch">Search all applicants, shops and subscriptions<input id="applicationHubSearch" type="search" placeholder="Applicant, shop name, category, phone, city or subscription…"></label><div id="applicationHubTabs" class="actions" role="tablist" aria-label="Application and subscription tabs" style="margin:12px 0"></div><div id="applicationHubMessage" class="notice" role="status">Loading application center…</div><div id="applicationHubList" class="shop-list"></div></div>
 <div id="ownerShopkeeperControl" class="panel shop-section"><div class="row"><div><h1>📇 Shopkeeper Contact Directory & Management</h1><div class="sub">Owner-only directory of approved shopkeepers. View name, mobile, full shop address and GPS location; contact directly by call or WhatsApp. Account controls remain below.</div></div><button id="shopkeepersRefresh" class="secondary">Refresh directory</button></div><label class="field" for="shopkeeperGlobalSearch">Search shopkeeper / mobile / shop / address<input id="shopkeeperGlobalSearch" type="search" placeholder="Name, mobile number, shop name, city or address…"></label><div id="shopkeepersMessage" class="notice" role="status"></div><div id="shopkeeperList" class="shop-list"></div></div>
 <div id="ownerCustomerControl" class="panel shop-section"><div class="row"><div><h1>Customer directory</h1><div class="sub">Owner-only, read-only customer account lookup. Only profile name, account status and join date are shown; contact details and sensitive records are not exposed here.</div></div><button id="customersRefresh" class="secondary" type="button">Refresh customers</button></div><label class="field" for="customerGlobalSearch">Search customer accounts<input id="customerGlobalSearch" type="search" placeholder="Search customer name or account status…"></label><div id="customersMessage" class="notice" role="status"></div><div id="customerList" class="shop-list"></div></div>
 <div id="ownerOrderControl" class="panel shop-section"><div class="row"><div><h1>Global order console</h1><div class="sub">Owner-only, read-only order overview. Status changes stay disabled until a dedicated audited Owner RPC is available.</div></div><button id="ordersRefresh" class="secondary" type="button">Refresh orders</button></div><label class="field" for="orderGlobalSearch">Search all orders<input id="orderGlobalSearch" type="search" placeholder="Order number, shop, customer or status…"></label><div id="ordersMessage" class="notice" role="status"></div><div id="ownerOrderList" class="shop-list"></div></div>
@@ -318,7 +320,99 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      card.append(actions);list.append(card);
    }
  }
- async function loadShopkeepers(){
+ 
+const HUB_TABS=[
+ {key:"all",label:"📋 All applications",test:()=>true},
+ {key:"pending",label:"🕒 Awaiting approval",test:x=>x.profile?.role!=="shopkeeper"},
+ {key:"approved",label:"✅ Approved shopkeepers",test:x=>x.profile?.role==="shopkeeper"},
+ {key:"paid",label:"💚 Verified paid",test:x=>x.subscriptionState==="verified_paid"},
+ {key:"payment",label:"🟠 Payment pending",test:x=>x.subscriptionState==="payment_pending"},
+ {key:"expired",label:"🔴 Expired / cancelled",test:x=>x.subscriptionState==="expired"||x.subscriptionState==="cancelled"}
+];
+let selectedHubTab="all",hubRecords=[];
+function renderApplicationHub(){
+ const tabs=$("applicationHubTabs");tabs.replaceChildren();
+ for(const tab of HUB_TABS){
+  const count=hubRecords.filter(tab.test).length;
+  const btn=document.createElement("button");btn.type="button";btn.className=selectedHubTab===tab.key?"":"secondary";btn.setAttribute("role","tab");btn.setAttribute("aria-selected",String(selectedHubTab===tab.key));btn.textContent=tab.label+" ("+count+")";
+  btn.addEventListener("click",()=>{selectedHubTab=tab.key;renderApplicationHub()});tabs.append(btn);
+ }
+ const query=$("applicationHubSearch").value.trim().toLowerCase();
+ const selected=HUB_TABS.find(t=>t.key===selectedHubTab)||HUB_TABS[0];
+ const rows=hubRecords.filter(x=>{
+  const hay=[x.shop?.name,x.profile?.full_name,x.profile?.phone,x.shop?.phone,x.shop?.city,x.shop?.address,x.categoryLabel,x.subscriptionState,x.planName,x.shop?.status].filter(Boolean).join(" ").toLowerCase();
+  return selected.test(x)&&(!query||hay.includes(query));
+ });
+ const list=$("applicationHubList");list.replaceChildren();
+ message("applicationHubMessage",selected.label+" · "+rows.length+" of "+hubRecords.length+" record(s). Verified paid highlights require a successful, verified linked payment.");
+ if(!rows.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="No matching records in this tab.";list.append(empty);return}
+ for(const x of rows){
+  const card=document.createElement("article");card.className="shop-card";
+  if(x.subscriptionState==="verified_paid")card.style.border="2px solid #16a34a";
+  else if(x.profile?.role!=="shopkeeper")card.style.border="2px solid #d97706";
+  const top=document.createElement("div");top.className="shop-meta";const info=document.createElement("div");
+  const title=document.createElement("div");title.className="shop-name";title.textContent=x.shop?.name||"Shop application";
+  const detail=document.createElement("div");detail.className="sub";detail.textContent=[x.categoryLabel,x.profile?.full_name||"Applicant name not added",x.profile?.phone||x.shop?.phone,x.shop?.city,x.shop?.address].filter(Boolean).join(" · ");
+  info.append(title,detail);
+  const state=document.createElement("span");state.className="pill";
+  state.textContent=x.subscriptionState==="verified_paid"?"💚 VERIFIED PAID":x.subscriptionState==="payment_pending"?"🟠 PAYMENT PENDING":x.subscriptionState==="expired"?"🔴 EXPIRED":x.subscriptionState==="cancelled"?"CANCELLED":x.profile?.role==="shopkeeper"?"APPROVED SHOPKEEPER":"AWAITING APPROVAL";
+  top.append(info,state);card.append(top);
+  const meta=document.createElement("div");meta.className="sub";meta.style.marginTop="8px";
+  meta.textContent="Shop status: "+(x.shop?.status||"not set")+" · Account: "+(x.profile?.role||"applicant")+" · Subscription: "+(x.subscriptionLabel||"No subscription record")+(x.planName?" · Plan: "+x.planName:"")+(x.subscriptionEnds?" · Ends: "+new Date(x.subscriptionEnds).toLocaleDateString():"");
+  card.append(meta);
+  const actions=document.createElement("div");actions.className="shop-actions";
+  if(x.shop?.id){
+   const manage=document.createElement("button");manage.type="button";manage.className="secondary";manage.textContent="Open shop management";manage.addEventListener("click",()=>{document.getElementById("ownerShopsControl").scrollIntoView({behavior:"smooth",block:"start"});$("businessTypeFilter").value=x.shop.business_type||"all";loadShops()});actions.append(manage);
+   if(x.shop.status==="active"&&x.shop.is_active===true){const open=document.createElement("a");open.href="./index.html?shop_id="+encodeURIComponent(x.shop.id);open.target="_blank";open.rel="noopener noreferrer";open.textContent="Open Store Website ↗";open.style.cssText="display:inline-block;padding:9px 12px;border-radius:10px;background:#14532d;color:#dcfce7;text-decoration:none;font-weight:750";actions.append(open)}
+  }
+  if(x.profile?.phone){const call=document.createElement("a");call.href="tel:"+x.profile.phone.replace(/[^+\\d]/g,"");call.textContent="📞 Call applicant";call.style.cssText="padding:9px 12px;border-radius:10px;background:#24364d;color:#fff;text-decoration:none";actions.append(call)}
+  card.append(actions);list.append(card);
+ }
+}
+async function loadApplicationHub(){
+ message("applicationHubMessage","Loading shop applications and verified subscription records…");
+ $("applicationHubList").replaceChildren();
+ const {data:shops,error:shopError}=await client.from("shops").select("id,owner_id,name,business_type,city,phone,address,status,is_active,subscription_plan_id,subscription_expires_at,created_at").order("created_at",{ascending:false});
+ if(shopError){message("applicationHubMessage","Could not load shop applications: "+shopError.message,true);return}
+ const ownerIds=[...new Set((shops||[]).map(s=>s.owner_id).filter(Boolean))];
+ let profiles=[];
+ if(ownerIds.length){const {data,error}=await client.from("profiles").select("id,full_name,phone,role,is_active,created_at").in("id",ownerIds);if(error){message("applicationHubMessage","Could not load applicant profiles: "+error.message,true);return}profiles=data||[]}
+ const shopIds=(shops||[]).map(s=>s.id);
+ let subscriptions=[];
+ if(shopIds.length){const {data,error}=await client.from("shop_subscriptions").select("id,shop_id,plan_id,status,starts_at,ends_at,payment_id,created_at,billing_cycle").in("shop_id",shopIds).order("created_at",{ascending:false});if(error){message("applicationHubMessage","Shop applications loaded, but subscription details could not be read: "+error.message,true);return}subscriptions=data||[]}
+ const paymentIds=[...new Set(subscriptions.map(x=>x.payment_id).filter(Boolean))];
+ let payments=[];
+ if(paymentIds.length){const {data,error}=await client.from("payments").select("id,status,verified,amount,currency,created_at").in("id",paymentIds);if(error){message("applicationHubMessage","Subscription data loaded, but payment verification details could not be read: "+error.message,true);return}payments=data||[]}
+ const planIds=[...new Set(subscriptions.map(x=>x.plan_id).filter(Boolean))];
+ let plans=[];
+ if(planIds.length){const {data,error}=await client.from("subscription_plans").select("id,name").in("id",planIds);if(error){message("applicationHubMessage","Subscription data loaded, but plan names could not be read: "+error.message,true);return}plans=data||[]}
+ const profileMap=new Map(profiles.map(p=>[p.id,p])),paymentMap=new Map(payments.map(p=>[p.id,p])),planMap=new Map(plans.map(p=>[p.id,p]));
+ const latestByShop=new Map();
+ for(const sub of subscriptions){if(!latestByShop.has(sub.shop_id))latestByShop.set(sub.shop_id,sub)}
+ const now=Date.now();
+ hubRecords=(shops||[]).map(shop=>{
+  const profile=profileMap.get(shop.owner_id)||null,sub=latestByShop.get(shop.id)||null,payment=sub?.payment_id?paymentMap.get(sub.payment_id):null;
+  const active=sub?.status==="active"&&(!sub.ends_at||new Date(sub.ends_at).getTime()>now);
+  const verifiedPaid=!!(active&&payment?.status==="success"&&payment?.verified===true);
+  let subscriptionState="none",subscriptionLabel="No subscription";
+  if(verifiedPaid){subscriptionState="verified_paid";subscriptionLabel="Active · payment verified"}
+  else if(sub?.status==="pending_payment"){subscriptionState="payment_pending";subscriptionLabel="Awaiting verified payment"}
+  else if(sub?.status==="expired"||(sub?.ends_at&&new Date(sub.ends_at).getTime()<=now)){subscriptionState="expired";subscriptionLabel="Expired"}
+  else if(sub?.status==="cancelled"){subscriptionState="cancelled";subscriptionLabel="Cancelled"}
+  else if(active){subscriptionState="active_unverified";subscriptionLabel="Active status · payment not verified in linked record"}
+  return {shop,profile,subscription:sub,subscriptionState,subscriptionLabel,subscriptionEnds:sub?.ends_at||shop.subscription_expires_at,planName:planMap.get(sub?.plan_id||shop.subscription_plan_id)?.name||"",categoryLabel:({grocery:"Grocery",daily_needs:"Daily Needs",garments:"Garments",jewellery:"Jewellery",restaurant:"Restaurant",hotel:"Hotel",office_company:"Office / Company",electronics:"Electronics",medical:"Medical",digital_services:"Digital Services",other:"Other"})[shop.business_type]||shop.business_type||"Unknown"};
+ });
+ $("hubApplicationsCount").textContent=hubRecords.length.toLocaleString("en-IN");
+ $("hubPendingCount").textContent=hubRecords.filter(x=>x.profile?.role!=="shopkeeper").length.toLocaleString("en-IN");
+ $("hubApprovedCount").textContent=hubRecords.filter(x=>x.profile?.role==="shopkeeper").length.toLocaleString("en-IN");
+ $("hubPaidCount").textContent=hubRecords.filter(x=>x.subscriptionState==="verified_paid").length.toLocaleString("en-IN");
+ $("hubPaymentPendingCount").textContent=hubRecords.filter(x=>x.subscriptionState==="payment_pending").length.toLocaleString("en-IN");
+ $("hubExpiredCount").textContent=hubRecords.filter(x=>["expired","cancelled"].includes(x.subscriptionState)).length.toLocaleString("en-IN");
+ renderApplicationHub();
+}
+$("applicationHubRefresh").addEventListener("click",loadApplicationHub);
+$("applicationHubSearch").addEventListener("input",renderApplicationHub);
+async function loadShopkeepers(){
    const list=$("shopkeeperList");list.replaceChildren();message("shopkeepersMessage","Loading shopkeeper contact directory…");
    const query=$("shopkeeperGlobalSearch")?.value?.trim().toLowerCase()||"";
    const {data:profiles,error}=await client.from("profiles").select("id,full_name,phone,role,is_active,created_at").eq("role","shopkeeper").order("created_at",{ascending:false});
@@ -598,7 +692,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      }
      loginPanel.classList.add("hidden");dashboard.classList.remove("hidden");topActions.classList.remove("hidden");
      $("ownerEmail").textContent=session.user.email||"Signed-in Owner";
-     await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers(),loadCustomers(),loadOwnerOrders(),loadGlobalProducts(),loadCatalog(),loadPayments(),loadAuditLogs()]);
+     await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadApplicationHub(),loadShopkeepers(),loadCustomers(),loadOwnerOrders(),loadGlobalProducts(),loadCatalog(),loadPayments(),loadAuditLogs()]);
      startOwnerAuditRealtime();
    }catch(error){showLogin(error.message||"Owner session verification failed.")}finally{checkingOwnerSession=false}
  }
@@ -614,7 +708,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  $("mfaForgot").addEventListener("click",()=>{$("mfaRecoveryHelp").classList.toggle("hidden")});
  $("mfaSignOut").addEventListener("click",async()=>{await client.auth.signOut();ownerMfaFactorId=null;ownerMfaMode=null;showLogin("Signed out.")});
  $("mfaCode").addEventListener("input",()=>{$("mfaCode").value=$("mfaCode").value.replace(/\D/g,"").slice(0,6)});
- $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadShopkeepers()])});
+ $("refresh").addEventListener("click",async()=>{await Promise.all([loadSummary(),loadShops(),loadBusinessWebsites(),loadApplicationHub(),loadShopkeepers()])});
  $("shopsRefresh").addEventListener("click",loadShops);
  $("websitesRefresh").addEventListener("click",loadBusinessWebsites);
  $("businessGlobalSearch").addEventListener("input",renderBusinessWebsites);
@@ -688,11 +782,12 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      const context=sectionName(el);
      const target=(el.tagName==="LABEL"&&el.control)?el.control:el;
      const href=el.tagName==="A"?el.getAttribute("href"):"";
-     entries.push({label:label.slice(0,150),context,target,href,status:"Available",action:el.closest("#businessCategoryButtons")?()=>el.click():null,search:(label+" "+context+" "+(el.id||"")).toLowerCase()});
+     entries.push({label:label.slice(0,150),context,target,href,status:"Available",action:(el.closest("#businessCategoryButtons")||el.closest("#applicationHubTabs"))?()=>el.click():null,search:(label+" "+context+" "+(el.id||"")).toLowerCase()});
      if(entries.length>=1800)break;
    }
    const directory=[
     {label:"Business & all 11 categories",context:"Business Control",id:"ownerCategoryControl",status:"Available",keywords:"shops stores business category grocery daily needs garments jewellery restaurant hotel office electronics medical digital services"},
+    {label:"Shopkeeper Applications & Subscription Center",context:"Applications & Subscriptions",id:"ownerApplicationHub",status:"Available",keywords:"shop application applicant applied pending approval approved shopkeeper paid subscription active verified payment expired cancelled plan"},
     {label:"Shopkeeper accounts",context:"User Control",id:"ownerShopkeeperControl",status:"Available",keywords:"users shopkeepers accounts block activate"},
     {label:"Product category management",context:"Product Control",id:"ownerCatalogControl",status:"Available",keywords:"products categories subcategories catalog"},
     {label:"Payments & subscriptions",context:"Payment Control",id:"ownerPaymentControl",status:"Available",keywords:"payments razorpay subscriptions verify"},
@@ -709,7 +804,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      const target=item.id?document.getElementById(item.id):null;
      entries.push({label:item.label,context:item.context,target,href:item.href||"",status:item.status,category:"control",search:(item.label+" "+item.context+" "+(item.keywords||"")).toLowerCase()});
    }
-   const sections=[["ownerCategoryControl","business","Business / shop"],["ownerShopsControl","business","Business / shop"],["ownerShopkeeperControl","shopkeeper","Shopkeeper"],["ownerCustomerControl","customer","Customer"],["ownerOrderControl","order","Order"],["ownerGlobalProductControl","product","Product / stock"],["ownerPaymentControl","payment","Payment / subscription"],["ownerAuditControl","security","Security / audit"]];
+   const sections=[["ownerCategoryControl","business","Business / shop"],["ownerApplicationHub","business","Shop applications & subscriptions"],["ownerShopsControl","business","Business / shop"],["ownerShopkeeperControl","shopkeeper","Shopkeeper"],["ownerCustomerControl","customer","Customer"],["ownerOrderControl","order","Order"],["ownerGlobalProductControl","product","Product / stock"],["ownerPaymentControl","payment","Payment / subscription"],["ownerAuditControl","security","Security / audit"]];
    for(const [sectionId,type,label] of sections){
      const section=document.getElementById(sectionId);if(!section)continue;
      for(const card of section.querySelectorAll(".shop-card")){
