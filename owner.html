@@ -327,7 +327,9 @@ const HUB_TABS=[
  {key:"approved",label:"✅ Approved shopkeepers",test:x=>x.profile?.role==="shopkeeper"},
  {key:"paid",label:"💚 Verified paid",test:x=>x.subscriptionState==="verified_paid"},
  {key:"payment",label:"🟠 Payment pending",test:x=>x.subscriptionState==="payment_pending"},
- {key:"expired",label:"🔴 Expired / cancelled",test:x=>x.subscriptionState==="expired"||x.subscriptionState==="cancelled"}
+ {key:"unverified",label:"🟡 Active · verify payment",test:x=>x.subscriptionState==="active_unverified"},
+ {key:"expired",label:"🔴 Expired / cancelled",test:x=>x.subscriptionState==="expired"||x.subscriptionState==="cancelled"},
+ {key:"none",label:"⚪ No subscription",test:x=>x.subscriptionState==="none"}
 ];
 let selectedHubTab="all",hubRecords=[];
 function renderApplicationHub(){
