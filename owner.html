@@ -912,8 +912,65 @@ async function loadShopkeepers(){
  manualFrame.addEventListener("load",()=>{manualStatus.textContent=manualPages[selectedManual].label+" loaded.";});
  manualFrame.addEventListener("error",()=>{manualStatus.textContent="Manual could not be loaded. Use Open selected manual to try separately.";});
  allManuals.querySelector("#ownerManualRefresh").addEventListener("click",()=>selectOwnerManual(selectedManual,true));
+
+ // Owner Master Tools: operational helpers stored only in this browser.
+ const masterTools=document.createElement("section");
+ masterTools.id="ownerMasterTools";
+ masterTools.className="panel shop-section";
+ masterTools.innerHTML=`
+  <div class="row"><div><h2>🧠 Owner Master Control Tools</h2><div class="sub">Operational command kit for Super Admin.</div></div><span class="pill">MASTER TOOLS</span></div>
+  <div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:16px">
+   <section class="panel"><h3>✅ Admin Task Manager</h3><p class="muted">Create, complete and remove your admin work items.</p><label class="field" for="masterTaskInput">New task</label><input id="masterTaskInput" maxlength="180" placeholder="e.g. Review pending shop applications"><button id="masterTaskAdd" type="button" style="margin-top:10px">Add task</button><div id="masterTaskList" aria-live="polite" style="margin-top:12px"></div></section>
+   <section class="panel"><h3>🛡️ Daily Security Checklist</h3><p class="muted">A local checklist; it does not change security settings.</p><div id="masterSecurityChecks"></div><p id="masterChecklistStatus" class="muted" aria-live="polite"></p></section>
+   <section class="panel"><h3>🚨 Incident & Maintenance Log</h3><p class="muted">Record operational incidents without storing passwords, OTPs or secret keys.</p><label class="field" for="masterIncidentInput">Incident / action note</label><textarea id="masterIncidentInput" maxlength="1000" rows="3" style="width:100%;margin-top:6px" placeholder="Describe issue, impact and action taken"></textarea><button id="masterIncidentAdd" type="button" style="margin-top:10px">Save log entry</button><div id="masterIncidentList" aria-live="polite" style="margin-top:12px"></div><button id="masterIncidentExport" class="secondary" type="button" style="margin-top:10px">Export incident log CSV</button></section>
+   <section class="panel"><h3>📢 Announcement Draft</h3><p class="muted">Prepare a message for shopkeepers. Nothing is sent automatically.</p><label class="field" for="masterAnnouncement">Message</label><textarea id="masterAnnouncement" rows="4" maxlength="2000" style="width:100%;margin-top:6px" placeholder="Write an update for shopkeepers..."></textarea><button id="masterAnnouncementCopy" type="button" style="margin-top:10px">Copy announcement</button><p id="masterAnnouncementStatus" class="muted" aria-live="polite"></p></section>
+   <section class="panel"><h3>⚡ Quick Admin Shortcuts</h3><p class="muted">Jump to existing management sections.</p><div class="actions" style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" data-master-jump="ownerApplicationHub">Applications</button><button type="button" data-master-jump="ownerShopkeeperControl">Shopkeepers</button><button type="button" data-master-jump="ownerOrderControl">Orders</button><button type="button" data-master-jump="ownerPaymentControl">Payments</button><button type="button" data-master-jump="ownerAuditControl">Security & Audit</button><button type="button" data-master-jump="allManuals">All Manuals</button></div></section>
+  </div>
+  <p class="muted" style="margin-top:14px;font-size:12px">Storage notice: tasks, checklist ticks, incident notes and drafts are saved in this browser on this device only. They are not synced to Supabase or other devices. Do not enter personal customer data, passwords, OTPs, API keys or payment secrets.</p>`;
+ const masterStoreKey="smartBusinessPro.ownerMasterTools.v1";
+ let masterState={tasks:[],incidents:[],checks:{}};
+ try{const saved=JSON.parse(localStorage.getItem(masterStoreKey)||"{}");if(saved&&typeof saved==="object")masterState={...masterState,...saved};}catch{}
+ const saveMasterState=()=>{try{localStorage.setItem(masterStoreKey,JSON.stringify(masterState));}catch{alert("Browser storage is unavailable or full. Export important notes before closing.");}};
+ const safeMasterText=(value)=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+ const taskList=masterTools.querySelector("#masterTaskList");
+ function renderMasterTasks(){
+  taskList.replaceChildren();
+  if(!masterState.tasks.length){taskList.textContent="No tasks yet.";return;}
+  masterState.tasks.forEach((task,index)=>{
+   const row=document.createElement("div");row.style.cssText="display:flex;gap:8px;align-items:center;border-top:1px solid var(--line);padding:9px 0";
+   const check=document.createElement("input");check.type="checkbox";check.checked=!!task.done;check.setAttribute("aria-label","Complete task");
+   check.addEventListener("change",()=>{task.done=check.checked;saveMasterState();renderMasterTasks();});
+   const label=document.createElement("span");label.textContent=task.text;label.style.cssText="flex:1;overflow-wrap:anywhere;"+(task.done?"text-decoration:line-through;opacity:.65":"");
+   const del=document.createElement("button");del.type="button";del.className="secondary";del.textContent="Delete";del.addEventListener("click",()=>{masterState.tasks.splice(index,1);saveMasterState();renderMasterTasks();});
+   row.append(check,label,del);taskList.append(row);
+  });
+ }
+ masterTools.querySelector("#masterTaskAdd").addEventListener("click",()=>{const input=masterTools.querySelector("#masterTaskInput");const value=input.value.trim();if(!value)return;masterState.tasks.unshift({text:value,done:false,createdAt:new Date().toISOString()});input.value="";saveMasterState();renderMasterTasks();});
+ masterTools.querySelector("#masterTaskInput").addEventListener("keydown",event=>{if(event.key==="Enter")masterTools.querySelector("#masterTaskAdd").click();});
+ const checks=[["mfa","Confirm Super Admin MFA is enabled"],["payments","Review payment verification and webhook alerts"],["access","Review shopkeeper roles and access"],["backup","Confirm important data backup/export"],["audit","Review recent security and audit activity"],["secrets","Check that secrets are not exposed in public files"]];
+ const checkRoot=masterTools.querySelector("#masterSecurityChecks");
+ checks.forEach(([key,label])=>{const wrap=document.createElement("label");wrap.style.cssText="display:flex;gap:9px;align-items:flex-start;padding:8px 0";
+  const input=document.createElement("input");input.type="checkbox";input.checked=!!masterState.checks[key];input.addEventListener("change",()=>{masterState.checks[key]=input.checked;saveMasterState();updateChecklistStatus();});
+  const span=document.createElement("span");span.textContent=label;wrap.append(input,span);checkRoot.append(wrap);
+ });
+ function updateChecklistStatus(){const done=checks.filter(([key])=>masterState.checks[key]).length;masterTools.querySelector("#masterChecklistStatus").textContent=done+" of "+checks.length+" checks ticked on this device. Ticks are reminders, not proof of security."; }
+ function renderMasterIncidents(){
+  const root=masterTools.querySelector("#masterIncidentList");root.replaceChildren();
+  if(!masterState.incidents.length){root.textContent="No incident notes saved.";return;}
+  masterState.incidents.slice(0,12).forEach(item=>{const row=document.createElement("div");row.style.cssText="border-top:1px solid var(--line);padding:8px 0";
+   const date=document.createElement("div");date.className="muted";date.textContent=new Date(item.at).toLocaleString();
+   const note=document.createElement("div");note.style.whiteSpace="pre-wrap";note.textContent=item.note;row.append(date,note);root.append(row);
+  });
+ }
+ masterTools.querySelector("#masterIncidentAdd").addEventListener("click",()=>{const input=masterTools.querySelector("#masterIncidentInput");const note=input.value.trim();if(!note)return;masterState.incidents.unshift({at:new Date().toISOString(),note});input.value="";saveMasterState();renderMasterIncidents();});
+ masterTools.querySelector("#masterIncidentExport").addEventListener("click",()=>{const rows=[["Timestamp","Incident note"],...masterState.incidents.map(x=>[x.at,x.note])];const csv=rows.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="owner-incident-log.csv";a.click();URL.revokeObjectURL(url);});
+ masterTools.querySelector("#masterAnnouncementCopy").addEventListener("click",async()=>{const value=masterTools.querySelector("#masterAnnouncement").value.trim();const status=masterTools.querySelector("#masterAnnouncementStatus");if(!value){status.textContent="Write an announcement first.";return;}try{await navigator.clipboard.writeText(value);status.textContent="Announcement copied. It has not been sent.";}catch{status.textContent="Clipboard unavailable. Select and copy the message manually."; }});
+ masterTools.querySelectorAll("[data-master-jump]").forEach(button=>button.addEventListener("click",()=>{const targetId=button.dataset.masterJump;const target=targetId==="allManuals"?document.getElementById("ownerWorkspacePanel_allManuals"):document.getElementById(targetId);if(target){const panel=target.closest("[data-workspace-panel]");if(panel){const tab=[...document.querySelectorAll("#ownerWorkspaceTabs button")].find(x=>x.getAttribute("aria-selected")==="true");const wanted=document.querySelector('#ownerWorkspaceTabs button:nth-child('+( [...document.querySelectorAll("#ownerWorkspaceTabs button")].indexOf([...document.querySelectorAll("#ownerWorkspaceTabs button")].find(b=>b.textContent.includes(targetId==="ownerApplicationHub"?"Applications":targetId==="ownerShopkeeperControl"?"Shopkeepers":targetId==="ownerOrderControl"?"Orders":targetId==="ownerPaymentControl"?"Payments":targetId==="ownerAuditControl"?"Security & Audit":"All Manuals")))+1)+')');wanted?.click();}target.scrollIntoView({behavior:"smooth",block:"start"});}}));
+ renderMasterTasks();renderMasterIncidents();updateChecklistStatus();
+
  const definitions=[
   {id:"overview",label:"🏠 Overview",nodes:[command,overview]},
+  {id:"masterTools",label:"🧠 Master Tools",nodes:[masterTools]},
   {id:"searchGuides",label:"🔎 Global Search",nodes:[searchGuides]},
   {id:"allManuals",label:"📚 All Manuals",nodes:[allManuals]},
   {id:"ownerShopsControl",label:"🏪 Shops"},
