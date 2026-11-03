@@ -40,17 +40,20 @@
   if(profileError||profile?.role!=="super_admin"||profile?.is_active!==true){msg("Access denied. An active Super Admin account is required.",true);return}
   const {data:assurance,error:assuranceError}=await client.auth.mfa.getAuthenticatorAssuranceLevel();
   if(assuranceError||assurance?.currentLevel!=="aal2"||assurance?.nextLevel!=="aal2"){msg("Authenticator MFA is not verified. Return to Owner Dashboard and complete MFA.",true);return}
-  buttons(true);msg("Secure Owner session verified. You can now issue your QR.");
+  $("create").disabled=false;msg("Secure Owner session verified. You can now issue your QR.");
   $("create").addEventListener("click",async()=>{
    buttons(false);$("create").textContent="Creating secure QR…";msg("Issuing a new secure verification token…");
    try{
+    if(!window.QRCode)throw new Error("QR generator is still loading. Check internet and try again; the existing QR has not been changed.");
+    const probe=document.createElement("div");
+    new QRCode(probe,{text:"https://example.com/qr-preflight",width:80,height:80,correctLevel:QRCode.CorrectLevel.H});
+    if(!probe.querySelector("canvas,img"))throw new Error("QR generator check failed. The existing QR has not been changed.");
     const {data,error}=await client.rpc("issue_owner_profile_verification");
     if(error)throw error;
     const row=Array.isArray(data)?data[0]:data;
     if(!row?.verify_url)throw new Error("The verification URL was not returned.");
     verifyUrl=row.verify_url;
     $("qr").replaceChildren();
-    if(!window.QRCode)throw new Error("QR library is unavailable. Check internet and tap Create again.");
     new QRCode($("qr"),{text:verifyUrl,width:260,height:260,colorDark:"#10251d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.H});
     $("qr").classList.remove("hidden");$("link").textContent=verifyUrl;$("link").classList.remove("hidden");
     $("download").disabled=false;$("copy").disabled=false;$("print").disabled=false;
