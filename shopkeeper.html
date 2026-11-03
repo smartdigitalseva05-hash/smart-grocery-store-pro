@@ -63,8 +63,14 @@ a{color:#8ce2b3}
    <label class="field">Delivery fee (₹)<input id="sfDeliveryFee" type="number" min="0" max="999999" step="0.01" value="0"></label>
    <label class="field">Free delivery above (₹)<input id="sfFreeThreshold" type="number" min="0" max="99999999" step="0.01" placeholder="Leave blank to disable"></label>
   </div>
+  <div class="product" style="margin:14px 0;border:1px solid var(--line)">
+   <h2 style="margin-top:0">🚚 Home delivery: ON / OFF</h2>
+   <p class="sub">Shopkeeper khud decide kare: delivery deni hai ya nahi. OFF karne par customer checkout par home delivery select nahi kar payega. Baad mein kabhi bhi ON kar sakte hain.</p>
+   <label class="field"><input id="sfDeliveryEnabled" type="checkbox" style="display:inline;width:auto"> Enable home delivery for my shop</label>
+   <div class="sub" id="sfDeliveryStatus" role="status">Delivery preference not loaded yet.</div>
+   <button id="sfDeliveryToggleSave" type="button" class="secondary">Save delivery ON / OFF</button>
+  </div>
   <div class="formgrid">
-   <label class="field"><input id="sfDeliveryEnabled" type="checkbox" checked style="display:inline;width:auto"> Home delivery enabled</label>
    <label class="field"><input id="sfPickupEnabled" type="checkbox" checked style="display:inline;width:auto"> Store pickup enabled</label>
    <label class="field"><input id="sfStoreOpen" type="checkbox" checked style="display:inline;width:auto"> Store open for orders</label>
   </div>
@@ -76,7 +82,7 @@ a{color:#8ce2b3}
  <div class="product" style="margin-top:14px"><strong>Public shop catalogue link</strong><div class="sub" id="sfPublicLink">Select a shop to generate its link.</div><div class="actions" style="margin-top:8px"><button id="sfCopyLink" type="button" class="secondary">Copy link</button><a id="sfOpenLink" href="./storefront.html" target="_blank" rel="noopener">Open storefront</a></div></div>
  <hr style="border-color:var(--line);margin:18px 0">
  <h2>📍 Delivery pincodes / zones</h2>
- <form id="deliveryZoneForm"><div class="formgrid">
+ <form id="deliveryZoneForm"><div class="sub" id="zoneFeatureNotice">Enable home delivery above to add and use delivery pincodes.</div><div class="formgrid">
   <label class="field">Area / zone name<input id="zoneName" maxlength="100" required placeholder="Main market"></label>
   <label class="field">6-digit pincode<input id="zonePincode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label>
   <label class="field">Delivery fee (₹)<input id="zoneFee" type="number" min="0" step="0.01" value="0" required></label>
@@ -1242,13 +1248,32 @@ async function loadStorefrontManager(){
  $("sfPublicLink").textContent=link;$("sfOpenLink").href=link;
  const {data:s,error}=await db.from("shop_storefront_settings").select("*").eq("shop_id",currentShop.id).maybeSingle();
  if(error)say("sfMessage","Settings load failed: "+error.message,true);
- else{const v=s||{};$("sfAnnouncement").value=v.announcement||"";$("sfLogo").value=v.logo_url||currentShop.logo_url||"";$("sfBanner").value=v.banner_url||"";$("sfTheme").value=v.theme_key||"emerald";$("sfMinimum").value=v.minimum_order_amount??0;$("sfDeliveryFee").value=v.delivery_fee??0;$("sfFreeThreshold").value=v.free_delivery_threshold??"";$("sfDeliveryEnabled").checked=v.delivery_enabled!==false;$("sfPickupEnabled").checked=v.pickup_enabled!==false;$("sfStoreOpen").checked=v.store_open!==false;$("sfReturnPolicy").value=v.return_policy||"";$("sfPrivacyPolicy").value=v.privacy_policy||"";$("sfTerms").value=v.terms_text||"";say("sfMessage",s?"Settings loaded.":"Configure and save your public shop settings.");}
+ else{const v=s||{};$("sfAnnouncement").value=v.announcement||"";$("sfLogo").value=v.logo_url||currentShop.logo_url||"";$("sfBanner").value=v.banner_url||"";$("sfTheme").value=v.theme_key||"emerald";$("sfMinimum").value=v.minimum_order_amount??0;$("sfDeliveryFee").value=v.delivery_fee??0;$("sfFreeThreshold").value=v.free_delivery_threshold??"";$("sfDeliveryEnabled").checked=v.delivery_enabled!==false;$("sfPickupEnabled").checked=v.pickup_enabled!==false;$("sfStoreOpen").checked=v.store_open!==false;$("sfReturnPolicy").value=v.return_policy||"";$("sfPrivacyPolicy").value=v.privacy_policy||"";$("sfTerms").value=v.terms_text||"";say("sfMessage",s?"Settings loaded.":"Configure and save your public shop settings.");updateDeliveryControls();}
  const [zr,cr]=await Promise.all([db.from("shop_delivery_zones").select("id,zone_name,pincode,delivery_fee,minimum_order_amount,estimated_delivery_minutes,is_active").eq("shop_id",currentShop.id).order("zone_name"),db.from("shop_coupons").select("id,code,discount_type,discount_value,minimum_order_amount,usage_limit,used_count,is_active").eq("shop_id",currentShop.id).order("created_at",{ascending:false})]);
  const zl=$("deliveryZoneList");zl.replaceChildren();if(zr.error)say("zoneMessage",zr.error.message,true);
  (zr.data||[]).forEach(z=>{const a=document.createElement("article");a.className="product";const t=document.createElement("strong");t.textContent=z.zone_name+" · "+z.pincode;const m=document.createElement("div");m.className="sub";m.textContent="₹"+z.delivery_fee+" fee · min ₹"+z.minimum_order_amount+" · "+(z.estimated_delivery_minutes?z.estimated_delivery_minutes+" min":"ETA not set")+" · "+(z.is_active?"Active":"Paused");const b=document.createElement("button");b.className="danger";b.type="button";b.textContent="Delete";b.onclick=async()=>{if(!confirm("Delete this delivery zone?"))return;const {error}=await db.from("shop_delivery_zones").delete().eq("id",z.id).eq("shop_id",currentShop.id);if(error)say("zoneMessage",error.message,true);else loadStorefrontManager()};a.append(t,m,b);zl.append(a)});
  const cl=$("couponList");cl.replaceChildren();if(cr.error)say("couponMessage",cr.error.message,true);
  (cr.data||[]).forEach(z=>{const a=document.createElement("article");a.className="product";const t=document.createElement("strong");t.textContent=z.code+" · "+(z.discount_type==="percentage"?z.discount_value+"%":"₹"+z.discount_value);const m=document.createElement("div");m.className="sub";m.textContent="Minimum ₹"+z.minimum_order_amount+" · Used "+z.used_count+(z.usage_limit?"/"+z.usage_limit:"")+" · "+(z.is_active?"Active":"Paused");const b=document.createElement("button");b.className="secondary";b.type="button";b.textContent=z.is_active?"Pause":"Activate";b.onclick=async()=>{const {error}=await db.from("shop_coupons").update({is_active:!z.is_active}).eq("id",z.id).eq("shop_id",currentShop.id);if(error)say("couponMessage",error.message,true);else loadStorefrontManager()};a.append(t,m,b);cl.append(a)});
  await loadProductReviews();
+}
+function updateDeliveryControls(){
+ const enabled=$("sfDeliveryEnabled").checked;
+ $("sfDeliveryStatus").textContent=enabled?"Home delivery is ON. Customers can use delivery options configured below.":"Home delivery is OFF. Customers can use store pickup if enabled.";
+ $("zoneFeatureNotice").textContent=enabled?"Home delivery is ON. Add only the pincodes you actually serve.":"Home delivery is OFF. Delivery zones are paused for customer checkout; turn delivery ON to manage them.";
+ $("deliveryZoneForm").querySelectorAll("input,button").forEach(el=>{el.disabled=!enabled});
+ $("deliveryZoneList").style.opacity=enabled?"1":".58";
+}
+async function saveDeliveryPreference(){
+ if(!currentShop||!canManageProducts())return say("sfMessage","Active subscription required.",true);
+ const {data:{user}}=await db.auth.getUser();
+ const {error}=await db.from("shop_storefront_settings").upsert({shop_id:currentShop.id,delivery_enabled:$("sfDeliveryEnabled").checked,delivery_fee:Number($("sfDeliveryFee").value||0),free_delivery_threshold:$("sfFreeThreshold").value===""?null:Number($("sfFreeThreshold").value),updated_by:user?.id||null},{onConflict:"shop_id"});
+ if(error)return say("sfMessage","Delivery preference save failed: "+error.message,true);
+ if(!$("sfDeliveryEnabled").checked){
+  const {error:zoneError}=await db.from("shop_delivery_zones").update({is_active:false}).eq("shop_id",currentShop.id);
+  if(zoneError)return say("sfMessage","Delivery is OFF, but zone pause failed: "+zoneError.message,true);
+ }
+ say("sfMessage",$("sfDeliveryEnabled").checked?"Home delivery enabled. Add your delivery pincodes below.":"Home delivery disabled. Existing delivery zones have been paused.");
+ await loadStorefrontManager();
 }
 async function saveStorefrontSettings(e){
  e.preventDefault();if(!currentShop||!canManageProducts())return say("sfMessage","Active subscription required.",true);
@@ -1869,7 +1894,7 @@ async function loadShopData(){
   finally{button.disabled=false}
  });
  $("businessLedgerForm").addEventListener("submit",saveBusinessLedger);["ledgerSubtotal","ledgerDiscount","ledgerTax"].forEach(id=>$(id).addEventListener("input",updateLedgerTotal));$("businessAccountsRefresh").addEventListener("click",loadBusinessLedger);$("ledgerFilter").addEventListener("change",loadBusinessLedger);$("ledgerExport").addEventListener("click",exportBusinessLedger);
- $("storefrontSettingsForm").addEventListener("submit",saveStorefrontSettings);$("deliveryZoneForm").addEventListener("submit",saveDeliveryZone);$("couponForm").addEventListener("submit",saveCoupon);$("storefrontRefresh").addEventListener("click",loadStorefrontManager);$("sfCopyLink").addEventListener("click",()=>{const v=$("sfPublicLink").textContent;if(navigator.clipboard?.writeText)navigator.clipboard.writeText(v).then(()=>say("sfMessage","Link copied."),()=>say("sfMessage","Copy failed; select the link manually.",true));else say("sfMessage","Select and copy the link manually.")});
+ $("storefrontSettingsForm").addEventListener("submit",saveStorefrontSettings);$("sfDeliveryEnabled").addEventListener("change",updateDeliveryControls);$("sfDeliveryToggleSave").addEventListener("click",saveDeliveryPreference);$("deliveryZoneForm").addEventListener("submit",saveDeliveryZone);$("couponForm").addEventListener("submit",saveCoupon);$("storefrontRefresh").addEventListener("click",loadStorefrontManager);$("sfCopyLink").addEventListener("click",()=>{const v=$("sfPublicLink").textContent;if(navigator.clipboard?.writeText)navigator.clipboard.writeText(v).then(()=>say("sfMessage","Link copied."),()=>say("sfMessage","Copy failed; select the link manually.",true));else say("sfMessage","Select and copy the link manually.")});
  $("shopSelect").addEventListener("change",loadShopData);
  $("ordersRefresh").addEventListener("click",loadOrders);$("applyOrderFilters").addEventListener("click",loadOrders);$("clearOrderFilters").addEventListener("click",()=>{$("orderStatusFilter").value="";$("orderSearch").value="";loadOrders()});$("customerDirectoryRefresh").addEventListener("click",loadOrders);$("customerDirectorySearch").addEventListener("input",()=>renderCustomerDirectory());
  $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
