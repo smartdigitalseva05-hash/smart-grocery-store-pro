@@ -84,7 +84,7 @@ a{color:#8ce2b3}
   <label class="field">Notes / details<textarea id="universalRecordNotes" rows="2" maxlength="3000" placeholder="Add item details, delivery address, follow-up notes or internal instructions"></textarea></label>
   <button id="universalRecordSave" type="submit">Save advanced record</button><div id="universalRecordMessage" class="notice" role="status"></div>
  </form>
- <div class="row" style="margin-top:16px"><label class="field" style="flex:1;min-width:170px">Filter type<select id="universalRecordFilter"><option value="">All workflows</option><option value="quotation">Quotations</option><option value="invoice">Invoices</option><option value="purchase_order">Purchase orders</option><option value="sales_return">Sales returns</option><option value="purchase_return">Purchase returns</option><option value="delivery">Deliveries</option><option value="booking">Bookings</option><option value="appointment">Appointments</option><option value="customer_follow_up">Customer follow-ups</option><option value="loyalty_entry">Loyalty entries</option><option value="warranty_claim">Warranty claims</option><option value="stock_adjustment">Stock adjustments</option><option value="inventory_transfer">Inventory transfers</option><option value="service_job">Service jobs</option><option value="maintenance">Maintenance</option><option value="employee_advance">Employee advances</option><option value="expense_claim">Expense claims</option><option value="task">Tasks</option></select></label><label class="field" style="flex:1;min-width:170px">Filter status<select id="universalRecordStatusFilter"><option value="">All statuses</option><option value="draft">Draft</option><option value="open">Open</option><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="paid">Paid</option><option value="returned">Returned</option><option value="cancelled">Cancelled</option></select></label></div>
+ <div class="row" style="margin-top:16px"><label class="field" style="flex:1;min-width:170px">Search records<input id="universalRecordSearch" type="search" maxlength="120" placeholder="Search title, person or reference"></label><button id="universalRecordExport" class="secondary" type="button">Export records CSV</button><label class="field" style="flex:1;min-width:170px">Filter type<select id="universalRecordFilter"><option value="">All workflows</option><option value="quotation">Quotations</option><option value="invoice">Invoices</option><option value="purchase_order">Purchase orders</option><option value="sales_return">Sales returns</option><option value="purchase_return">Purchase returns</option><option value="delivery">Deliveries</option><option value="booking">Bookings</option><option value="appointment">Appointments</option><option value="customer_follow_up">Customer follow-ups</option><option value="loyalty_entry">Loyalty entries</option><option value="warranty_claim">Warranty claims</option><option value="stock_adjustment">Stock adjustments</option><option value="inventory_transfer">Inventory transfers</option><option value="service_job">Service jobs</option><option value="maintenance">Maintenance</option><option value="employee_advance">Employee advances</option><option value="expense_claim">Expense claims</option><option value="task">Tasks</option></select></label><label class="field" style="flex:1;min-width:170px">Filter status<select id="universalRecordStatusFilter"><option value="">All statuses</option><option value="draft">Draft</option><option value="open">Open</option><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="paid">Paid</option><option value="returned">Returned</option><option value="cancelled">Cancelled</option></select></label></div>
  <div id="universalAdvancedList" class="products"><div class="notice">Select a shop to load records.</div></div>
  <div id="universalAdvancedListMessage" class="notice" role="status"></div>
 </section>
@@ -972,6 +972,13 @@ function bindGrowthTools(){
  $("universalAdvancedRefresh").addEventListener("click",loadUniversalAdvancedRecords);
  $("universalRecordFilter").addEventListener("change",loadUniversalAdvancedRecords);
  $("universalRecordStatusFilter").addEventListener("change",loadUniversalAdvancedRecords);
+ $("universalRecordSearch").addEventListener("input",loadUniversalAdvancedRecords);
+ $("universalRecordExport").addEventListener("click",()=>{
+  if(!currentShop||!canManageProducts()){say("universalRecordMessage","Active subscription required to export records.",true);return}
+  const rows=universalAdvancedRows;
+  downloadCsvFile("advanced-records-"+currentShop.id+".csv",["Type","Title","Reference","Person","Phone","Amount","Due date","Status","Notes","Created"],rows.map(x=>[UNIVERSAL_RECORD_LABELS[x.record_type]||x.record_type,x.title,x.reference_no,x.customer_name,x.customer_phone,x.amount,x.due_date,x.status,x.notes,x.created_at]));
+  say("universalRecordMessage","CSV export prepared for this shop.");
+ });
  $("lowStockLimit").addEventListener("change",loadAdvancedAlerts);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
  $("shareShopWhatsApp").addEventListener("click",()=>{const msg=[$("whatsAppPromo").value.trim()||("Hello! Visit "+currentShop.name+" to view our products."),shopPublicUrl()].join("\n\n");window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");say("whatsAppMessage","WhatsApp opened. Review and send the message yourself.")});
  $("copyShopLink").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(shopPublicUrl());say("qrMessage","Shop link copied.")}catch{say("qrMessage","Copy not supported. "+shopPublicUrl(),true)}});
@@ -1109,6 +1116,7 @@ async function loadAdvancedAlerts(){
  }catch(error){msg.textContent="Some alerts could not load: "+(error.message||"Unknown error");msg.classList.add("error")}
 }
 
+let universalAdvancedRows=[];
 const UNIVERSAL_RECORD_LABELS={quotation:"Quotation",invoice:"Invoice",purchase_order:"Purchase order",sales_return:"Sales return",purchase_return:"Purchase return",delivery:"Delivery",booking:"Booking",appointment:"Appointment",customer_follow_up:"Customer follow-up",loyalty_entry:"Loyalty / reward",warranty_claim:"Warranty claim",stock_adjustment:"Stock adjustment",inventory_transfer:"Inventory transfer",service_job:"Service job",maintenance:"Maintenance",employee_advance:"Employee advance",expense_claim:"Expense claim",task:"Task"};
 async function loadUniversalAdvancedRecords(){
  const host=$("universalAdvancedList");if(!host||!currentShop)return;
@@ -1118,9 +1126,11 @@ async function loadUniversalAdvancedRecords(){
  if(type)query=query.eq("record_type",type);if(status)query=query.eq("status",status);
  const {data,error}=await query;
  if(error){$("universalAdvancedListMessage").textContent="Records unavailable: "+error.message;return}
- const rows=data||[];
- if(!rows.length){$("universalAdvancedListMessage").textContent="No matching advanced records yet.";return}
- for(const x of rows){
+ const rows=data||[];universalAdvancedRows=rows;
+ const term=$("universalRecordSearch").value.trim().toLowerCase();
+ const visible=term?rows.filter(x=>[x.title,x.reference_no,x.customer_name,x.customer_phone,x.notes].some(v=>String(v||"").toLowerCase().includes(term))):rows;
+ if(!visible.length){$("universalAdvancedListMessage").textContent="No matching advanced records yet.";return}
+ for(const x of visible){
   const card=document.createElement("article");card.className="product";
   const head=document.createElement("div");head.className="row";
   const title=document.createElement("strong");title.textContent=(UNIVERSAL_RECORD_LABELS[x.record_type]||x.record_type)+" · "+x.title;
@@ -1132,7 +1142,7 @@ async function loadUniversalAdvancedRecords(){
   const next=document.createElement("button");next.type="button";next.className="secondary";next.textContent="Advance status";next.addEventListener("click",()=>advanceUniversalRecord(x));actions.append(next);
   card.append(actions);host.append(card);
  }
- $("universalAdvancedListMessage").textContent="Showing "+rows.length+" record(s) for "+currentShop.name+".";
+ $("universalAdvancedListMessage").textContent="Showing "+visible.length+" of "+rows.length+" loaded record(s) for "+currentShop.name+". Records are private to this shop.";
 }
 async function advanceUniversalRecord(record){
  if(!currentShop||!canManageProducts()){say("universalRecordMessage","An active subscription is required to update records.",true);return}
