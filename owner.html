@@ -884,10 +884,14 @@ async function loadShopkeepers(){
  const overview=[...dashboard.children].find(el=>el.classList?.contains("panel")&&el!==command&&el.querySelector("#metrics"));
  const searchGuides=document.createElement("div");
  searchGuides.className="panel shop-section";
- searchGuides.innerHTML='<div class="row"><div><h1>🔎 Global Search & Guides</h1><div class="sub">Search loaded Super Admin records and open the step-by-step guides from this single workspace.</div></div><button id="workspaceGlobalSearch" type="button" class="secondary">Open Global Search</button></div><div class="grid" style="margin-top:14px"><a class="metric" href="super-admin-manual-odia.html" style="text-decoration:none;color:inherit"><strong>📘 Super Admin Guide (Odia)</strong><span>Step-by-step guide in Odia</span></a><a class="metric" href="super-admin-manual-english.html" style="text-decoration:none;color:inherit"><strong>📗 Super Admin Guide (English)</strong><span>Step-by-step guide in English</span></a></div><p class="muted">Global Search covers records loaded in this dashboard and available controls; it does not replace database-wide reporting.</p>';
+ searchGuides.innerHTML='<div class="row"><div><h1>🔎 Global Search</h1><div class="sub">Search the loaded Super Admin records and available controls.</div></div><button id="workspaceGlobalSearch" type="button" class="secondary">Open Global Search</button></div><p class="muted">Search results cover records loaded in this dashboard and available controls.</p>';
+ const allManuals=document.createElement("div");
+ allManuals.className="panel shop-section";
+ allManuals.innerHTML='<div class="row"><div><h1>📚 All User Manuals</h1><div class="sub">Customer, Shopkeeper and Owner manuals are maintained separately and can be updated independently.</div></div><a class="metric" href="manual-center.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">Open Full Manual Center ↗</a></div><iframe title="All user manuals" src="manual-center.html?role=owner" style="width:100%;height:760px;border:1px solid var(--border);border-radius:12px;background:#fff;margin-top:12px"></iframe>';
  const definitions=[
   {id:"overview",label:"🏠 Overview",nodes:[command,overview]},
-  {id:"searchGuides",label:"🔎 Search & Guides",nodes:[searchGuides]},
+  {id:"searchGuides",label:"🔎 Global Search",nodes:[searchGuides]},
+  {id:"allManuals",label:"📚 All Manuals",nodes:[allManuals]},
   {id:"ownerShopsControl",label:"🏪 Shops"},
   {id:"ownerCategoryControl",label:"🧭 11 Categories"},
   {id:"ownerApplicationHub",label:"🗂️ Applications"},
