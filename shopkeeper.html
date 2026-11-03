@@ -1449,7 +1449,7 @@ async function loadShopData(){
   const list=$("orderList");list.replaceChildren();
   if(!currentShop){say("ordersMessage","Select a shop first.");return}
   say("ordersMessage","Loading orders…");
-  const {data,error}=await db.from("orders").select("id,order_number,status,payment_method,payment_status,total,created_at,shipping_address,items:order_items(quantity,total_price,product:products(name))").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100);
+  const {data,error}=await db.from("orders").select("id,order_number,status,payment_method,payment_status,total,discount_amount,coupon_code,created_at,shipping_address,items:order_items(quantity,total_price,product:products(name))").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100);
   if(error){say("ordersMessage",error.message,true);recentShopOrders=[];renderCustomerDirectory([]);return}
   recentShopOrders=data||[];renderCustomerDirectory(recentShopOrders);
   if(!data?.length){say("ordersMessage","No orders for this shop yet.");return}
@@ -1467,7 +1467,7 @@ async function loadShopData(){
    const card=document.createElement("article");card.className="order";
    const top=document.createElement("div");top.className="row";
    const info=document.createElement("div");const title=document.createElement("strong");title.textContent=o.order_number||("Order "+o.id.slice(0,8));
-   const meta=document.createElement("div");meta.className="sub";meta.textContent=new Date(o.created_at).toLocaleString()+" · "+money(o.total)+" · "+(o.payment_method==="cash_on_delivery"?"COD":"Online")+" ("+(o.payment_status||"unpaid")+")";info.append(title,meta);
+   const meta=document.createElement("div");meta.className="sub";meta.textContent=new Date(o.created_at).toLocaleString()+" · "+money(o.total)+(Number(o.discount_amount||0)>0?" · Coupon "+o.coupon_code+" −"+money(o.discount_amount):"")+" · "+(o.payment_method==="cash_on_delivery"?"COD":"Online")+" ("+(o.payment_status||"unpaid")+")";info.append(title,meta);
    const status=document.createElement("span");status.className="pill";status.textContent=(o.status||"unknown").replaceAll("_"," ");top.append(info,status);card.append(top);
    const lines=document.createElement("div");lines.className="sub";lines.style.marginTop="9px";lines.textContent=(o.items||[]).map(x=>(x.product?.name||"Item")+" × "+x.quantity).join(" · ");card.append(lines);
    const a=o.shipping_address||{};const delivery=document.createElement("div");delivery.className="sub";delivery.style.marginTop="8px";delivery.textContent="Deliver to: "+[a.label,a.full_address,a.city,a.pincode,a.phone].filter(Boolean).join(" · ");if(delivery.textContent!=="Deliver to: ")card.append(delivery);
