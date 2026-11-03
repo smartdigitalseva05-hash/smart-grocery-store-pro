@@ -50,6 +50,55 @@ a{color:#8ce2b3}
 <section id="loginPanel" class="panel auth"><h1>Shopkeeper sign in</h1><p class="muted">Sign in with the shopkeeper account approved by the Owner. <a href="./apply-shop.html" style="color:#7dd3fc">Apply for a shop</a></p><form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><button id="loginButton" type="submit">Sign in</button></form><button id="forgotPasswordButton" type="button" class="secondary" style="margin-top:10px;width:100%">Forgot Password?</button><div id="loginMessage" class="notice" role="status"></div><form id="recoveryForm" class="hidden" style="margin-top:14px"><h2 style="font-size:18px">Set a new password</h2><label class="field">New password<input id="newPassword" type="password" autocomplete="new-password" minlength="12" required></label><label class="field">Confirm new password<input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="12" required></label><button id="saveNewPasswordButton" type="submit">Update Password</button><div id="recoveryMessage" class="notice" role="status"></div></form></section>
 <section id="app" class="hidden">
 <div class="panel"><div class="row"><div><h1>My shop</h1><div class="sub">Only shops linked to your signed-in account are shown.</div></div><div style="min-width:220px;flex:1;max-width:360px"><select id="shopSelect" aria-label="Choose shop"></select></div></div><div id="shopInfo" class="notice"></div></div>
+
+<section class="panel" id="storefrontManager">
+ <div class="row"><div><h1>🛍️ Online Storefront & Delivery Setup</h1><div class="sub">Configure your public shop page, delivery charges, pincodes, policies and coupon codes.</div></div><button id="storefrontRefresh" class="secondary" type="button">Refresh</button></div>
+ <form id="storefrontSettingsForm">
+  <div class="formgrid">
+   <label class="field">Announcement<input id="sfAnnouncement" maxlength="240" placeholder="Welcome offer / store announcement"></label>
+   <label class="field">Logo image HTTPS URL<input id="sfLogo" type="url" maxlength="2048" placeholder="https://…"></label>
+   <label class="field">Banner image HTTPS URL<input id="sfBanner" type="url" maxlength="2048" placeholder="https://…"></label>
+   <label class="field">Theme<select id="sfTheme"><option value="emerald">Emerald</option><option value="blue">Blue</option><option value="rose">Rose</option><option value="amber">Amber</option><option value="slate">Slate</option></select></label>
+   <label class="field">Minimum order (₹)<input id="sfMinimum" type="number" min="0" max="99999999" step="0.01" value="0"></label>
+   <label class="field">Delivery fee (₹)<input id="sfDeliveryFee" type="number" min="0" max="999999" step="0.01" value="0"></label>
+   <label class="field">Free delivery above (₹)<input id="sfFreeThreshold" type="number" min="0" max="99999999" step="0.01" placeholder="Leave blank to disable"></label>
+  </div>
+  <div class="formgrid">
+   <label class="field"><input id="sfDeliveryEnabled" type="checkbox" checked style="display:inline;width:auto"> Home delivery enabled</label>
+   <label class="field"><input id="sfPickupEnabled" type="checkbox" checked style="display:inline;width:auto"> Store pickup enabled</label>
+   <label class="field"><input id="sfStoreOpen" type="checkbox" checked style="display:inline;width:auto"> Store open for orders</label>
+  </div>
+  <label class="field">Return / cancellation policy<textarea id="sfReturnPolicy" maxlength="4000" rows="2"></textarea></label>
+  <label class="field">Privacy policy<textarea id="sfPrivacyPolicy" maxlength="4000" rows="2"></textarea></label>
+  <label class="field">Terms & conditions<textarea id="sfTerms" maxlength="4000" rows="2"></textarea></label>
+  <button id="sfSave" type="submit">Save storefront settings</button><div id="sfMessage" class="notice" role="status"></div>
+ </form>
+ <div class="product" style="margin-top:14px"><strong>Public shop catalogue link</strong><div class="sub" id="sfPublicLink">Select a shop to generate its link.</div><div class="actions" style="margin-top:8px"><button id="sfCopyLink" type="button" class="secondary">Copy link</button><a id="sfOpenLink" href="./storefront.html" target="_blank" rel="noopener">Open storefront</a></div></div>
+ <hr style="border-color:var(--line);margin:18px 0">
+ <h2>📍 Delivery pincodes / zones</h2>
+ <form id="deliveryZoneForm"><div class="formgrid">
+  <label class="field">Area / zone name<input id="zoneName" maxlength="100" required placeholder="Main market"></label>
+  <label class="field">6-digit pincode<input id="zonePincode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label>
+  <label class="field">Delivery fee (₹)<input id="zoneFee" type="number" min="0" step="0.01" value="0" required></label>
+  <label class="field">Minimum order (₹)<input id="zoneMinimum" type="number" min="0" step="0.01" value="0"></label>
+  <label class="field">Estimated delivery (minutes)<input id="zoneEta" type="number" min="1" max="10080" placeholder="Optional"></label>
+ </div><button type="submit" id="zoneSave">Add delivery zone</button><div id="zoneMessage" class="notice" role="status"></div></form>
+ <div id="deliveryZoneList" class="products"></div>
+ <hr style="border-color:var(--line);margin:18px 0">
+ <h2>🎟️ Coupon codes</h2>
+ <form id="couponForm"><div class="formgrid">
+  <label class="field">Coupon code<input id="couponCode" maxlength="32" pattern="[A-Za-z0-9_-]{3,32}" required placeholder="WELCOME10"></label>
+  <label class="field">Discount type<select id="couponType"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed amount (₹)</option></select></label>
+  <label class="field">Discount value<input id="couponValue" type="number" min="0.01" step="0.01" required></label>
+  <label class="field">Minimum order (₹)<input id="couponMinimum" type="number" min="0" step="0.01" value="0"></label>
+  <label class="field">Maximum discount (₹)<input id="couponMaximum" type="number" min="0" step="0.01" placeholder="Optional"></label>
+  <label class="field">Usage limit<input id="couponLimit" type="number" min="1" step="1" placeholder="Unlimited"></label>
+  <label class="field">Starts at<input id="couponStarts" type="datetime-local"></label>
+  <label class="field">Ends at<input id="couponEnds" type="datetime-local"></label>
+ </div><button id="couponSave" type="submit">Create coupon</button><div id="couponMessage" class="notice" role="status"></div></form>
+ <div id="couponList" class="products"></div>
+</section>
+
 <section class="panel" id="publicShopProfile">
  <h2>Customer-facing shop details</h2>
  <p class="sub">These details appear on your own customer QR/link page.</p>
