@@ -423,8 +423,6 @@ async function loadCustomerStore() {
   }
 
   requestedShopId = targetShopId;
-  const openedDifferentShopLink = Boolean((shopLinkId && shopLinkId !== targetShopId) || (shopLinkSlug && shopLinkSlug !== store.slug));
-
   const {data:store,error:storeError}=await db.from("shops")
     .select("id,name,slug,business_type,address,city,status,is_active,opening_time,closing_time,latitude,longitude")
     .eq("id",requestedShopId)
@@ -436,6 +434,8 @@ async function loadCustomerStore() {
     showError("Your connected shop is unavailable or inactive. Contact the shopkeeper or platform support.");
     return;
   }
+
+  const openedDifferentShopLink = Boolean((shopLinkId && shopLinkId !== targetShopId) || (shopLinkSlug && shopLinkSlug !== store.slug));
 
   await loadShopStorefrontConfig(requestedShopId);
   $("storeHeroTitle").textContent = "Shop only from " + store.name;
