@@ -52,7 +52,7 @@ a{color:#8ce2b3}
 <div class="panel"><div class="row"><div><h1>My shop</h1><div class="sub">Only shops linked to your signed-in account are shown.</div></div><div style="min-width:220px;flex:1;max-width:360px"><select id="shopSelect" aria-label="Choose shop"></select></div></div><div id="shopInfo" class="notice"></div></div>
 <section id="pinnedReferralPanel" class="panel" aria-label="Pinned customer referral link" style="position:sticky;top:8px;z-index:20;padding:12px;border:2px solid #22c55e;box-shadow:0 8px 24px #0005;background:#0d1b16">
 <div class="row" style="align-items:center;gap:10px"><div><strong style="font-size:16px">📌 Customer Referral Link</strong><div class="sub">Hamesha yahin milega · Selected shop ka unique link</div></div><span class="badge" style="background:#14532d;color:#dcfce7;padding:5px 8px;border-radius:20px">PINNED</span></div>
-<div class="pinned-referral-card"><strong>Customer Referral / Store Link</strong><p class="sub">Har shop ka apna unique customer link. Shop select karne par us shop ka link dikhega. Customer is link se signup/login karke usi shop se connect hoga.</p><label class="field">Selected shop referral link<input id="shopReferralLink" type="text" readonly value="" placeholder="Select a shop to create its unique link"></label><div class="product-actions"><button id="copyShopReferralLink" type="button" class="secondary">Copy referral link</button><button id="shareShopReferralLink" type="button">Share link on WhatsApp</button></div><div id="shopReferralMessage" class="notice" role="status"></div></div>
+<div class="pinned-referral-card"><strong>Customer Referral / Store Link</strong><p class="sub">Har shop ka apna unique customer link. Shop select karne par us shop ka link dikhega. Customer is link se signup/login karke usi shop se connect hoga.</p><label class="field">Selected shop referral link<input id="shopReferralLink" type="text" readonly value="" placeholder="Tap Generate link"></label><div id="shopReferralVisibleLink" style="display:block;overflow-wrap:anywhere;padding:12px;margin:8px 0;border:1px solid #22c55e;border-radius:10px;background:#07130f;color:#d1fae5;min-height:44px">Link abhi generate nahi hua.</div><div class="product-actions"><button id="generateShopReferralLink" type="button" class="secondary">Generate / Refresh link</button><button id="copyShopReferralLink" type="button" class="secondary">Copy referral link</button><button id="shareShopReferralLink" type="button">Share link on WhatsApp</button></div><div id="shopReferralMessage" class="notice" role="status"></div></div>
 </section>
 
 <section class="panel" id="storefrontManager">
@@ -535,7 +535,7 @@ async function boot(){
   const sel=$("shopSelect");sel.replaceChildren();
   for(const s of shops){const o=document.createElement("option");o.value=s.id;o.textContent=s.name+" ("+s.status+")";sel.append(o)}
   if(!shops.length){say("shopInfo","No shop is linked to this account yet. Contact the Owner for approval.");$("productForm").querySelector("button").disabled=true;return}
-  currentShop=shops[0];sel.value=currentShop.id;await Promise.all([loadPlans(),loadShopData()]);
+  currentShop=shops[0];sel.value=currentShop.id;refreshShopReferralLink();await Promise.all([loadPlans(),loadShopData()]);
  }
  function renderBusinessWorkspace(shop){
   const types={
@@ -985,8 +985,8 @@ async function loadDigitalApplications(){
  });
 }
 
-function shopPublicUrl(shop=null){const selected=shop||shops.find(s=>s.id===$("shopSelect")?.value)||currentShop;if(!selected?.id)return "";const u=new URL("./index.html",window.location.href);u.searchParams.set("shop_id",String(selected.id));return u.href}
-function refreshShopReferralLink(){const field=$("shopReferralLink");if(!field)return "";const link=shopPublicUrl();field.value=link;field.placeholder=link?"":"Select an approved shop to create its unique link";if(!link)say("shopReferralMessage","Shop list load hone ke baad referral link yahan dikhega.",true);else say("shopReferralMessage","Selected shop ka unique customer link ready hai.");return link}
+function shopPublicUrl(shop=null){const selected=shop||shops.find(s=>s.id===$("shopSelect")?.value)||currentShop;if(!selected?.id)return "";const u=new URL("index.html","https://smartdigitalseva05-hash.github.io/smart-grocery-store-pro/");u.searchParams.set("shop_id",String(selected.id));return u.href}
+function refreshShopReferralLink(){const field=$("shopReferralLink");if(!field)return "";const selected=shops.find(s=>s.id===$("shopSelect")?.value)||currentShop;const link=shopPublicUrl(selected);field.value=link;field.placeholder=link?"":"Select an approved shop to create its unique link";const visible=$("shopReferralVisibleLink");if(visible){visible.replaceChildren();if(link){const a=document.createElement("a");a.href=link;a.target="_blank";a.rel="noopener noreferrer";a.textContent=link;a.style.cssText="color:#86efac;text-decoration:underline;overflow-wrap:anywhere";visible.append(a)}else visible.textContent="Shop select hone ke baad yahan link dikhega."}if(!link)say("shopReferralMessage","Shop select karein, phir Generate / Refresh link dabayein.",true);else say("shopReferralMessage","Selected shop ka unique customer link ready hai.");return link}
 function csvCell(value){
  const raw=String(value??"");
  const safe=/^[=+@\\-\\t\\r]/.test(raw)?"'"+raw:raw;
@@ -1079,6 +1079,7 @@ function bindGrowthTools(){
   say("universalRecordMessage","CSV export prepared for this shop.");
  });
  $("lowStockLimit").addEventListener("change",loadAdvancedAlerts);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
+ $("generateShopReferralLink").addEventListener("click",()=>refreshShopReferralLink());
  $("copyShopReferralLink").addEventListener("click",async()=>{const link=refreshShopReferralLink();if(!link)return;const field=$("shopReferralLink");try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(link);say("shopReferralMessage","Referral link copy ho gaya. Ab ise customer ko bhej sakte hain.");return}}catch{}field.focus();field.select();field.setSelectionRange(0,field.value.length);const ok=document.execCommand("copy");say("shopReferralMessage",ok?"Referral link copy ho gaya.":"Link selected hai. Android menu se Copy dabayein.")});
  $("shareShopReferralLink").addEventListener("click",()=>{const link=refreshShopReferralLink();if(!link)return;const selected=shops.find(s=>s.id===$("shopSelect").value)||currentShop;const msg="Join "+(selected?.name||"our shop")+" and view our products here: "+link;window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer")});
  $("shareShopWhatsApp").addEventListener("click",()=>{const msg=[$("whatsAppPromo").value.trim()||("Hello! Visit "+currentShop.name+" to view our products."),shopPublicUrl()].join("\n\n");window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");say("whatsAppMessage","WhatsApp opened. Review and send the message yourself.")});
