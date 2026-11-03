@@ -365,7 +365,7 @@ function renderApplicationHub(){
    const manage=document.createElement("button");manage.type="button";manage.className="secondary";manage.textContent="Open shop management";manage.addEventListener("click",()=>{document.getElementById("ownerShopsControl").scrollIntoView({behavior:"smooth",block:"start"});$("businessTypeFilter").value=x.shop.business_type||"all";loadShops()});actions.append(manage);
    if(x.shop.status==="active"&&x.shop.is_active===true){const open=document.createElement("a");open.href="./index.html?shop_id="+encodeURIComponent(x.shop.id);open.target="_blank";open.rel="noopener noreferrer";open.textContent="Open Store Website ↗";open.style.cssText="display:inline-block;padding:9px 12px;border-radius:10px;background:#14532d;color:#dcfce7;text-decoration:none;font-weight:750";actions.append(open)}
   }
-  if(x.profile?.phone){const call=document.createElement("a");call.href="tel:"+x.profile.phone.replace(/[^+\\d]/g,"");call.textContent="📞 Call applicant";call.style.cssText="padding:9px 12px;border-radius:10px;background:#24364d;color:#fff;text-decoration:none";actions.append(call)}
+  if(x.profile?.phone){const call=document.createElement("a");call.href="tel:"+x.profile.phone.replace(/[^+\d]/g,"");call.textContent="📞 Call applicant";call.style.cssText="padding:9px 12px;border-radius:10px;background:#24364d;color:#fff;text-decoration:none";actions.append(call)}
   card.append(actions);list.append(card);
  }
 }
