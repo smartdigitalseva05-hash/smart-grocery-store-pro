@@ -122,6 +122,8 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
  <p id="publicStoreAddress" class="small">Shop address will appear here.</p>
  <p id="publicStoreHours" class="small">Opening hours not provided yet.</p>
  <p id="publicStoreStatus" class="notice">Checking shop status…</p>
+ <p id="publicStoreAnnouncement" class="notice"></p>
+ <p id="publicStorePolicies" class="small"></p>
  <a id="publicStoreMap" class="btn btn-light hidden" target="_blank" rel="noopener noreferrer">Open shop location in Maps</a>
 </section>
 
@@ -241,6 +243,8 @@ let signupMode = false;
 let resetMode = false;
 let checkoutMode = false;
 let deliveryFee = 40;
+let shopStorefrontSettings = null;
+let shopDeliveryZones = [];
 
 const $ = id => document.getElementById(id);
 
@@ -398,6 +402,7 @@ async function loadCustomerStore() {
     return;
   }
 
+  await loadShopStorefrontConfig(requestedShopId);
   $("storeHeroTitle").textContent = "Shop only from " + store.name;
   $("publicStoreName").textContent = store.name;
   $("publicStoreAddress").textContent = [store.address,store.city].filter(Boolean).join(", ");
@@ -406,7 +411,8 @@ async function loadCustomerStore() {
   $("publicStoreHours").textContent=opening&&closing?"Opening hours: "+opening+" – "+closing:"Opening hours not provided yet.";
   const parts=new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZone:"Asia/Kolkata"}).formatToParts(new Date());
   const now=Number(parts.find(x=>x.type==="hour").value)*60+Number(parts.find(x=>x.type==="minute").value);
-  if(store.opening_time&&store.closing_time){
+  if(shopStorefrontSettings?.store_open===false){$("publicStoreStatus").textContent="🔴 Shop is temporarily closed for online orders";}
+  else if(store.opening_time&&store.closing_time){
     const [oh,om]=store.opening_time.split(":").map(Number),[ch,cm]=store.closing_time.split(":").map(Number),start=oh*60+om,end=ch*60+cm;
     const isOpen=start===end?true:(end>start?now>=start&&now<end:now>=start||now<end);
     $("publicStoreStatus").textContent=isOpen?"🟢 Open now":"🔴 Closed now";
@@ -465,6 +471,30 @@ async function loadDeliveryFee() {
   if (Number.isFinite(configured) && configured >= 0) {
     deliveryFee = configured;
   }
+}
+
+
+async function loadShopStorefrontConfig(shopId){
+  shopStorefrontSettings=null;shopDeliveryZones=[];
+  const [settingsResult,zonesResult]=await Promise.all([
+    db.from("shop_storefront_settings").select("announcement,minimum_order_amount,delivery_fee,free_delivery_threshold,delivery_enabled,pickup_enabled,store_open,return_policy,privacy_policy,terms_text").eq("shop_id",shopId).maybeSingle(),
+    db.from("shop_delivery_zones").select("pincode,delivery_fee,minimum_order_amount,is_active").eq("shop_id",shopId).eq("is_active",true)
+  ]);
+  if(settingsResult.error)console.warn("Shop storefront settings unavailable:",settingsResult.error.message);
+  else shopStorefrontSettings=settingsResult.data||null;
+  if(zonesResult.error)console.warn("Shop delivery zones unavailable:",zonesResult.error.message);
+  else shopDeliveryZones=zonesResult.data||[];
+  if(shopStorefrontSettings&&Number.isFinite(Number(shopStorefrontSettings.delivery_fee)))deliveryFee=Number(shopStorefrontSettings.delivery_fee);
+  $("publicStoreAnnouncement").textContent=shopStorefrontSettings?.announcement||"";
+  const policy=[["Returns",shopStorefrontSettings?.return_policy],["Privacy",shopStorefrontSettings?.privacy_policy],["Terms",shopStorefrontSettings?.terms_text]].filter(x=>x[1]);
+  $("publicStorePolicies").textContent=policy.map(x=>x[0]+": "+x[1]).join(" · ");
+}
+function calculateShopDeliveryFee(subtotal){
+  const pin=$("pincode")?.value.trim()||"",zone=shopDeliveryZones.find(z=>z.pincode===pin);
+  let fee=zone?Number(zone.delivery_fee):(shopStorefrontSettings?Number(shopStorefrontSettings.delivery_fee||0):deliveryFee);
+  const threshold=shopStorefrontSettings?.free_delivery_threshold;
+  if(threshold!==null&&threshold!==undefined&&subtotal>=Number(threshold))fee=0;
+  return Number.isFinite(fee)&&fee>=0?fee:deliveryFee;
 }
 
 /* =========================================
@@ -663,12 +693,14 @@ function updateCart() {
     : '<p class="small">Your cart is empty.</p>';
 
   const subtotal = cart.reduce((sum,p) => sum+effectivePrice(p)*p.quantity, 0);
-  const shipping = cart.length ? deliveryFee : 0;
+  const shipping = cart.length ? calculateShopDeliveryFee(subtotal) : 0;
   $("cartTotal").textContent =
     "Subtotal: " + money(subtotal) +
     " · Delivery: " + money(shipping) +
     " · Total: " + money(subtotal + shipping);
 }
+
+$("pincode").addEventListener("input",updateCart);
 
 $("cartItems").addEventListener("click", e => {
   const btn = e.target.closest("[data-remove]");
@@ -916,6 +948,13 @@ $("checkoutBtn").onclick = async () => {
   const city = $("city").value.trim();
   const pincode = $("pincode").value.trim();
   const phone = $("phone").value.trim();
+  const subtotal=cart.reduce((sum,p)=>sum+effectivePrice(p)*p.quantity,0);
+  const zone=shopDeliveryZones.find(z=>z.pincode===pincode);
+  if(shopStorefrontSettings?.store_open===false)return notify("This shop is currently closed for online orders.");
+  if(shopStorefrontSettings?.delivery_enabled===false)return notify("This shop has disabled home delivery. Contact the shopkeeper for pickup options.");
+  if(shopStorefrontSettings&&subtotal<Number(shopStorefrontSettings.minimum_order_amount||0))return notify("Minimum order amount is "+money(shopStorefrontSettings.minimum_order_amount)+".");
+  if(shopDeliveryZones.length&&!zone)return notify("This shop does not deliver to pincode "+pincode+".");
+  if(zone&&subtotal<Number(zone.minimum_order_amount||0))return notify("Minimum order for this delivery area is "+money(zone.minimum_order_amount)+".");
 
   if (!address || !city || !phone || !/^[0-9]{6}$/.test(pincode)) {
     return notify("Enter a complete address and valid 6-digit pincode.");
