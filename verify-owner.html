@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071b13"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Cache-Control" content="no-store">
+<title>Owner Verification · Smart Business Pro</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 15% 0,#174b36 0,transparent 38%),#07130f;color:#f1fbf4;font:16px system-ui,-apple-system,Segoe UI,sans-serif}.card{width:min(520px,100%);padding:26px;border:1px solid #315b43;border-radius:24px;background:linear-gradient(145deg,#12271e,#0b1b14);box-shadow:0 24px 70px #0008}.brand{font-size:13px;letter-spacing:1.3px;color:#9bc9aa;font-weight:800}.mark{width:62px;height:62px;border-radius:18px;display:grid;place-items:center;background:#1c4b32;font-size:30px;margin:22px 0 16px}.status{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;letter-spacing:.5px;background:#173d2b;color:#a7f3c2;border:1px solid #2c8050}.status.bad{background:#451b1b;color:#fecaca;border-color:#9f3434}.name{font-size:30px;line-height:1.15;margin:17px 0 8px;overflow-wrap:anywhere}.role{color:#c0d8c8;font-size:16px}.org{font-weight:800;margin-top:5px;color:#9ce4b4}.rule{height:1px;background:#294638;margin:22px 0}.meta{display:grid;gap:10px;color:#b6cbbd;font-size:13px}.meta strong{display:block;color:#eef9f1;font-size:14px;margin-top:3px}.notice{font-size:12px;line-height:1.6;color:#94aa9a;margin-top:20px}.state{color:#c5d8cb;line-height:1.6}.foot{margin-top:22px;font-size:11px;color:#718c7b;text-align:center}
+</style>
+</head>
+<body>
+<main class="card">
+<div class="brand">SMART BUSINESS PRO · PUBLIC VERIFICATION</div>
+<div class="mark">🛡️</div>
+<div id="status" class="status">CHECKING QR…</div>
+<h1 id="name" class="name">Verifying owner profile</h1>
+<div id="role" class="role state">Please wait while the verification record is checked securely.</div>
+<div id="org" class="org"></div>
+<div class="rule"></div>
+<div class="meta">
+<div>Verification record<strong id="record">Checking database record…</strong></div>
+<div>Issued on<strong id="issued">—</strong></div>
+<div>Valid until<strong id="expires">—</strong></div>
+</div>
+<p id="notice" class="notice">A valid QR confirms an active profile record in the Smart Business Pro database. It is not a government identity document or a substitute for official identity checks.</p>
+<div class="foot">Secure owner profile verification · Smart Business Pro</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
+<script>
+(async()=>{
+ const $=id=>document.getElementById(id);
+ const client=window.supabase.createClient("https://wqlopfftzvsjsxmrmxeq.supabase.co","sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX",{auth:{persistSession:false,autoRefreshToken:false}});
+ const code=new URLSearchParams(location.search).get("code")||"";
+ function fail(message){
+  $("status").textContent="NOT VERIFIED";$("status").classList.add("bad");
+  $("name").textContent="Owner profile not verified";$("role").textContent=message;
+  $("record").textContent="Invalid / expired / revoked";$("notice").textContent="Do not rely on this QR as proof of identity. Ask the owner to issue a fresh verification QR from the secured Owner panel.";
+ }
+ if(!/^[0-9a-f]{64}$/.test(code)){fail("The QR code is missing or malformed.");return}
+ try{
+  const {data,error}=await client.rpc("verify_owner_profile_token",{p_code:code});
+  if(error)throw error;
+  if(!data||data.verified!==true){fail(data?.error||"The verification service could not confirm this QR.");return}
+  $("status").textContent="✓ VERIFIED · ACTIVE";$("name").textContent=data.profile.name;
+  $("role").textContent=data.profile.designation;$("org").textContent=data.profile.organization;
+  $("record").textContent="Active Smart Business Pro owner record";
+  const fmt=v=>v?new Date(v).toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"}):"—";
+  $("issued").textContent=fmt(data.issued_at);$("expires").textContent=fmt(data.expires_at);
+  $("notice").textContent=data.notice;
+ }catch(error){fail("Verification could not be completed. Check your internet connection and scan again.");}
+})();
+</script>
+</body></html>
