@@ -1,18 +1,97 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Smart Business Pro · All Manuals</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#081321">
+<title>Smart Business Pro · All Manuals</title>
 <style>
 :root{color-scheme:dark;--bg:#081321;--panel:#122238;--line:#2c4562;--text:#e8f1fb;--muted:#a9bfd7;--accent:#0c638c}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,Arial,sans-serif}.wrap{max-width:1100px;margin:auto;padding:18px}.head,.tabs{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.head{justify-content:space-between}.muted{color:var(--muted);font-size:13px}.tabs{margin:18px 0}.tabs button,.open{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);padding:11px 14px;text-decoration:none;cursor:pointer}.tabs button[aria-selected=true]{background:var(--accent);border-color:#38bdf8}.frame{width:100%;height:76vh;min-height:580px;border:1px solid var(--line);border-radius:12px;background:white}.tools{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}.note{padding:12px;border:1px solid var(--line);border-radius:10px;color:var(--muted);background:#0e1d30}
-</style></head><body><main class="wrap">
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,Arial,sans-serif}
+.wrap{max-width:1100px;margin:auto;padding:18px}
+.head,.tabs{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.head{justify-content:space-between}
+.muted{color:var(--muted);font-size:13px}
+.tabs{margin:18px 0;overflow-x:auto;flex-wrap:nowrap;padding:2px 1px 8px}
+.tabs button,.open{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);padding:11px 14px;text-decoration:none;cursor:pointer;font:inherit}
+.tabs button{flex:0 0 auto;white-space:nowrap}
+.tabs button[aria-selected=true]{background:var(--accent);border-color:#38bdf8}
+button:focus-visible,a:focus-visible{outline:3px solid #7dd3fc;outline-offset:3px}
+.frame{display:block;width:100%;height:76vh;min-height:580px;border:1px solid var(--line);border-radius:12px;background:white}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}
+.note{padding:12px;border:1px solid var(--line);border-radius:10px;color:var(--muted);background:#0e1d30;margin-bottom:12px}
+@media(max-width:600px){.wrap{padding:12px}.head{align-items:flex-start;flex-direction:column}.tabs{margin:12px 0}.tabs button,.open{padding:10px 12px;font-size:14px}.frame{height:72vh;min-height:480px}}
+</style>
+</head>
+<body>
+<main class="wrap">
 <div class="head"><div><h1>📚 Smart Business Pro · All Manuals</h1><div class="muted">Har user ke liye alag guide. Customer, Shopkeeper aur Owner manuals alag-alag update kiye ja sakte hain.</div></div><span class="muted">Manual Center</span></div>
 <div class="tabs" role="tablist" aria-label="User manuals">
-<button type="button" role="tab" data-role="customer" aria-selected="false">🛍️ Customer Manual</button>
-<button type="button" role="tab" data-role="shopkeeper" aria-selected="false">🏪 Shopkeeper Manual</button>
-<button type="button" role="tab" data-role="owner" aria-selected="false">🛡️ Owner / Super Admin Manual</button>
+<button type="button" role="tab" id="tab-customer" data-role="customer" aria-controls="manualFrame" aria-selected="false" tabindex="-1">🛍️ Customer Manual</button>
+<button type="button" role="tab" id="tab-shopkeeper" data-role="shopkeeper" aria-controls="manualFrame" aria-selected="false" tabindex="-1">🏪 Shopkeeper Manual</button>
+<button type="button" role="tab" id="tab-owner" data-role="owner" aria-controls="manualFrame" aria-selected="false" tabindex="-1">🛡️ Owner / Super Admin Manual</button>
 </div>
 <div class="tools"><a class="open" id="openManual" href="customer-manual-odia.html" target="_blank" rel="noopener">Open manual separately ↗</a><a class="open" href="super-admin-manual-english.html" target="_blank" rel="noopener">Owner Manual · English ↗</a><button class="open" id="reloadManual" type="button">Refresh manual ↻</button></div>
-<div class="note" id="manualStatus" role="status">Selected guide loads directly from its own file. Updating one manual does not require changing the other two.</div>
+<div class="note" id="manualStatus" role="status" aria-live="polite">Choose a role to open its latest guide. Each guide is maintained in a separate file.</div>
 <iframe class="frame" id="manualFrame" title="Selected user manual" src="customer-manual-odia.html"></iframe>
-</main><script>
-(()=>{const pages={customer:{src:"customer-manual-odia.html",label:"Customer Manual"},shopkeeper:{src:"shopkeeper-manual-odia.html",label:"Shopkeeper Manual"},owner:{src:"super-admin-manual-odia.html",label:"Owner / Super Admin Manual"}};const params=new URLSearchParams(location.search);let active=pages[params.get("role")]?params.get("role"):"customer";const frame=document.getElementById("manualFrame"),open=document.getElementById("openManual"),status=document.getElementById("manualStatus");function select(role){active=role;const p=pages[role];frame.src=p.src;open.href=p.src;open.textContent="Open "+p.label+" separately ↗";status.textContent=p.label+" is loaded from its own file. Each guide can be revised independently; use Refresh after an update.";document.querySelectorAll("[data-role]").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.role===role)));const url=new URL(location.href);url.searchParams.set("role",role);history.replaceState(null,"",url)}document.querySelectorAll("[data-role]").forEach(b=>b.addEventListener("click",()=>select(b.dataset.role)));document.getElementById("reloadManual").addEventListener("click",()=>{frame.src=pages[active].src+"?refresh="+Date.now()});select(active)})();
-</script></body></html>
+</main>
+<script>
+(()=> {
+ const pages={
+  customer:{src:"customer-manual-odia.html",label:"Customer Manual"},
+  shopkeeper:{src:"shopkeeper-manual-odia.html",label:"Shopkeeper Manual"},
+  owner:{src:"super-admin-manual-odia.html",label:"Owner / Super Admin Manual"}
+ };
+ const params=new URLSearchParams(location.search);
+ const requested=params.get("role");
+ let active=Object.prototype.hasOwnProperty.call(pages,requested)?requested:"customer";
+ const frame=document.getElementById("manualFrame");
+ const openLink=document.getElementById("openManual");
+ const status=document.getElementById("manualStatus");
+ const tabs=[...document.querySelectorAll("[data-role]")];
+ function select(role,updateUrl=true){
+  if(!Object.prototype.hasOwnProperty.call(pages,role))role="customer";
+  active=role;
+  const page=pages[role];
+  frame.src=page.src;
+  openLink.href=page.src;
+  openLink.textContent="Open "+page.label+" separately ↗";
+  status.textContent="Loading "+page.label+"…";
+  tabs.forEach(tab=>{
+   const selected=tab.dataset.role===role;
+   tab.setAttribute("aria-selected",String(selected));
+   tab.tabIndex=selected?0:-1;
+  });
+  if(updateUrl){
+   const url=new URL(location.href);
+   url.searchParams.set("role",role);
+   history.replaceState(null,"",url);
+  }
+ }
+ tabs.forEach((tab,index)=>{
+  tab.addEventListener("click",()=>select(tab.dataset.role));
+  tab.addEventListener("keydown",event=>{
+   if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
+   event.preventDefault();
+   let next=index;
+   if(event.key==="ArrowRight")next=(index+1)%tabs.length;
+   if(event.key==="ArrowLeft")next=(index-1+tabs.length)%tabs.length;
+   if(event.key==="Home")next=0;
+   if(event.key==="End")next=tabs.length-1;
+   tabs[next].focus();
+   select(tabs[next].dataset.role);
+  });
+ });
+ frame.addEventListener("load",()=>{status.textContent=pages[active].label+" loaded. Use Refresh after its guide file is updated.";});
+ frame.addEventListener("error",()=>{status.textContent="This manual could not be loaded. Check the guide file or open it separately.";});
+ document.getElementById("reloadManual").addEventListener("click",()=>{
+  const page=pages[active];
+  status.textContent="Refreshing "+page.label+"…";
+  frame.src=page.src+"?refresh="+Date.now();
+ });
+ select(active);
+})();
+</script>
+</body>
+</html>
