@@ -109,7 +109,7 @@ a{color:#8ce2b3}
 
 <section class="panel" id="publicShopProfile">
  <h2>Customer-facing shop details</h2>
- <p class="sub">These details appear on your own customer QR/link page.</p>
+ <p class="sub">These details appear on your own customer storefront page.</p>
  <div class="formgrid">
   <label class="field">Shop address<input id="publicShopAddress" maxlength="300" placeholder="Street, area, landmark"></label>
   <label class="field">City / town<input id="publicShopCity" maxlength="100" placeholder="City or town"></label>
@@ -160,7 +160,6 @@ a{color:#8ce2b3}
 <section class="panel" id="shopGrowthTools">
 <div class="row"><div><h1>Shop Growth Toolkit</h1><div class="sub">Promote your shop, monitor stock and understand recent activity.</div></div><button id="growthRefresh" class="secondary" type="button">Refresh insights</button></div>
 <div class="formgrid" style="margin-top:12px">
-<div class="product"><strong>Shop QR Code</strong><p class="sub">Customers scan this QR, sign in, and permanently join your shop. They will see only your products.</p><div id="shopQrName" class="sub" style="margin:8px 0">QR for your selected shop</div><div id="shopQr" style="background:#fff;border-radius:12px;padding:12px;display:inline-block;min-width:180px;min-height:180px"></div><div class="product-actions"><button id="downloadShopQr" type="button" class="secondary">Download QR</button><button id="printShopQr" type="button" class="secondary">Print QR</button><button id="copyShopLink" type="button" class="secondary">Copy shop link</button></div><div id="qrMessage" class="notice"></div></div>
 <div class="product"><strong>WhatsApp Shop Promotion</strong><p class="sub">Prepare a message; you choose recipients and send it yourself.</p><label class="field">Offer / message<textarea id="whatsAppPromo" maxlength="500" rows="3" placeholder="Fresh groceries available today!"></textarea></label><div class="product-actions"><button id="shareShopWhatsApp" type="button">Share on WhatsApp</button></div><div id="whatsAppMessage" class="notice"></div></div></div>
 <div class="product" style="margin-top:12px"><div class="row"><div><strong>Advanced Business Reports</strong><div class="sub">Download shop-scoped inventory and recent sales reports for accounting and offline review.</div></div><button id="exportBusinessReport" class="secondary" type="button">Export CSV reports</button></div><div id="exportBusinessReportMessage" class="notice" role="status"></div></div>
 <div class="product" style="margin-top:12px"><strong>Smart Sales Analytics</strong><div class="formgrid"><div><div class="sub">Recent orders</div><h2 id="metricOrders">—</h2></div><div><div class="sub">Paid / collected revenue</div><h2 id="metricRevenue">—</h2></div><div><div class="sub">Delivered orders</div><h2 id="metricDelivered">—</h2></div><div><div class="sub">Products listed</div><h2 id="metricProducts">—</h2></div></div><div id="analyticsMessage" class="notice"></div></div>
@@ -475,26 +474,6 @@ a{color:#8ce2b3}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-window.QRCodeLibraryPromise = new Promise((resolve, reject) => {
-  if (window.QRCode) { resolve(window.QRCode); return; }
-  const sources = [
-    "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js",
-    "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"
-  ];
-  let index = 0;
-  const loadNext = () => {
-    if (window.QRCode) { resolve(window.QRCode); return; }
-    if (index >= sources.length) { reject(new Error("QR library could not load. Check internet connection and try again.")); return; }
-    const script = document.createElement("script");
-    script.src = sources[index++];
-    script.async = true;
-    script.onload = () => window.QRCode ? resolve(window.QRCode) : loadNext();
-    script.onerror = loadNext;
-    document.head.appendChild(script);
-  };
-  loadNext();
-});
-</script>
 <script src="./password-security.js"></script>
 <script>
 (()=>{
@@ -572,7 +551,7 @@ async function boot(){
   $("workspaceTitle").textContent=cfg.name+" workspace";
   $("workspaceType").textContent=cfg.desc+" · "+shop.name;
   $("workspaceFeatures").replaceChildren();
-  const universalFeatures=["Shared product and service catalogue with photos, categories, prices, offers and stock","Inventory variants: garment sizes/colours, jewellery specifications, device IMEI/serial and medicine batches/expiry","Supplier register, purchase entries, stock movement history, supplier payments and shop expenses","Customer orders, order status, customer contacts, credit ledger and downloadable reports","Restaurant tools: menu, table register, reservations and kitchen tickets","Hotel tools: rooms, guest bookings, reservations and housekeeping","Office tools: employees, attendance, leave, payroll and task tracking","Electronics tools: device inventory, warranty records and repair jobs","Medical tools: batch inventory, expiry alerts and stock status","Digital Seva tools: applications, document checklist, service fees and payment balance","Shop QR, customer-facing shop link, WhatsApp promotion, alerts and sales insights"];universalFeatures.forEach(item=>{const row=document.createElement("div");row.className="product";row.textContent="✓ "+item;$("workspaceFeatures").append(row)});
+  const universalFeatures=["Shared product and service catalogue with photos, categories, prices, offers and stock","Inventory variants: garment sizes/colours, jewellery specifications, device IMEI/serial and medicine batches/expiry","Supplier register, purchase entries, stock movement history, supplier payments and shop expenses","Customer orders, order status, customer contacts, credit ledger and downloadable reports","Restaurant tools: menu, table register, reservations and kitchen tickets","Hotel tools: rooms, guest bookings, reservations and housekeeping","Office tools: employees, attendance, leave, payroll and task tracking","Electronics tools: device inventory, warranty records and repair jobs","Medical tools: batch inventory, expiry alerts and stock status","Digital Seva tools: applications, document checklist, service fees and payment balance","Customer-facing shop link, WhatsApp promotion, alerts and sales insights"];universalFeatures.forEach(item=>{const row=document.createElement("div");row.className="product";row.textContent="✓ "+item;$("workspaceFeatures").append(row)});
   const note=document.createElement("div");note.className="notice";note.textContent=cfg.note;$("workspaceFeatures").append(note);
   const retail=["grocery","daily_needs","garments","jewellery","restaurant","electronics","medical","other"].includes(shop.business_type);
   if(!["grocery","daily_needs"].includes(shop.business_type)){$("groceryProcurementPanel").classList.add("hidden")}else{$("groceryProcurementPanel").classList.remove("hidden")}
@@ -1003,52 +982,6 @@ async function loadDigitalApplications(){
 }
 
 function shopPublicUrl(){if(!currentShop?.id)return "";const u=new URL("./index.html",window.location.href);u.searchParams.set("shop_id",String(currentShop.id));return u.href}
-function renderShopQrImageFallback(host,url,shopId,shopName){
- host.replaceChildren();
- const img=document.createElement("img");
- img.alt="QR code for "+shopName;
- img.width=240;img.height=240;
- img.style.cssText="display:block;width:240px;height:240px;object-fit:contain;background:#fff";
- img.referrerPolicy="no-referrer";
- const qrApi=new URL("https://api.qrserver.com/v1/create-qr-code/");
- qrApi.searchParams.set("size","240x240");
- qrApi.searchParams.set("format","png");
- qrApi.searchParams.set("data",url);
- img.onload=()=>{host.dataset.shopId=shopId;say("qrMessage","QR ready for "+shopName+". Scan to open this shop.",false);};
- img.onerror=()=>say("qrMessage","QR service could not load. Check internet, then tap Refresh insights.",true);
- img.src=qrApi.toString();
- host.append(img);
- say("qrMessage","Creating QR image…",false);
-}
-function renderShopQr(){
- const host=$("shopQr");if(!host)return;
- host.replaceChildren();
- if(!currentShop?.id){$("shopQrName").textContent="Select a shop to generate its QR.";say("qrMessage","No shop selected.",true);return}
- const shopId=String(currentShop.id),shopName=String(currentShop.name||"Selected shop");
- const url=shopPublicUrl();
- $("shopQrName").textContent="QR for: "+shopName+" · Unique shop ID";
- if(!url){say("qrMessage","Shop link could not be created. Refresh and select this shop again.",true);return}
- // Wait for the local QR library instead of racing it. If it fails, use the image fallback.
- if(!window.QRCode){
-  say("qrMessage","Loading QR generator…",false);
-  if(window.QRCodeLibraryPromise){
-   window.QRCodeLibraryPromise.then(()=>{
-    if(currentShop?.id===shopId)renderShopQr();
-   }).catch(()=>{if(currentShop?.id===shopId)renderShopQrImageFallback(host,url,shopId,shopName)});
-  }else{renderShopQrImageFallback(host,url,shopId,shopName)}
-  return;
- }
- try{
-  new QRCode(host,{text:url,width:240,height:240,colorDark:"#10251d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});
-  host.dataset.shopId=shopId;
-  say("qrMessage","Unique QR ready for "+shopName+". This QR contains this shop's ID.",false);
- }catch(error){
-  renderShopQrImageFallback(host,url,shopId,shopName);
- }
-}
-function shopQrFileName(){const slug=String(currentShop?.name||"shop").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"shop";return slug+"-shop-qr.png"}
-function printShopQr(){const host=$("shopQr"),canvas=host.querySelector("canvas"),image=host.querySelector("img"),src=canvas?canvas.toDataURL("image/png"):image?.src;if(!src)return say("qrMessage","QR is not ready yet. Refresh and try again.",true);const w=window.open("","_blank");if(!w)return say("qrMessage","Allow pop-ups to print this shop QR.",true);const heading=w.document.createElement("h2");heading.textContent=(currentShop?.name||"Shop")+" — Customer QR Code";const img=w.document.createElement("img");img.src=src;img.alt="QR code for "+(currentShop?.name||"shop");img.style.width="320px";img.style.height="320px";const note=w.document.createElement("p");note.textContent="Scan to open this shop's customer catalogue.";w.document.body.style.cssText="font-family:Arial,sans-serif;text-align:center;padding:28px;color:#111";w.document.body.append(heading,img,note);w.document.close();w.focus();w.print();}
-
 function csvCell(value){
  const raw=String(value??"");
  const safe=/^[=+@\\-\\t\\r]/.test(raw)?"'"+raw:raw;
@@ -1097,7 +1030,7 @@ async function loadFinancialSummary(){
 }
 async function loadGrowthInsights(){
  if(!currentShop)return;
- renderShopQr();
+
  const [pRes,oRes]=await Promise.all([db.from("products").select("id,name,stock,is_available").eq("shop_id",currentShop.id),db.from("orders").select("id,total,status,payment_status,created_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100)]);
  if(pRes.error){say("analyticsMessage",pRes.error.message,true);return}if(oRes.error){say("analyticsMessage",oRes.error.message,true);return}
  const ps=pRes.data||[],os=oRes.data||[],done=os.filter(o=>o.status==="delivered"),paid=os.filter(o=>o.payment_status==="paid"&&o.status!=="cancelled"&&o.status!=="refunded");
@@ -1122,7 +1055,7 @@ async function loadGrowthInsights(){
  const a=ps.length?ps.filter(p=>p.is_available&&Number(p.stock)>0).length/ps.length:0,b=ps.length?ps.filter(p=>Number(p.stock)>limit).length/ps.length:0,d=os.length?done.length/os.length:0,c=ps.length?Math.min(1,ps.filter(p=>p.name?.trim()).length/Math.max(5,ps.length)):0;
  const vals=[Math.round(c*25),Math.round(a*25),Math.round(b*25),Math.round(d*25)];$("growthScore").textContent=vals.reduce((x,y)=>x+y,0)+"/100";
  const box=$("growthBreakdown");box.replaceChildren();["Catalogue setup","Available products","Stock above alert level","Delivered order share"].forEach((n,i)=>{const r=document.createElement("div");r.className="row";const l=document.createElement("span");l.textContent=n;const v=document.createElement("b");v.textContent=vals[i]+"/25";r.append(l,v);box.append(r)});
- renderShopQr();
+
 }
 function bindGrowthTools(){
  $("growthRefresh").addEventListener("click",loadGrowthInsights);
@@ -1142,9 +1075,7 @@ function bindGrowthTools(){
  });
  $("lowStockLimit").addEventListener("change",loadAdvancedAlerts);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
  $("shareShopWhatsApp").addEventListener("click",()=>{const msg=[$("whatsAppPromo").value.trim()||("Hello! Visit "+currentShop.name+" to view our products."),shopPublicUrl()].join("\n\n");window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");say("whatsAppMessage","WhatsApp opened. Review and send the message yourself.")});
- $("copyShopLink").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(shopPublicUrl());say("qrMessage","Shop link copied.")}catch{say("qrMessage","Copy not supported. "+shopPublicUrl(),true)}});
- $("downloadShopQr").addEventListener("click",()=>{const c=$("shopQr").querySelector("canvas"),img=$("shopQr").querySelector("img");const data=c?c.toDataURL("image/png"):img?.src;if(!data){say("qrMessage","Generate the QR first.",true);return}const a=document.createElement("a");a.href=data;a.download=shopQrFileName();a.click()});
- $("printShopQr").addEventListener("click",printShopQr);
+
 }
 
 
@@ -1403,7 +1334,7 @@ async function loadShopData(){
   const nextShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!nextShop)return;
   if(currentShop?.id!==nextShop.id)selectedHotelBookingRequestId=null;
   currentShop=nextShop;
-  renderShopQr();
+
   $("publicShopAddress").value=currentShop.address||"";
   $("publicShopCity").value=currentShop.city||"";
   $("publicShopOpening").value=currentShop.opening_time||"";
