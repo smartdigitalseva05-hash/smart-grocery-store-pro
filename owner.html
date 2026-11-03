@@ -865,4 +865,75 @@ async function loadShopkeepers(){
    }
  });
 })();
-</script></body></html>
+</script>
+<script>
+/* Unified Super Admin workspace: one main tab with all controls as inner tabs. */
+(()=>{
+ const dashboard=document.getElementById("dashboard");
+ if(!dashboard||document.getElementById("ownerUnifiedWorkspace"))return;
+ const command=document.getElementById("ownerCommandCenter");
+ const overview=[...dashboard.children].find(el=>el.classList?.contains("panel")&&el!==command&&el.querySelector("#metrics"));
+ const definitions=[
+  {id:"overview",label:"🏠 Overview",nodes:[command,overview]},
+  {id:"ownerShopsControl",label:"🏪 Shops"},
+  {id:"ownerCategoryControl",label:"🧭 11 Categories"},
+  {id:"ownerApplicationHub",label:"🗂️ Applications"},
+  {id:"ownerShopkeeperControl",label:"📇 Shopkeepers"},
+  {id:"ownerCustomerControl",label:"👥 Customers"},
+  {id:"ownerOrderControl",label:"🧾 Orders"},
+  {id:"ownerGlobalProductControl",label:"📦 Products & Stock"},
+  {id:"ownerCatalogControl",label:"🗃️ Catalog"},
+  {id:"ownerPaymentControl",label:"💳 Payments"},
+  {id:"ownerAuditControl",label:"🛡️ Security & Audit"}
+ ];
+ const workspace=document.createElement("div");
+ workspace.id="ownerUnifiedWorkspace";
+ workspace.className="panel shop-section";
+ workspace.innerHTML='<div class="row"><div><h1>🧭 Super Admin Control Center</h1><div class="sub">One main workspace · All management tools are organized inside the tabs below.</div></div><span class="pill">ONE MAIN TAB</span></div><div id="ownerWorkspaceTabs" class="owner-workspace-tabs" role="tablist" aria-label="Super Admin workspace tabs"></div><div id="ownerWorkspaceContent"></div>';
+ dashboard.insertBefore(workspace,dashboard.firstChild);
+ const nav=workspace.querySelector("#ownerWorkspaceTabs");
+ const content=workspace.querySelector("#ownerWorkspaceContent");
+ const panels=new Map();
+ for(const def of definitions){
+   const panel=document.createElement("div");
+   panel.className="owner-workspace-panel";
+   panel.dataset.workspacePanel=def.id;
+   panel.id="ownerWorkspacePanel_"+def.id;
+   for(const node of (def.nodes||[document.getElementById(def.id)])){
+     if(node){panel.appendChild(node);node.classList.add("owner-workspace-inner");}
+   }
+   if(panel.children.length){content.appendChild(panel);panels.set(def.id,panel);}
+   const btn=document.createElement("button");
+   btn.type="button";btn.className="owner-workspace-tab";btn.textContent=def.label;
+   btn.setAttribute("role","tab");btn.setAttribute("aria-selected","false");
+   btn.addEventListener("click",()=>activate(def.id));
+   nav.appendChild(btn);
+   def.button=btn;
+ }
+ function activate(id){
+   if(!panels.has(id))return;
+   for(const [key,panel] of panels){const active=key===id;panel.hidden=!active;panel.classList.toggle("is-active",active);}
+   for(const def of definitions){const active=def.id===id;def.button.setAttribute("aria-selected",String(active));def.button.classList.toggle("active",active);}
+   workspace.dataset.activeTab=id;
+ }
+ function activateForElement(el){
+   const panel=el?.closest?.("[data-workspace-panel]");
+   if(panel)activate(panel.dataset.workspacePanel);
+ }
+ // Keep existing dashboard links and global-search results working after reorganization.
+ dashboard.addEventListener("click",event=>{
+   const link=event.target.closest('a[href^="#owner"]');
+   if(!link)return;
+   const targetId=link.getAttribute("href").slice(1);
+   const target=document.getElementById(targetId);
+   if(target){event.preventDefault();activateForElement(target);target.scrollIntoView({behavior:"smooth",block:"start"});}
+ });
+ const originalScrollIntoView=Element.prototype.scrollIntoView;
+ Element.prototype.scrollIntoView=function(options){
+   if(dashboard.contains(this))activateForElement(this);
+   return originalScrollIntoView.call(this,options);
+ };
+ activate("overview");
+})();
+</script>
+</body></html>
