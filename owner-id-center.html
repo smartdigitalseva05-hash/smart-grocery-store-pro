@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07130f"><meta name="referrer" content="no-referrer">
+<title>Owner QR Center · Smart Business Pro</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 12% 0,#1d5748 0,transparent 32%),#07130f;color:#f4fbf6;font:15px system-ui,-apple-system,Segoe UI,sans-serif}main{width:min(760px,100% - 26px);margin:28px auto}.panel{background:#12271f;border:1px solid #315443;border-radius:20px;padding:22px;margin-top:16px;box-shadow:0 14px 34px #0003}h1{margin:0 0 8px;font-size:25px}.muted{color:#a7bdae;line-height:1.6}.row,.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}button,a.btn{border:0;border-radius:11px;padding:12px 16px;background:linear-gradient(135deg,#b8ef68,#8fdc66);color:#14311f;font-weight:800;cursor:pointer;text-decoration:none;font:inherit;font-weight:800}button.secondary,a.secondary{background:#1b3a2d;color:#e5f6eb;border:1px solid #365c48}button:disabled{opacity:.55;cursor:wait}#qr{display:grid;place-items:center;background:white;border-radius:16px;padding:14px;width:max-content;max-width:100%;margin:18px auto}#qr canvas,#qr img{max-width:100%;height:auto}.notice{min-height:22px;color:#c5d8cb;font-size:13px;margin-top:12px}.notice.error{color:#fca5a5}.profile{border:1px solid #315443;border-radius:14px;padding:14px;margin-top:14px}.profile strong{display:block;font-size:20px;margin:4px 0}.url{overflow-wrap:anywhere;background:#091a13;border:1px solid #315443;border-radius:10px;padding:12px;color:#bce8ca;font-size:12px;margin-top:12px}.small{font-size:12px;color:#91aa9a}.hidden{display:none!important}
+</style>
+</head>
+<body><main>
+<header class="row"><div><div style="font-weight:850;letter-spacing:.5px">🏢 SMART BUSINESS PRO</div><div class="muted" style="font-size:13px">Private Owner QR & Identity Verification</div></div><a class="btn secondary" href="./owner.html">Owner Dashboard</a></header>
+<section class="panel">
+<h1>🪪 Owner Verification QR Center</h1>
+<p class="muted">Issue a public verification QR for your Owner profile. Only your active Super Admin account with completed Authenticator MFA can create or rotate this QR. A new QR automatically revokes the previous QR.</p>
+<div class="profile"><div class="small">PUBLIC PROFILE DETAILS</div><strong>Hemanta Sahu</strong><div>Founder & Platform Owner</div><div style="color:#9ce4b4;font-weight:750;margin-top:4px">Smart Business Pro</div></div>
+<div class="actions" style="margin-top:18px"><button id="create" disabled>Create / Rotate Secure QR</button><button id="download" class="secondary" disabled>Download QR</button><button id="copy" class="secondary" disabled>Copy verification link</button><button id="print" class="secondary" disabled>Print QR</button></div>
+<div id="qr" class="hidden" aria-label="Owner verification QR code"></div>
+<div id="link" class="url hidden"></div>
+<div id="message" class="notice" role="status">Checking secure Owner session…</div>
+<p class="small">Security: 256-bit random code · SHA-256 hash stored in database · 365-day expiry · old QR revoked on rotation · no phone/email/password shown publicly.</p>
+</section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';document.head.appendChild(s)"></script>
+<script>
+(async()=>{
+ const $=id=>document.getElementById(id);
+ const client=window.supabase.createClient("https://wqlopfftzvsjsxmrmxeq.supabase.co","sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX");
+ let verifyUrl="";
+ function msg(t,bad=false){$("message").textContent=t;$("message").classList.toggle("error",bad)}
+ function buttons(on){["create","download","copy","print"].forEach(id=>$(id).disabled=!on)}
+ buttons(false);
+ try{
+  const {data:{session},error:sessionError}=await client.auth.getSession();
+  if(sessionError||!session){msg("Please sign in through the Owner Dashboard first.",true);return}
+  const {data:{user},error:userError}=await client.auth.getUser();
+  if(userError||!user){msg("Your login session is invalid. Sign in again.",true);return}
+  const {data:profile,error:profileError}=await client.from("profiles").select("role,is_active").eq("id",user.id).maybeSingle();
+  if(profileError||profile?.role!=="super_admin"||profile?.is_active!==true){msg("Access denied. An active Super Admin account is required.",true);return}
+  const {data:assurance,error:assuranceError}=await client.auth.mfa.getAuthenticatorAssuranceLevel();
+  if(assuranceError||assurance?.currentLevel!=="aal2"||assurance?.nextLevel!=="aal2"){msg("Authenticator MFA is not verified. Return to Owner Dashboard and complete MFA.",true);return}
+  buttons(true);msg("Secure Owner session verified. You can now issue your QR.");
+  $("create").addEventListener("click",async()=>{
+   buttons(false);$("create").textContent="Creating secure QR…";msg("Issuing a new secure verification token…");
+   try{
+    const {data,error}=await client.rpc("issue_owner_profile_verification");
+    if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row?.verify_url)throw new Error("The verification URL was not returned.");
+    verifyUrl=row.verify_url;
+    $("qr").replaceChildren();
+    if(!window.QRCode)throw new Error("QR library is unavailable. Check internet and tap Create again.");
+    new QRCode($("qr"),{text:verifyUrl,width:260,height:260,colorDark:"#10251d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.H});
+    $("qr").classList.remove("hidden");$("link").textContent=verifyUrl;$("link").classList.remove("hidden");
+    $("download").disabled=false;$("copy").disabled=false;$("print").disabled=false;
+    msg("New QR created. Any previous QR for this Owner profile has been revoked.");
+   }catch(error){msg(error.message||"QR creation failed. Please retry.",true)}
+   finally{$("create").disabled=false;$("create").textContent="Create / Rotate Secure QR";}
+  });
+  $("download").addEventListener("click",()=>{
+   const canvas=$("qr").querySelector("canvas");const img=$("qr").querySelector("img");
+   const src=canvas?canvas.toDataURL("image/png"):img?.src;
+   if(!src){msg("QR image is not ready yet.",true);return}
+   const a=document.createElement("a");a.href=src;a.download="Smart-Business-Pro-Owner-Verification.png";a.click();
+  });
+  $("copy").addEventListener("click",async()=>{
+   try{await navigator.clipboard.writeText(verifyUrl);msg("Verification link copied.");}
+   catch{msg("Copy not available in this browser. You can select the link text.",true)}
+  });
+  $("print").addEventListener("click",()=>{
+   const img=$("qr").querySelector("img");const canvas=$("qr").querySelector("canvas");
+   const src=img?.src||(canvas?canvas.toDataURL("image/png"):"");
+   if(!src){msg("QR image is not ready yet.",true);return}
+   const w=window.open("","_blank");if(!w){msg("Allow pop-ups to print the QR.",true);return}
+   w.document.write("<!doctype html><title>Owner Verification QR</title><body style='font-family:Arial;text-align:center;padding:30px'><h2>Smart Business Pro</h2><h3>Hemanta Sahu · Founder & Platform Owner</h3><img style='width:260px;height:260px' src='"+src+"'><p>Scan to verify active owner profile</p></body>");w.document.close();w.focus();w.print();
+  });
+ }catch(error){msg("Secure session check failed. Return to Owner Dashboard and sign in again.",true)}
+})();
+</script></body></html>
