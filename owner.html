@@ -105,7 +105,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
 <div id="ownerCategoryControl" class="panel shop-section"><div class="row"><div><h1>Category-wise Business Control</h1><div class="sub">Owner-only controls. Select a business to manage its shops, or search across every category.</div></div><button id="websitesRefresh" class="secondary" type="button">Refresh all</button></div>
 <label class="field" for="businessGlobalSearch">Search all businesses / stores<input id="businessGlobalSearch" type="search" placeholder="Search shop name, city, phone, category or status…"></label>
 <div class="grid" id="businessTotals"><div class="metric"><span>Total businesses</span><strong id="businessTotalCount">0</strong></div><div class="metric"><span>Active businesses</span><strong id="businessActiveCount">0</strong></div><div class="metric"><span>Categories</span><strong id="businessCategoryCount">11</strong></div><div class="metric"><span>Search results</span><strong id="businessResultCount">0</strong></div></div>
-<div id="businessCategoryButtons" class="actions" style="margin-top:16px"></div><div id="businessWebsitesMessage" class="notice" role="status"></div><div id="businessWebsiteList" class="shop-list"></div></div>
+<div class="sub" style="margin-top:14px">Separate category tabs · Tap any category to open its shop list. Search results can open individual live shops.</div><div id="businessCategoryButtons" class="actions" role="tablist" aria-label="Business category tabs" style="margin-top:10px"></div><div id="businessWebsitesMessage" class="notice" role="status"></div><div id="businessWebsiteList" class="shop-list"></div></div>
 <div id="ownerShopkeeperControl" class="panel shop-section"><div class="row"><div><h1>📇 Shopkeeper Contact Directory & Management</h1><div class="sub">Owner-only directory of approved shopkeepers. View name, mobile, full shop address and GPS location; contact directly by call or WhatsApp. Account controls remain below.</div></div><button id="shopkeepersRefresh" class="secondary">Refresh directory</button></div><label class="field" for="shopkeeperGlobalSearch">Search shopkeeper / mobile / shop / address<input id="shopkeeperGlobalSearch" type="search" placeholder="Name, mobile number, shop name, city or address…"></label><div id="shopkeepersMessage" class="notice" role="status"></div><div id="shopkeeperList" class="shop-list"></div></div>
 <div id="ownerCustomerControl" class="panel shop-section"><div class="row"><div><h1>Customer directory</h1><div class="sub">Owner-only, read-only customer account lookup. Only profile name, account status and join date are shown; contact details and sensitive records are not exposed here.</div></div><button id="customersRefresh" class="secondary" type="button">Refresh customers</button></div><label class="field" for="customerGlobalSearch">Search customer accounts<input id="customerGlobalSearch" type="search" placeholder="Search customer name or account status…"></label><div id="customersMessage" class="notice" role="status"></div><div id="customerList" class="shop-list"></div></div>
 <div id="ownerOrderControl" class="panel shop-section"><div class="row"><div><h1>Global order console</h1><div class="sub">Owner-only, read-only order overview. Status changes stay disabled until a dedicated audited Owner RPC is available.</div></div><button id="ordersRefresh" class="secondary" type="button">Refresh orders</button></div><label class="field" for="orderGlobalSearch">Search all orders<input id="orderGlobalSearch" type="search" placeholder="Order number, shop, customer or status…"></label><div id="ordersMessage" class="notice" role="status"></div><div id="ownerOrderList" class="shop-list"></div></div>
@@ -271,11 +271,11 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    $("businessActiveCount").textContent=websiteShops.filter(s=>s.status==="active"&&s.is_active===true).length.toLocaleString("en-IN");
    $("businessCategoryCount").textContent=getBusinessTypes().length.toLocaleString("en-IN");
    const types=getBusinessTypes();
-   const allBtn=document.createElement("button");allBtn.type="button";allBtn.className=selectedWebsiteType==="all"?"":"secondary";allBtn.textContent="🌐 All Businesses ("+websiteShops.length+")";
+   const allBtn=document.createElement("button");allBtn.type="button";allBtn.className=selectedWebsiteType==="all"?"":"secondary";allBtn.setAttribute("role","tab");allBtn.setAttribute("aria-selected",String(selectedWebsiteType==="all"));allBtn.textContent="🌐 All Businesses ("+websiteShops.length+")";
    allBtn.addEventListener("click",()=>{selectedWebsiteType="all";renderBusinessWebsites()});$("businessCategoryButtons").append(allBtn);
    for(const type of types){
      const count=websiteShops.filter(s=>s.business_type===type.key).length;
-     const btn=document.createElement("button");btn.type="button";btn.className=type.key===selectedWebsiteType?"":"secondary";btn.textContent=type.label+" ("+count+")";
+     const btn=document.createElement("button");btn.type="button";btn.className=type.key===selectedWebsiteType?"":"secondary";btn.setAttribute("role","tab");btn.setAttribute("aria-selected",String(type.key===selectedWebsiteType));btn.textContent=type.label+" ("+count+")";
      btn.addEventListener("click",()=>{selectedWebsiteType=type.key;renderBusinessWebsites()});
      $("businessCategoryButtons").append(btn);
    }
@@ -688,7 +688,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      const context=sectionName(el);
      const target=(el.tagName==="LABEL"&&el.control)?el.control:el;
      const href=el.tagName==="A"?el.getAttribute("href"):"";
-     entries.push({label:label.slice(0,150),context,target,href,status:"Available",search:(label+" "+context+" "+(el.id||"")).toLowerCase()});
+     entries.push({label:label.slice(0,150),context,target,href,status:"Available",action:el.closest("#businessCategoryButtons")?()=>el.click():null,search:(label+" "+context+" "+(el.id||"")).toLowerCase()});
      if(entries.length>=1800)break;
    }
    const directory=[
@@ -715,7 +715,8 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      for(const card of section.querySelectorAll(".shop-card")){
        const body=clean(card.innerText);if(!body)continue;
        const title=clean(card.querySelector(".shop-name,strong,h3")?.innerText)||body.slice(0,95);
-       entries.push({label:title.slice(0,150),context:label,target:card,href:"",status:"Loaded record",category:type,search:(body+" "+title+" "+label).toLowerCase()});
+       const storeLink=card.querySelector('a[href*="shop_id"]');
+       entries.push({label:title.slice(0,150),context:label,target:card,href:storeLink?.getAttribute("href")||"",status:storeLink?"Open live store":"Storefront not live · Open management record",category:type,search:(body+" "+title+" "+label).toLowerCase()});
      }
    }
  }
@@ -741,6 +742,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      else button.addEventListener("click",()=>{
        const target=item.entry.target;
        close();
+       if(item.entry.action){item.entry.action();return}
        if(item.entry.href&&item.entry.href!=="#"){window.location.href=item.entry.href;return}
        target.scrollIntoView({behavior:"smooth",block:"center"});
        target.classList.add("quick-find-target");
