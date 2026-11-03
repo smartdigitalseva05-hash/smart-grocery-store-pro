@@ -474,7 +474,27 @@ a{color:#8ce2b3}
 </div></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" onerror="var qrFallback=document.createElement('script');qrFallback.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';document.head.appendChild(qrFallback)"></script>
+<script>
+window.QRCodeLibraryPromise = new Promise((resolve, reject) => {
+  if (window.QRCode) { resolve(window.QRCode); return; }
+  const sources = [
+    "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js",
+    "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"
+  ];
+  let index = 0;
+  const loadNext = () => {
+    if (window.QRCode) { resolve(window.QRCode); return; }
+    if (index >= sources.length) { reject(new Error("QR library could not load. Check internet connection and try again.")); return; }
+    const script = document.createElement("script");
+    script.src = sources[index++];
+    script.async = true;
+    script.onload = () => window.QRCode ? resolve(window.QRCode) : loadNext();
+    script.onerror = loadNext;
+    document.head.appendChild(script);
+  };
+  loadNext();
+});
+</script>
 <script src="./password-security.js"></script>
 <script>
 (()=>{
@@ -991,7 +1011,13 @@ function renderShopQr(){
  const url=shopPublicUrl();
  $("shopQrName").textContent="QR for: "+shopName+" · Unique shop ID";
  if(!url){say("qrMessage","Shop link could not be created. Refresh and select this shop again.",true);return}
- if(!window.QRCode){say("qrMessage","QR generator is loading or unavailable. Check internet and tap Refresh.",true);return}
+ if(!window.QRCode){
+  say("qrMessage","Loading QR generator… please wait.",false);
+  if(window.QRCodeLibraryPromise){
+   window.QRCodeLibraryPromise.then(()=>renderShopQr()).catch(error=>say("qrMessage",error.message||"QR generator unavailable. Check internet and retry.",true));
+  }else{say("qrMessage","QR generator could not start. Refresh the page and try again.",true)}
+  return;
+ }
  try{
   new QRCode(host,{text:url,width:240,height:240,colorDark:"#10251d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});
   host.dataset.shopId=shopId;
