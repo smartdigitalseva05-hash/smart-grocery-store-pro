@@ -985,8 +985,8 @@ async function loadDigitalApplications(){
  });
 }
 
-function shopPublicUrl(){if(!currentShop?.id)return "";const u=new URL("./index.html",window.location.href);u.searchParams.set("shop_id",String(currentShop.id));return u.href}
-function refreshShopReferralLink(){const field=$("shopReferralLink");if(field)field.value=shopPublicUrl()}
+function shopPublicUrl(shop=null){const selected=shop||shops.find(s=>s.id===$("shopSelect")?.value)||currentShop;if(!selected?.id)return "";const u=new URL("./index.html",window.location.href);u.searchParams.set("shop_id",String(selected.id));return u.href}
+function refreshShopReferralLink(){const field=$("shopReferralLink");if(!field)return "";const link=shopPublicUrl();field.value=link;field.placeholder=link?"":"Select an approved shop to create its unique link";if(!link)say("shopReferralMessage","Shop list load hone ke baad referral link yahan dikhega.",true);else say("shopReferralMessage","Selected shop ka unique customer link ready hai.");return link}
 function csvCell(value){
  const raw=String(value??"");
  const safe=/^[=+@\\-\\t\\r]/.test(raw)?"'"+raw:raw;
@@ -1079,8 +1079,8 @@ function bindGrowthTools(){
   say("universalRecordMessage","CSV export prepared for this shop.");
  });
  $("lowStockLimit").addEventListener("change",loadAdvancedAlerts);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
- $("copyShopReferralLink").addEventListener("click",async()=>{const link=shopPublicUrl();if(!link)return say("shopReferralMessage","Pehle shop select karein.",true);try{await navigator.clipboard.writeText(link);say("shopReferralMessage","Selected shop ka referral link copy ho gaya.")}catch{const field=$("shopReferralLink");field.focus();field.select();const ok=document.execCommand("copy");say("shopReferralMessage",ok?"Referral link copy ho gaya.":"Link ko manually select karke copy karein.")}});
- $("shareShopReferralLink").addEventListener("click",()=>{const link=shopPublicUrl();if(!link)return say("shopReferralMessage","Pehle shop select karein.",true);const msg="Join "+(currentShop?.name||"our shop")+" and view our products here: "+link;window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");say("shopReferralMessage","WhatsApp share khul gaya. Link bhejne se pehle message check karein.")});
+ $("copyShopReferralLink").addEventListener("click",async()=>{const link=refreshShopReferralLink();if(!link)return;const field=$("shopReferralLink");try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(link);say("shopReferralMessage","Referral link copy ho gaya. Ab ise customer ko bhej sakte hain.");return}}catch{}field.focus();field.select();field.setSelectionRange(0,field.value.length);const ok=document.execCommand("copy");say("shopReferralMessage",ok?"Referral link copy ho gaya.":"Link selected hai. Android menu se Copy dabayein.")});
+ $("shareShopReferralLink").addEventListener("click",()=>{const link=refreshShopReferralLink();if(!link)return;const selected=shops.find(s=>s.id===$("shopSelect").value)||currentShop;const msg="Join "+(selected?.name||"our shop")+" and view our products here: "+link;window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer")});
  $("shareShopWhatsApp").addEventListener("click",()=>{const msg=[$("whatsAppPromo").value.trim()||("Hello! Visit "+currentShop.name+" to view our products."),shopPublicUrl()].join("\n\n");window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");say("whatsAppMessage","WhatsApp opened. Review and send the message yourself.")});
 
 }
