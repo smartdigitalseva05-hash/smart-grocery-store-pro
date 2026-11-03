@@ -238,6 +238,7 @@ const SUPABASE_KEY = "sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
 let db = null;
 let currentUser = null;
 let products = [];
+let productRatings = new Map();
 let cart = [];
 let requestedShopId = new URLSearchParams(location.search).get("shop_id");
 const shopLinkId = requestedShopId;
@@ -529,6 +530,9 @@ async function loadProducts() {
   }
 
   products = data || [];
+  productRatings = new Map();
+  const {data:reviewRows,error:ratingsError}=await db.from("shop_product_reviews").select("product_id,rating").eq("shop_id",requestedShopId).eq("is_approved",true);
+  if(!ratingsError){for(const row of (reviewRows||[])){const current=productRatings.get(row.product_id)||{sum:0,count:0};current.sum+=Number(row.rating);current.count++;productRatings.set(row.product_id,current)}}
   if(requestedShopId && !products.length) $("needHelpText").textContent="No matching items are listed right now. Try another search.";
   $("status").classList.remove("error");
   $("status").textContent = products.length
@@ -576,6 +580,7 @@ function renderProducts() {
            onerror="this.src='https://placehold.co/400x300/e9f8f1/087f5b?text=Grocery'">
       <div class="product-info">
         <h3>${escapeHTML(p.name)}</h3>
+        ${productRatings.has(p.id) ? `<div class="small">★ ${ (productRatings.get(p.id).sum/productRatings.get(p.id).count).toFixed(1) } / 5 · ${productRatings.get(p.id).count} review(s)</div>` : ""}
         <div class="small">${escapeHTML(p.description || "Quality product or service")}</div>
         <div class="price">
           ${money(effectivePrice(p))}
