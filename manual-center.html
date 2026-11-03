@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Smart Business Pro · All Manuals</title>
+<style>
+:root{color-scheme:dark;--bg:#081321;--panel:#122238;--line:#2c4562;--text:#e8f1fb;--muted:#a9bfd7;--accent:#0c638c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,Arial,sans-serif}.wrap{max-width:1100px;margin:auto;padding:18px}.head,.tabs{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.head{justify-content:space-between}.muted{color:var(--muted);font-size:13px}.tabs{margin:18px 0}.tabs button,.open{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);padding:11px 14px;text-decoration:none;cursor:pointer}.tabs button[aria-selected=true]{background:var(--accent);border-color:#38bdf8}.frame{width:100%;height:76vh;min-height:580px;border:1px solid var(--line);border-radius:12px;background:white}.tools{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}.note{padding:12px;border:1px solid var(--line);border-radius:10px;color:var(--muted);background:#0e1d30}
+</style></head><body><main class="wrap">
+<div class="head"><div><h1>📚 Smart Business Pro · All Manuals</h1><div class="muted">Har user ke liye alag guide. Customer, Shopkeeper aur Owner manuals alag-alag update kiye ja sakte hain.</div></div><span class="muted">Manual Center</span></div>
+<div class="tabs" role="tablist" aria-label="User manuals">
+<button type="button" role="tab" data-role="customer" aria-selected="false">🛍️ Customer Manual</button>
+<button type="button" role="tab" data-role="shopkeeper" aria-selected="false">🏪 Shopkeeper Manual</button>
+<button type="button" role="tab" data-role="owner" aria-selected="false">🛡️ Owner / Super Admin Manual</button>
+</div>
+<div class="tools"><a class="open" id="openManual" href="customer-manual-odia.html" target="_blank" rel="noopener">Open manual separately ↗</a><button class="open" id="reloadManual" type="button">Refresh manual ↻</button></div>
+<div class="note" id="manualStatus" role="status">Selected guide loads directly from its own file. Updating one manual does not require changing the other two.</div>
+<iframe class="frame" id="manualFrame" title="Selected user manual" src="customer-manual-odia.html"></iframe>
+</main><script>
+(()=>{const pages={customer:{src:"customer-manual-odia.html",label:"Customer Manual"},shopkeeper:{src:"shopkeeper-manual-odia.html",label:"Shopkeeper Manual"},owner:{src:"super-admin-manual-odia.html",label:"Owner / Super Admin Manual"}};const params=new URLSearchParams(location.search);let active=pages[params.get("role")]?params.get("role"):"customer";const frame=document.getElementById("manualFrame"),open=document.getElementById("openManual"),status=document.getElementById("manualStatus");function select(role){active=role;const p=pages[role];frame.src=p.src;open.href=p.src;open.textContent="Open "+p.label+" separately ↗";status.textContent=p.label+" is loaded from its own file. Each guide can be revised independently; use Refresh after an update.";document.querySelectorAll("[data-role]").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.role===role)));const url=new URL(location.href);url.searchParams.set("role",role);history.replaceState(null,"",url)}document.querySelectorAll("[data-role]").forEach(b=>b.addEventListener("click",()=>select(b.dataset.role)));document.getElementById("reloadManual").addEventListener("click",()=>{frame.src=pages[active].src+"?refresh="+Date.now()});select(active)})();
+</script></body></html>
