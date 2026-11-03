@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>Smart Grocery Store Pro · My Orders</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#131e30;--line:#26364d;--muted:#9fb0c5;--text:#f4f7fb;--accent:#38bdf8;--bad:#fca5a5}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#19314c 0,transparent 34%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}main{width:min(900px,100% - 26px);margin:28px auto}.top,.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{font-weight:800;font-size:20px}.sub,.muted{color:var(--muted);font-size:13px}.panel{background:#131e30ef;border:1px solid var(--line);border-radius:17px;padding:20px;margin-top:17px}.auth{max-width:430px;margin:7vh auto}h1{font-size:24px;margin:0 0 8px}.field{display:block;color:var(--muted);font-size:13px;margin:12px 0}input{display:block;width:100%;margin-top:6px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#0b1422;color:var(--text);font:inherit}button{border:0;border-radius:10px;padding:11px 15px;background:var(--accent);color:#062033;font-weight:750;cursor:pointer}button.secondary{background:#24364d;color:var(--text)}button.danger{background:#7f1d1d;color:#fee2e2}button:disabled{opacity:.55;cursor:wait}.actions{display:flex;gap:8px;flex-wrap:wrap}.notice{min-height:20px;margin-top:12px;color:var(--muted);font-size:13px}.notice.error{color:var(--bad)}.hidden{display:none!important}.order{padding:16px;background:#0d1727;border:1px solid var(--line);border-radius:14px;margin-top:12px}.pill{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:4px 8px;text-transform:capitalize}.items{margin:12px 0 0;padding-left:18px;color:#dce6f3}.items li{margin:5px 0}.timeline{border-left:2px solid #31445d;margin:12px 0 0 5px;padding-left:13px}.timeline div{font-size:12px;color:var(--muted);margin:7px 0}.foot{font-size:12px;color:var(--muted);margin:20px 0}@media(max-width:520px){main{margin:16px auto}.panel{padding:15px}.brand{font-size:17px}}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#19314c 0,transparent 34%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}main{width:min(900px,100% - 26px);margin:28px auto}.top,.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{font-weight:800;font-size:20px}.sub,.muted{color:var(--muted);font-size:13px}.panel{background:#131e30ef;border:1px solid var(--line);border-radius:17px;padding:20px;margin-top:17px}.auth{max-width:430px;margin:7vh auto}h1{font-size:24px;margin:0 0 8px}.field{display:block;color:var(--muted);font-size:13px;margin:12px 0}input,select,textarea{display:block;width:100%;margin-top:6px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#0b1422;color:var(--text);font:inherit}textarea{resize:vertical}.review{margin-top:10px;padding:11px;border:1px solid var(--line);border-radius:11px;background:#101d2e}.review label{display:block;color:var(--muted);font-size:12px;margin:6px 0}button{border:0;border-radius:10px;padding:11px 15px;background:var(--accent);color:#062033;font-weight:750;cursor:pointer}button.secondary{background:#24364d;color:var(--text)}button.danger{background:#7f1d1d;color:#fee2e2}button:disabled{opacity:.55;cursor:wait}.actions{display:flex;gap:8px;flex-wrap:wrap}.notice{min-height:20px;margin-top:12px;color:var(--muted);font-size:13px}.notice.error{color:var(--bad)}.hidden{display:none!important}.order{padding:16px;background:#0d1727;border:1px solid var(--line);border-radius:14px;margin-top:12px}.pill{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:4px 8px;text-transform:capitalize}.items{margin:12px 0 0;padding-left:18px;color:#dce6f3}.items li{margin:5px 0}.timeline{border-left:2px solid #31445d;margin:12px 0 0 5px;padding-left:13px}.timeline div{font-size:12px;color:var(--muted);margin:7px 0}.foot{font-size:12px;color:var(--muted);margin:20px 0}@media(max-width:520px){main{margin:16px auto}.panel{padding:15px}.brand{font-size:17px}}
 </style></head><body><main>
 <header class="top"><div><div class="brand">🛒 Smart Grocery Store Pro</div><div class="sub">Customer · My Orders</div></div><div id="topActions" class="actions hidden"><button id="refresh" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
 <section id="loginPanel" class="panel auth"><h1>Customer sign in</h1><p class="muted">Use the same customer account used to place your order.</p><form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><button id="loginButton" type="submit">Sign in</button></form><div id="loginMessage" class="notice" role="status"></div></section>
@@ -14,11 +14,12 @@
  const URL="https://wqlopfftzvsjsxmrmxeq.supabase.co",KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
  const db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
  const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(Number(n||0));
- let ordersChannel=null,orderPollTimer=null;
+ let ordersChannel=null,orderPollTimer=null,currentCustomerId=null;
  const say=(id,msg,bad=false)=>{$(id).textContent=msg;$(id).classList.toggle("error",bad)};
  function login(msg=""){$("loginPanel").classList.remove("hidden");$("app").classList.add("hidden");$("topActions").classList.add("hidden");say("loginMessage",msg)}
  async function boot(){
   const {data:{session},error}=await db.auth.getSession();if(error||!session){login(error?.message||"");return}
+  currentCustomerId=session.user.id;
   const {data:p,error:pe}=await db.from("profiles").select("role,is_active").eq("id",session.user.id).single();
   if(pe||!p||p.role!=="customer"||!p.is_active){await db.auth.signOut();login(pe?.message||"This account is not an active customer account.");return}
   $("loginPanel").classList.add("hidden");$("app").classList.remove("hidden");$("topActions").classList.remove("hidden");await loadOrders();await subscribeCustomerOrders(session.user.id);
@@ -35,7 +36,7 @@
  }
  async function loadOrders(){
   const list=$("ordersList");list.replaceChildren();say("ordersMessage","Loading your orders…");
-  const {data,error}=await db.from("orders").select("id,shop_id,order_number,status,payment_method,payment_status,subtotal,shipping_fee,total,created_at,shop:shops(name),items:order_items(quantity,price_at_purchase,total_price,product:products(name)),history:order_status_history(new_status,reason,created_at)").order("created_at",{ascending:false});
+  const {data,error}=await db.from("orders").select("id,shop_id,order_number,status,payment_method,payment_status,subtotal,shipping_fee,total,created_at,shop:shops(name),items:order_items(product_id,quantity,price_at_purchase,total_price,product:products(id,name)),history:order_status_history(new_status,reason,created_at)").order("created_at",{ascending:false});
   if(error){say("ordersMessage",error.message,true);return}
   if(!data?.length){say("ordersMessage","No orders found for this account yet.");return}
   say("ordersMessage",data.length+" order(s) found.");
@@ -48,6 +49,24 @@
    const items=document.createElement("ul");items.className="items";
    for(const item of (o.items||[])){const li=document.createElement("li");li.textContent=(item.product?.name||"Item")+" × "+item.quantity+" · "+money(item.total_price);items.append(li)}
    if(items.children.length)card.append(items);
+   if(o.status==="delivered"&&(o.items||[]).length){
+    const reviewTitle=document.createElement("strong");reviewTitle.textContent="Product reviews";reviewTitle.style.display="block";reviewTitle.style.marginTop="13px";card.append(reviewTitle);
+    for(const item of (o.items||[])){
+     const productId=item.product?.id||item.product_id;if(!productId)continue;
+     const existing=reviewMap.get(o.id+":"+productId),box=document.createElement("div");box.className="review";
+     const productName=document.createElement("strong");productName.textContent=item.product?.name||"Purchased item";box.append(productName);
+     if(existing){const statusLine=document.createElement("div");statusLine.className="sub";statusLine.textContent="Your rating: "+existing.rating+"/5 · "+(existing.is_approved?"Published":"Waiting for shop approval")+(existing.review_text?" · "+existing.review_text:"");box.append(statusLine)}
+     else{
+      const form=document.createElement("form"),ratingLabel=document.createElement("label"),rating=document.createElement("select"),textLabel=document.createElement("label"),comment=document.createElement("textarea"),send=document.createElement("button"),msg=document.createElement("div");
+      ratingLabel.textContent="Rating";for(let n=5;n>=1;n--){const op=document.createElement("option");op.value=String(n);op.textContent=n+" star"+(n===1?"":"s");rating.append(op)}ratingLabel.append(rating);
+      textLabel.textContent="Review (optional)";comment.maxLength=2000;comment.rows=2;comment.placeholder="Share your experience";textLabel.append(comment);
+      send.type="submit";send.textContent="Submit review";msg.className="sub";form.append(ratingLabel,textLabel,send,msg);
+      form.addEventListener("submit",async e=>{e.preventDefault();send.disabled=true;const {error:insertError}=await db.from("shop_product_reviews").insert({shop_id:o.shop_id,product_id:productId,order_id:o.id,customer_id:currentCustomerId,rating:Number(rating.value),review_text:comment.value.trim()||null});if(insertError){msg.textContent=insertError.message;send.disabled=false;return}msg.textContent="Review submitted for shop approval.";await loadOrders()});
+      box.append(form);
+     }
+     card.append(box);
+    }
+   }
    if(o.history?.length){const timeline=document.createElement("div");timeline.className="timeline";for(const h of o.history){const line=document.createElement("div");line.textContent=new Date(h.created_at).toLocaleString()+" · "+h.new_status+(h.reason?" · "+h.reason:"");timeline.append(line)}card.append(timeline)}
    if(o.status==="pending"&&o.payment_status==="unpaid"){
     const actions=document.createElement("div");actions.className="actions";actions.style.marginTop="12px";const cancel=document.createElement("button");cancel.className="danger";cancel.textContent="Cancel order";cancel.addEventListener("click",async()=>{if(!window.confirm("Cancel this order? Stock will be restored by the database if cancellation is allowed."))return;cancel.disabled=true;const {error:ce}=await db.rpc("cancel_order",{p_order_id:o.id,p_reason:"Cancelled by customer"});if(ce){say("ordersMessage",ce.message,true);cancel.disabled=false;return}await loadOrders()});actions.append(cancel);card.append(actions);
