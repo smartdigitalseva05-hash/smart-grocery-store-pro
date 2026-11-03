@@ -46,7 +46,7 @@ a{color:#8ce2b3}
 @media(max-width:520px){.quick-find-overlay{padding:5vh 9px}.quick-find-box{max-height:88vh}.quick-find-results{max-height:66vh}}
 </style></head>
 <body><main>
-<header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Multi-business management · <a href="./shopkeeper-benefits.html">Shopkeeper benefits</a> · <a href="./showcase.html">Platform overview</a> · <a href="./catalogue.html">200 product ideas</a></div></div><div id="topActions" class="actions hidden"><button id="shopkeeperQuickSearchOpen" type="button" class="secondary quick-find-open" aria-haspopup="dialog" aria-controls="quickFindOverlay">🔎 Find tools <span style="opacity:.8;font-size:12px">Ctrl K</span></button><button id="reload" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
+<header class="top"><div><div class="brand">🏢 Smart Business Pro</div><div class="sub">Multi-business management · <a href="./shopkeeper-manual-odia.html" style="color:#7dd3fc;font-weight:700">📘 ଦୋକାନୀ ଗାଇଡ୍</a> · <a href="./shopkeeper-benefits.html">Shopkeeper benefits</a> · <a href="./showcase.html">Platform overview</a> · <a href="./catalogue.html">200 product ideas</a></div></div><div id="topActions" class="actions hidden"><button id="shopkeeperQuickSearchOpen" type="button" class="secondary quick-find-open" aria-haspopup="dialog" aria-controls="quickFindOverlay">🔎 Find tools <span style="opacity:.8;font-size:12px">Ctrl K</span></button><button id="reload" class="secondary">Refresh</button><button id="logout" class="secondary">Sign out</button></div></header>
 <section id="loginPanel" class="panel auth"><h1>Shopkeeper sign in</h1><p class="muted">Sign in with the shopkeeper account approved by the Owner. <a href="./apply-shop.html" style="color:#7dd3fc">Apply for a shop</a></p><form id="loginForm"><label class="field">Email<input id="email" type="email" autocomplete="username" required></label><label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label><button id="loginButton" type="submit">Sign in</button></form><button id="forgotPasswordButton" type="button" class="secondary" style="margin-top:10px;width:100%">Forgot Password?</button><div id="loginMessage" class="notice" role="status"></div><form id="recoveryForm" class="hidden" style="margin-top:14px"><h2 style="font-size:18px">Set a new password</h2><label class="field">New password<input id="newPassword" type="password" autocomplete="new-password" minlength="12" required></label><label class="field">Confirm new password<input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="12" required></label><button id="saveNewPasswordButton" type="submit">Update Password</button><div id="recoveryMessage" class="notice" role="status"></div></form></section>
 <section id="app" class="hidden">
 <div class="panel"><div class="row"><div><h1>My shop</h1><div class="sub">Only shops linked to your signed-in account are shown.</div></div><div style="min-width:220px;flex:1;max-width:360px"><select id="shopSelect" aria-label="Choose shop"></select></div></div><div id="shopInfo" class="notice"></div></div>
@@ -1941,6 +1941,7 @@ async function loadShopData(){
      entries.push({label:label.slice(0,150),context,target,href,search:(label+" "+context+" "+(el.id||"")).toLowerCase()});
      if(entries.length>=1800)break;
    }
+   entries.push({label:"ଦୋକାନୀ ବ୍ୟବହାର ପୁସ୍ତିକା · Shopkeeper Manual",context:"ସହାୟତା / Help",target:null,href:"shopkeeper-manual-odia.html",search:"manual guide odia shopkeeper ଦୋକାନୀ ଗାଇଡ୍ help how to use"});
  }
  function close(){overlay.classList.remove("is-open");overlay.setAttribute("aria-hidden","true");openButton.focus()}
  function render(query){
@@ -1961,7 +1962,7 @@ async function loadShopData(){
      button.addEventListener("click",()=>{
        const target=item.entry.target;
        close();
-       if(item.entry.href&&item.entry.href!=="#"){target.click();return}
+       if(item.entry.href&&item.entry.href!=="#"){window.location.href=item.entry.href;return}
        target.scrollIntoView({behavior:"smooth",block:"center"});
        target.classList.add("quick-find-target");
        if(target.matches("input,select,textarea,button")){try{target.focus({preventScroll:true})}catch{}}
