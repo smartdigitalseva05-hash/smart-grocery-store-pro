@@ -357,9 +357,28 @@ async function loadCustomerStore() {
   let targetShopId = profile.connected_shop_id || null;
   let joinedFromThisLink = false;
 
+  // Validate the QR/link before permanently binding the customer account.
   if (!targetShopId && shopLinkId) {
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidPattern.test(shopLinkId)) {
+      showError("This shop QR/link is invalid. Please scan the original QR code from the shopkeeper.");
+      return;
+    }
+
+    const {data:linkShop,error:linkShopError} = await db.from("shops")
+      .select("id")
+      .eq("id",shopLinkId)
+      .eq("status","active")
+      .eq("is_active",true)
+      .maybeSingle();
+
+    if (linkShopError || !linkShop) {
+      showError("This shop QR/link is invalid or the shop is inactive. Please contact the shopkeeper for a fresh QR code.");
+      return;
+    }
+
     const {data:bound,error:bindError} = await db.from("profiles")
-      .update({connected_shop_id:shopLinkId})
+      .update({connected_shop_id:linkShop.id})
       .eq("id",currentUser.id)
       .is("connected_shop_id",null)
       .select("connected_shop_id")
@@ -371,12 +390,24 @@ async function loadCustomerStore() {
         .eq("id",currentUser.id)
         .maybeSingle();
       if (latestError || !latest?.connected_shop_id) {
-        showError(bindError.message || "This shop could not be joined. Please check the shop link.");
+        showError("Shop connection failed safely: " + (bindError.message || "Please refresh and scan the shop QR again."));
         return;
       }
       targetShopId = latest.connected_shop_id;
     } else {
       targetShopId = bound?.connected_shop_id || null;
+      // A concurrent QR scan may have won the one-shop-only binding race.
+      if (!targetShopId) {
+        const {data:latest,error:latestError} = await db.from("profiles")
+          .select("connected_shop_id")
+          .eq("id",currentUser.id)
+          .maybeSingle();
+        if (latestError) {
+          showError("Shop connection could not be confirmed. Please refresh and try again.");
+          return;
+        }
+        targetShopId = latest?.connected_shop_id || null;
+      }
     }
     joinedFromThisLink = targetShopId === shopLinkId;
   }
