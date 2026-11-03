@@ -1279,6 +1279,7 @@ async function loadShopData(){
   $("publicShopLongitude").value=currentShop.longitude??"";
   say("publicShopProfileMessage","Update these details for your customers.");
   renderBusinessWorkspace(currentShop);
+  await loadStorefrontManager();
   await loadUniversalAdvancedRecords();
   setBusinessAccountContext();await loadBusinessLedger();
   await loadRestaurantTables();
