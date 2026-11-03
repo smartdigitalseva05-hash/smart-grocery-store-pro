@@ -66,6 +66,28 @@ a{color:#8ce2b3}
  <div id="publicShopProfileMessage" class="notice" role="status"></div>
 </section>
 <div class="panel" id="businessWorkspace"><h1 id="workspaceTitle">Business workspace</h1><p class="muted" id="workspaceType"></p><div id="workspaceFeatures" class="products"></div><div class="notice">Your business type is fixed after application to protect your business setup. Contact Super Admin for a correction.</div></div>
+<section class="panel" id="universalAdvancedPanel">
+ <div class="row"><div><h1>🚀 Universal Advanced Business Suite</h1><div class="sub">Available in every shop category. Track quotations, invoices, purchase orders, returns, delivery, appointments, customer follow-ups, loyalty, warranties, stock adjustments, transfers, service jobs, maintenance, staff advances and tasks.</div></div><button id="universalAdvancedRefresh" class="secondary" type="button">Refresh records</button></div>
+ <form id="universalAdvancedForm">
+  <div class="formgrid">
+   <label class="field">Workflow type<select id="universalRecordType" required>
+    <option value="quotation">Quotation / Estimate</option><option value="invoice">Invoice / Bill record</option><option value="purchase_order">Purchase order</option><option value="sales_return">Sales return</option><option value="purchase_return">Purchase return</option><option value="delivery">Delivery / Dispatch</option><option value="booking">Booking / Reservation</option><option value="appointment">Appointment</option><option value="customer_follow_up">Customer follow-up / CRM</option><option value="loyalty_entry">Loyalty / Reward entry</option><option value="warranty_claim">Warranty claim</option><option value="stock_adjustment">Stock adjustment</option><option value="inventory_transfer">Inventory transfer</option><option value="service_job">Service job</option><option value="maintenance">Maintenance</option><option value="employee_advance">Employee advance</option><option value="expense_claim">Expense claim</option><option value="task">Task / Reminder</option>
+   </select></label>
+   <label class="field">Title / item / work summary<input id="universalRecordTitle" maxlength="180" required placeholder="Example: Order estimate for customer"></label>
+   <label class="field">Reference number<input id="universalRecordReference" maxlength="80" placeholder="Invoice / job / tracking number"></label>
+   <label class="field">Customer / supplier / staff name<input id="universalRecordPerson" maxlength="120" placeholder="Name (optional)"></label>
+   <label class="field">Contact number<input id="universalRecordPhone" maxlength="25" inputmode="tel" placeholder="Phone (optional)"></label>
+   <label class="field">Amount (₹)<input id="universalRecordAmount" type="number" min="0" max="999999999" step="0.01" value="0"></label>
+   <label class="field">Due / follow-up date<input id="universalRecordDue" type="date"></label>
+   <label class="field">Status<select id="universalRecordStatus"><option value="open">Open</option><option value="draft">Draft</option><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="paid">Paid (record status only)</option><option value="returned">Returned</option><option value="cancelled">Cancelled</option></select></label>
+  </div>
+  <label class="field">Notes / details<textarea id="universalRecordNotes" rows="2" maxlength="3000" placeholder="Add item details, delivery address, follow-up notes or internal instructions"></textarea></label>
+  <button id="universalRecordSave" type="submit">Save advanced record</button><div id="universalRecordMessage" class="notice" role="status"></div>
+ </form>
+ <div class="row" style="margin-top:16px"><label class="field" style="flex:1;min-width:170px">Filter type<select id="universalRecordFilter"><option value="">All workflows</option><option value="quotation">Quotations</option><option value="invoice">Invoices</option><option value="purchase_order">Purchase orders</option><option value="sales_return">Sales returns</option><option value="purchase_return">Purchase returns</option><option value="delivery">Deliveries</option><option value="booking">Bookings</option><option value="appointment">Appointments</option><option value="customer_follow_up">Customer follow-ups</option><option value="loyalty_entry">Loyalty entries</option><option value="warranty_claim">Warranty claims</option><option value="stock_adjustment">Stock adjustments</option><option value="inventory_transfer">Inventory transfers</option><option value="service_job">Service jobs</option><option value="maintenance">Maintenance</option><option value="employee_advance">Employee advances</option><option value="expense_claim">Expense claims</option><option value="task">Tasks</option></select></label><label class="field" style="flex:1;min-width:170px">Filter status<select id="universalRecordStatusFilter"><option value="">All statuses</option><option value="draft">Draft</option><option value="open">Open</option><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="paid">Paid</option><option value="returned">Returned</option><option value="cancelled">Cancelled</option></select></label></div>
+ <div id="universalAdvancedList" class="products"><div class="notice">Select a shop to load records.</div></div>
+ <div id="universalAdvancedListMessage" class="notice" role="status"></div>
+</section>
 <section class="panel" id="advancedAlertsPanel"><div class="row"><div><h1>⚡ Advanced Smart Alerts</h1><div class="sub">Shop-specific reminders and risk signals. Only this selected shop's records are checked.</div></div><button id="advancedAlertsRefresh" class="secondary" type="button">Refresh alerts</button></div><div id="advancedAlertsList" class="products"><div class="notice">Alerts load after selecting a shop.</div></div><div id="advancedAlertsMessage" class="notice" role="status"></div></section>
 <section class="panel" id="shopGrowthTools">
 <div class="row"><div><h1>Shop Growth Toolkit</h1><div class="sub">Promote your shop, monitor stock and understand recent activity.</div></div><button id="growthRefresh" class="secondary" type="button">Refresh insights</button></div>
@@ -946,6 +968,10 @@ function bindGrowthTools(){
  $("exportBusinessReport").addEventListener("click",exportBusinessReports);
  $("financialPeriod").addEventListener("change",loadFinancialSummary);
  $("advancedAlertsRefresh").addEventListener("click",loadAdvancedAlerts);
+ $("universalAdvancedForm").addEventListener("submit",saveUniversalAdvancedRecord);
+ $("universalAdvancedRefresh").addEventListener("click",loadUniversalAdvancedRecords);
+ $("universalRecordFilter").addEventListener("change",loadUniversalAdvancedRecords);
+ $("universalRecordStatusFilter").addEventListener("change",loadUniversalAdvancedRecords);
  $("lowStockLimit").addEventListener("change",loadAdvancedAlerts);$("lowStockLimit").addEventListener("change",loadGrowthInsights);
  $("shareShopWhatsApp").addEventListener("click",()=>{const msg=[$("whatsAppPromo").value.trim()||("Hello! Visit "+currentShop.name+" to view our products."),shopPublicUrl()].join("\n\n");window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");say("whatsAppMessage","WhatsApp opened. Review and send the message yourself.")});
  $("copyShopLink").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(shopPublicUrl());say("qrMessage","Shop link copied.")}catch{say("qrMessage","Copy not supported. "+shopPublicUrl(),true)}});
@@ -1083,6 +1109,50 @@ async function loadAdvancedAlerts(){
  }catch(error){msg.textContent="Some alerts could not load: "+(error.message||"Unknown error");msg.classList.add("error")}
 }
 
+const UNIVERSAL_RECORD_LABELS={quotation:"Quotation",invoice:"Invoice",purchase_order:"Purchase order",sales_return:"Sales return",purchase_return:"Purchase return",delivery:"Delivery",booking:"Booking",appointment:"Appointment",customer_follow_up:"Customer follow-up",loyalty_entry:"Loyalty / reward",warranty_claim:"Warranty claim",stock_adjustment:"Stock adjustment",inventory_transfer:"Inventory transfer",service_job:"Service job",maintenance:"Maintenance",employee_advance:"Employee advance",expense_claim:"Expense claim",task:"Task"};
+async function loadUniversalAdvancedRecords(){
+ const host=$("universalAdvancedList");if(!host||!currentShop)return;
+ host.replaceChildren();$("universalAdvancedListMessage").textContent="Loading selected shop records…";
+ let query=db.from("shop_advanced_records").select("id,record_type,reference_no,title,customer_name,customer_phone,amount,due_date,status,notes,created_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(500);
+ const type=$("universalRecordFilter").value,status=$("universalRecordStatusFilter").value;
+ if(type)query=query.eq("record_type",type);if(status)query=query.eq("status",status);
+ const {data,error}=await query;
+ if(error){$("universalAdvancedListMessage").textContent="Records unavailable: "+error.message;return}
+ const rows=data||[];
+ if(!rows.length){$("universalAdvancedListMessage").textContent="No matching advanced records yet.";return}
+ for(const x of rows){
+  const card=document.createElement("article");card.className="product";
+  const head=document.createElement("div");head.className="row";
+  const title=document.createElement("strong");title.textContent=(UNIVERSAL_RECORD_LABELS[x.record_type]||x.record_type)+" · "+x.title;
+  const pill=document.createElement("span");pill.className="pill";pill.textContent=x.status.replace(/_/g," ");head.append(title,pill);card.append(head);
+  const meta=document.createElement("div");meta.className="sub";
+  meta.textContent=[x.reference_no||"",x.customer_name||"",x.customer_phone||"",x.due_date?"Due "+x.due_date:"", "₹"+Number(x.amount||0).toFixed(2)].filter(Boolean).join(" · ");card.append(meta);
+  if(x.notes){const note=document.createElement("p");note.className="sub";note.textContent=x.notes;card.append(note)}
+  const actions=document.createElement("div");actions.className="product-actions";
+  const next=document.createElement("button");next.type="button";next.className="secondary";next.textContent="Advance status";next.addEventListener("click",()=>advanceUniversalRecord(x));actions.append(next);
+  card.append(actions);host.append(card);
+ }
+ $("universalAdvancedListMessage").textContent="Showing "+rows.length+" record(s) for "+currentShop.name+".";
+}
+async function advanceUniversalRecord(record){
+ if(!currentShop||!canManageProducts()){say("universalRecordMessage","An active subscription is required to update records.",true);return}
+ const sequence=["draft","open","pending","in_progress","completed"],idx=sequence.indexOf(record.status),next=idx<0?"completed":sequence[Math.min(idx+1,sequence.length-1)];
+ if(record.status==="completed"||record.status==="cancelled"||record.status==="returned"||record.status==="paid"){say("universalRecordMessage","This record is already in a final status. Change it from the record status selector only when creating a new entry.",true);return}
+ const {error}=await db.from("shop_advanced_records").update({status:next,updated_at:new Date().toISOString()}).eq("id",record.id).eq("shop_id",currentShop.id);
+ if(error){say("universalRecordMessage","Status update failed: "+error.message,true);return}
+ say("universalRecordMessage","Status updated to "+next.replace(/_/g," ")+".");await loadUniversalAdvancedRecords();
+}
+async function saveUniversalAdvancedRecord(event){
+ event.preventDefault();if(!currentShop||!canManageProducts()){say("universalRecordMessage","An active subscription is required to save records.",true);return}
+ const title=$("universalRecordTitle").value.trim(),amount=Number($("universalRecordAmount").value||0);
+ if(!title||!Number.isFinite(amount)||amount<0){say("universalRecordMessage","Enter a valid title and amount.",true);return}
+ const {data:{user},error:userError}=await db.auth.getUser();if(userError||!user){say("universalRecordMessage","Please sign in again.",true);return}
+ const payload={shop_id:currentShop.id,record_type:$("universalRecordType").value,title,reference_no:$("universalRecordReference").value.trim()||null,customer_name:$("universalRecordPerson").value.trim()||null,customer_phone:$("universalRecordPhone").value.trim()||null,amount,due_date:$("universalRecordDue").value||null,status:$("universalRecordStatus").value,notes:$("universalRecordNotes").value.trim()||null,created_by:user.id};
+ const {error}=await db.from("shop_advanced_records").insert(payload);
+ if(error){say("universalRecordMessage","Save failed: "+error.message,true);return}
+ $("universalAdvancedForm").reset();$("universalRecordAmount").value="0";say("universalRecordMessage","Advanced record saved for "+currentShop.name+".");await loadUniversalAdvancedRecords();
+}
+
 async function loadShopData(){
   const nextShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!nextShop)return;
   if(currentShop?.id!==nextShop.id)selectedHotelBookingRequestId=null;
@@ -1095,6 +1165,7 @@ async function loadShopData(){
   $("publicShopLongitude").value=currentShop.longitude??"";
   say("publicShopProfileMessage","Update these details for your customers.");
   renderBusinessWorkspace(currentShop);
+  await loadUniversalAdvancedRecords();
   await loadRestaurantTables();
   await loadRestaurantReservations();
   await loadRestaurantMenu();
