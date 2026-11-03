@@ -118,7 +118,8 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
 </section>
 
 <section class="panel" id="publicStoreDetails" aria-label="Shop information">
- <h2 id="publicStoreName">Your connected shop</h2>
+ <div style="display:flex;align-items:center;gap:12px"><img id="publicStoreLogo" class="hidden" alt="Shop logo" style="width:64px;height:64px;object-fit:contain;border-radius:10px;background:#fff;padding:4px"><h2 id="publicStoreName">Your connected shop</h2></div>
+ <img id="publicStoreBanner" class="hidden" alt="Shop banner" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin:10px 0">
  <p id="publicStoreAddress" class="small">Shop address will appear here.</p>
  <p id="publicStoreHours" class="small">Opening hours not provided yet.</p>
  <p id="publicStoreStatus" class="notice">Checking shop status…</p>
@@ -478,7 +479,7 @@ async function loadDeliveryFee() {
 async function loadShopStorefrontConfig(shopId){
   shopStorefrontSettings=null;shopDeliveryZones=[];
   const [settingsResult,zonesResult]=await Promise.all([
-    db.from("shop_storefront_settings").select("announcement,minimum_order_amount,delivery_fee,free_delivery_threshold,delivery_enabled,pickup_enabled,store_open,return_policy,privacy_policy,terms_text").eq("shop_id",shopId).maybeSingle(),
+    db.from("shop_storefront_settings").select("announcement,logo_url,banner_url,theme_key,minimum_order_amount,delivery_fee,free_delivery_threshold,delivery_enabled,pickup_enabled,store_open,return_policy,privacy_policy,terms_text").eq("shop_id",shopId).maybeSingle(),
     db.from("shop_delivery_zones").select("pincode,delivery_fee,minimum_order_amount,is_active").eq("shop_id",shopId).eq("is_active",true)
   ]);
   if(settingsResult.error)console.warn("Shop storefront settings unavailable:",settingsResult.error.message);
@@ -487,6 +488,11 @@ async function loadShopStorefrontConfig(shopId){
   else shopDeliveryZones=zonesResult.data||[];
   if(shopStorefrontSettings&&Number.isFinite(Number(shopStorefrontSettings.delivery_fee)))deliveryFee=Number(shopStorefrontSettings.delivery_fee);
   $("publicStoreAnnouncement").textContent=shopStorefrontSettings?.announcement||"";
+  const safeImage=u=>typeof u==="string"&&/^https:\/\//i.test(u)?u:"";
+  const logo=safeImage(shopStorefrontSettings?.logo_url),banner=safeImage(shopStorefrontSettings?.banner_url);
+  $("publicStoreLogo").classList.toggle("hidden",!logo);if(logo)$("publicStoreLogo").src=logo;
+  $("publicStoreBanner").classList.toggle("hidden",!banner);if(banner)$("publicStoreBanner").src=banner;
+  const palettes={emerald:["#087f5b","#07543e","#e9f8f1"],blue:["#2563eb","#1e40af","#eff6ff"],rose:["#db2777","#9d174d","#fdf2f8"],amber:["#d97706","#92400e","#fffbeb"],slate:["#475569","#1e293b","#f1f5f9"]};const palette=palettes[shopStorefrontSettings?.theme_key]||palettes.emerald;document.documentElement.style.setProperty("--green",palette[0]);document.documentElement.style.setProperty("--dark",palette[1]);document.documentElement.style.setProperty("--light",palette[2]);
   const policy=[["Returns",shopStorefrontSettings?.return_policy],["Privacy",shopStorefrontSettings?.privacy_policy],["Terms",shopStorefrontSettings?.terms_text]].filter(x=>x[1]);
   $("publicStorePolicies").textContent=policy.map(x=>x[0]+": "+x[1]).join(" · ");
 }
