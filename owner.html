@@ -701,11 +701,13 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
     {label:"Global orders (read-only)",context:"Order Control",id:"ownerOrderControl",status:"Available",keywords:"orders order number status delivery fulfilment search"},
     {label:"Global products & stock (read-only)",context:"Global Product Control",id:"ownerGlobalProductControl",status:"Available",keywords:"products inventory stock global search"},
     {label:"Platform-wide settings",context:"Platform Settings",status:"Pending",keywords:"settings configuration platform features"},
-    {label:"Unified admin reports",context:"Reports & Analytics",status:"Pending",keywords:"reports analytics sales revenue charts"}
+    {label:"Unified admin reports",context:"Reports & Analytics",status:"Pending",keywords:"reports analytics sales revenue charts"},
+    {label:"Super Admin Manual · Odia",context:"User Manuals",status:"Available",href:"super-admin-manual-odia.html",keywords:"manual guide odia ମାନୁଆଲ୍ ଗାଇଡ୍ super admin help how to use instructions"},
+    {label:"Super Admin Manual · English",context:"User Manuals",status:"Available",href:"super-admin-manual-english.html",keywords:"manual guide english user guide instructions help how to use"}
    ];
    for(const item of directory){
      const target=item.id?document.getElementById(item.id):null;
-     entries.push({label:item.label,context:item.context,target,href:"",status:item.status,category:"control",search:(item.label+" "+item.context+" "+(item.keywords||"")).toLowerCase()});
+     entries.push({label:item.label,context:item.context,target,href:item.href||"",status:item.status,category:"control",search:(item.label+" "+item.context+" "+(item.keywords||"")).toLowerCase()});
    }
    const sections=[["ownerCategoryControl","business","Business / shop"],["ownerShopsControl","business","Business / shop"],["ownerShopkeeperControl","shopkeeper","Shopkeeper"],["ownerCustomerControl","customer","Customer"],["ownerOrderControl","order","Order"],["ownerGlobalProductControl","product","Product / stock"],["ownerPaymentControl","payment","Payment / subscription"],["ownerAuditControl","security","Security / audit"]];
    for(const [sectionId,type,label] of sections){
@@ -735,11 +737,11 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      const strong=document.createElement("strong");strong.textContent=item.entry.label;
      const small=document.createElement("small");small.textContent="📍 "+item.entry.context+" · "+(item.entry.status||"Available");
      button.append(strong,small);
-     if(item.entry.status==="Pending"||!item.entry.target){button.disabled=true;button.style.opacity=".65";button.style.cursor="not-allowed"}
+     if(item.entry.status==="Pending"||(!item.entry.target&&!item.entry.href)){button.disabled=true;button.style.opacity=".65";button.style.cursor="not-allowed"}
      else button.addEventListener("click",()=>{
        const target=item.entry.target;
        close();
-       if(item.entry.href&&item.entry.href!=="#"){target.click();return}
+       if(item.entry.href&&item.entry.href!=="#"){window.location.href=item.entry.href;return}
        target.scrollIntoView({behavior:"smooth",block:"center"});
        target.classList.add("quick-find-target");
        if(target.matches("input,select,textarea,button")){try{target.focus({preventScroll:true})}catch{}}
