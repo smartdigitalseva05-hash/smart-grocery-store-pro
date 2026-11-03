@@ -882,8 +882,12 @@ async function loadShopkeepers(){
  if(!dashboard||document.getElementById("ownerUnifiedWorkspace"))return;
  const command=document.getElementById("ownerCommandCenter");
  const overview=[...dashboard.children].find(el=>el.classList?.contains("panel")&&el!==command&&el.querySelector("#metrics"));
+ const searchGuides=document.createElement("div");
+ searchGuides.className="panel shop-section";
+ searchGuides.innerHTML='<div class="row"><div><h1>🔎 Global Search & Guides</h1><div class="sub">Search loaded Super Admin records and open the step-by-step guides from this single workspace.</div></div><button id="workspaceGlobalSearch" type="button" class="secondary">Open Global Search</button></div><div class="grid" style="margin-top:14px"><a class="metric" href="super-admin-manual-odia.html" style="text-decoration:none;color:inherit"><strong>📘 Super Admin Guide (Odia)</strong><span>Step-by-step guide in Odia</span></a><a class="metric" href="super-admin-manual-english.html" style="text-decoration:none;color:inherit"><strong>📗 Super Admin Guide (English)</strong><span>Step-by-step guide in English</span></a></div><p class="muted">Global Search covers records loaded in this dashboard and available controls; it does not replace database-wide reporting.</p>';
  const definitions=[
   {id:"overview",label:"🏠 Overview",nodes:[command,overview]},
+  {id:"searchGuides",label:"🔎 Search & Guides",nodes:[searchGuides]},
   {id:"ownerShopsControl",label:"🏪 Shops"},
   {id:"ownerCategoryControl",label:"🧭 11 Categories"},
   {id:"ownerApplicationHub",label:"🗂️ Applications"},
@@ -942,6 +946,8 @@ async function loadShopkeepers(){
    if(dashboard.contains(this))activateForElement(this);
    return originalScrollIntoView.call(this,options);
  };
+ const globalSearchButton=workspace.querySelector("#workspaceGlobalSearch");
+ globalSearchButton?.addEventListener("click",()=>document.getElementById("ownerQuickSearchOpen")?.click());
  activate("overview");
 })();
 </script>
