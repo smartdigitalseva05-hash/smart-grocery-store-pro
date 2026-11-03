@@ -1233,6 +1233,40 @@ async function saveUniversalAdvancedRecord(event){
  $("universalAdvancedForm").reset();$("universalRecordAmount").value="0";say("universalRecordMessage","Advanced record saved for "+currentShop.name+".");await loadUniversalAdvancedRecords();
 }
 
+
+async function loadStorefrontManager(){
+ if(!currentShop)return;
+ const link=location.origin+location.pathname.replace(/[^/]*$/,"")+"storefront.html?shop="+encodeURIComponent(currentShop.id);
+ $("sfPublicLink").textContent=link;$("sfOpenLink").href=link;
+ const {data:s,error}=await db.from("shop_storefront_settings").select("*").eq("shop_id",currentShop.id).maybeSingle();
+ if(error)say("sfMessage","Settings load failed: "+error.message,true);
+ else{const v=s||{};$("sfAnnouncement").value=v.announcement||"";$("sfLogo").value=v.logo_url||currentShop.logo_url||"";$("sfBanner").value=v.banner_url||"";$("sfTheme").value=v.theme_key||"emerald";$("sfMinimum").value=v.minimum_order_amount??0;$("sfDeliveryFee").value=v.delivery_fee??0;$("sfFreeThreshold").value=v.free_delivery_threshold??"";$("sfDeliveryEnabled").checked=v.delivery_enabled!==false;$("sfPickupEnabled").checked=v.pickup_enabled!==false;$("sfStoreOpen").checked=v.store_open!==false;$("sfReturnPolicy").value=v.return_policy||"";$("sfPrivacyPolicy").value=v.privacy_policy||"";$("sfTerms").value=v.terms_text||"";say("sfMessage",s?"Settings loaded.":"Configure and save your public shop settings.");}
+ const [zr,cr]=await Promise.all([db.from("shop_delivery_zones").select("id,zone_name,pincode,delivery_fee,minimum_order_amount,estimated_delivery_minutes,is_active").eq("shop_id",currentShop.id).order("zone_name"),db.from("shop_coupons").select("id,code,discount_type,discount_value,minimum_order_amount,usage_limit,used_count,is_active").eq("shop_id",currentShop.id).order("created_at",{ascending:false})]);
+ const zl=$("deliveryZoneList");zl.replaceChildren();if(zr.error)say("zoneMessage",zr.error.message,true);
+ (zr.data||[]).forEach(z=>{const a=document.createElement("article");a.className="product";const t=document.createElement("strong");t.textContent=z.zone_name+" · "+z.pincode;const m=document.createElement("div");m.className="sub";m.textContent="₹"+z.delivery_fee+" fee · min ₹"+z.minimum_order_amount+" · "+(z.estimated_delivery_minutes?z.estimated_delivery_minutes+" min":"ETA not set")+" · "+(z.is_active?"Active":"Paused");const b=document.createElement("button");b.className="danger";b.type="button";b.textContent="Delete";b.onclick=async()=>{if(!confirm("Delete this delivery zone?"))return;const {error}=await db.from("shop_delivery_zones").delete().eq("id",z.id).eq("shop_id",currentShop.id);if(error)say("zoneMessage",error.message,true);else loadStorefrontManager()};a.append(t,m,b);zl.append(a)});
+ const cl=$("couponList");cl.replaceChildren();if(cr.error)say("couponMessage",cr.error.message,true);
+ (cr.data||[]).forEach(z=>{const a=document.createElement("article");a.className="product";const t=document.createElement("strong");t.textContent=z.code+" · "+(z.discount_type==="percentage"?z.discount_value+"%":"₹"+z.discount_value);const m=document.createElement("div");m.className="sub";m.textContent="Minimum ₹"+z.minimum_order_amount+" · Used "+z.used_count+(z.usage_limit?"/"+z.usage_limit:"")+" · "+(z.is_active?"Active":"Paused");const b=document.createElement("button");b.className="secondary";b.type="button";b.textContent=z.is_active?"Pause":"Activate";b.onclick=async()=>{const {error}=await db.from("shop_coupons").update({is_active:!z.is_active}).eq("id",z.id).eq("shop_id",currentShop.id);if(error)say("couponMessage",error.message,true);else loadStorefrontManager()};a.append(t,m,b);cl.append(a)});
+}
+async function saveStorefrontSettings(e){
+ e.preventDefault();if(!currentShop||!canManageProducts())return say("sfMessage","Active subscription required.",true);
+ const logo=$("sfLogo").value.trim(),banner=$("sfBanner").value.trim();if((logo&&!/^https:\/\//i.test(logo))||(banner&&!/^https:\/\//i.test(banner)))return say("sfMessage","Image URLs must use HTTPS.",true);
+ const n=id=>Number($(id).value||0),{data:{user}}=await db.auth.getUser();
+ const payload={shop_id:currentShop.id,announcement:$("sfAnnouncement").value.trim()||null,logo_url:logo||null,banner_url:banner||null,theme_key:$("sfTheme").value,minimum_order_amount:n("sfMinimum"),delivery_fee:n("sfDeliveryFee"),free_delivery_threshold:$("sfFreeThreshold").value===""?null:n("sfFreeThreshold"),delivery_enabled:$("sfDeliveryEnabled").checked,pickup_enabled:$("sfPickupEnabled").checked,store_open:$("sfStoreOpen").checked,return_policy:$("sfReturnPolicy").value.trim()||null,privacy_policy:$("sfPrivacyPolicy").value.trim()||null,terms_text:$("sfTerms").value.trim()||null,updated_by:user?.id||null};
+ const {error}=await db.from("shop_storefront_settings").upsert(payload,{onConflict:"shop_id"});if(error)return say("sfMessage","Save failed: "+error.message,true);say("sfMessage","Storefront settings saved.");await loadStorefrontManager();
+}
+async function saveDeliveryZone(e){
+ e.preventDefault();if(!currentShop||!canManageProducts())return say("zoneMessage","Active subscription required.",true);
+ const name=$("zoneName").value.trim(),pin=$("zonePincode").value.trim(),fee=Number($("zoneFee").value),min=Number($("zoneMinimum").value||0),eta=$("zoneEta").value===""?null:Number($("zoneEta").value);
+ if(name.length<2||!/^[0-9]{6}$/.test(pin)||!Number.isFinite(fee)||fee<0||!Number.isFinite(min)||min<0||(eta!==null&&(!Number.isInteger(eta)||eta<1||eta>10080)))return say("zoneMessage","Check name, six-digit pincode, fee and ETA.",true);
+ const {error}=await db.from("shop_delivery_zones").upsert({shop_id:currentShop.id,zone_name:name,pincode:pin,delivery_fee:fee,minimum_order_amount:min,estimated_delivery_minutes:eta,is_active:true},{onConflict:"shop_id,pincode"});if(error)return say("zoneMessage",error.message,true);$("deliveryZoneForm").reset();$("zoneFee").value="0";$("zoneMinimum").value="0";say("zoneMessage","Delivery zone saved.");await loadStorefrontManager();
+}
+async function saveCoupon(e){
+ e.preventDefault();if(!currentShop||!canManageProducts())return say("couponMessage","Active subscription required.",true);
+ const code=$("couponCode").value.trim().toUpperCase(),type=$("couponType").value,value=Number($("couponValue").value),minimum=Number($("couponMinimum").value||0),maximum=$("couponMaximum").value===""?null:Number($("couponMaximum").value),limit=$("couponLimit").value===""?null:Number($("couponLimit").value),starts=$("couponStarts").value?new Date($("couponStarts").value).toISOString():null,ends=$("couponEnds").value?new Date($("couponEnds").value).toISOString():null;
+ if(!/^[A-Z0-9_-]{3,32}$/.test(code)||!Number.isFinite(value)||value<=0||(type==="percentage"&&value>100)||!Number.isFinite(minimum)||minimum<0||(maximum!==null&&(!Number.isFinite(maximum)||maximum<0))||(limit!==null&&(!Number.isInteger(limit)||limit<1))||(starts&&ends&&new Date(ends)<=new Date(starts)))return say("couponMessage","Check coupon code, discount and date/usage limits.",true);
+ const {error}=await db.from("shop_coupons").insert({shop_id:currentShop.id,code,discount_type:type,discount_value:value,minimum_order_amount:minimum,maximum_discount:maximum,usage_limit:limit,starts_at:starts,ends_at:ends,is_active:true});if(error)return say("couponMessage","Coupon save failed: "+error.message,true);$("couponForm").reset();$("couponMinimum").value="0";say("couponMessage","Coupon saved privately. Do not apply it in checkout until server-side redemption validation is implemented.");await loadStorefrontManager();
+}
+
 async function loadShopData(){
   const nextShop=shops.find(s=>s.id===$("shopSelect").value)||shops[0];if(!nextShop)return;
   if(currentShop?.id!==nextShop.id)selectedHotelBookingRequestId=null;
@@ -1812,6 +1846,7 @@ async function loadShopData(){
   finally{button.disabled=false}
  });
  $("businessLedgerForm").addEventListener("submit",saveBusinessLedger);["ledgerSubtotal","ledgerDiscount","ledgerTax"].forEach(id=>$(id).addEventListener("input",updateLedgerTotal));$("businessAccountsRefresh").addEventListener("click",loadBusinessLedger);$("ledgerFilter").addEventListener("change",loadBusinessLedger);$("ledgerExport").addEventListener("click",exportBusinessLedger);
+ $("storefrontSettingsForm").addEventListener("submit",saveStorefrontSettings);$("deliveryZoneForm").addEventListener("submit",saveDeliveryZone);$("couponForm").addEventListener("submit",saveCoupon);$("storefrontRefresh").addEventListener("click",loadStorefrontManager);$("sfCopyLink").addEventListener("click",()=>{const v=$("sfPublicLink").textContent;if(navigator.clipboard?.writeText)navigator.clipboard.writeText(v).then(()=>say("sfMessage","Link copied."),()=>say("sfMessage","Copy failed; select the link manually.",true));else say("sfMessage","Select and copy the link manually.")});
  $("shopSelect").addEventListener("change",loadShopData);
  $("ordersRefresh").addEventListener("click",loadOrders);$("applyOrderFilters").addEventListener("click",loadOrders);$("clearOrderFilters").addEventListener("click",()=>{$("orderStatusFilter").value="";$("orderSearch").value="";loadOrders()});$("customerDirectoryRefresh").addEventListener("click",loadOrders);$("customerDirectorySearch").addEventListener("input",()=>renderCustomerDirectory());
  $("planSelect").addEventListener("change",updatePlanPrice);$("billingCycle").addEventListener("change",updatePlanPrice);
