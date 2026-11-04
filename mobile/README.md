@@ -18,7 +18,7 @@ This directory is the isolated foundation for three separately distributable And
 - Never bundle Supabase service-role keys, Razorpay secrets, passwords, or signing credentials in source code or APKs.
 - Only HTTPS is allowed in the embedded web view. File access and mixed content stay disabled.
 - External links open outside the app; only the exact approved site origin and app route are kept inside.
-- Debug APKs are for internal testing only. Public distribution requires a protected release-signing process and Play App Signing.
+- Debug APKs are for internal testing only. CI stores the three generated APKs as a single 14-day artifact bundle. Public distribution requires a protected release-signing process and Play App Signing.
 - Do not claim Play Protect warnings are eliminated merely by changing the APK label or icon.
 
 ## Current status
