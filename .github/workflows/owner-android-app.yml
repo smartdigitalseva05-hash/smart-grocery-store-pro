@@ -1,0 +1,320 @@
+name: Smart Business Pro Owner Android App
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/owner-android-app.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-35 build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Generate branded Android application
+        shell: bash
+        run: |
+          set -euo pipefail
+          PKG="com.smartbusinesspro.owner"
+          DIR="app/src/main/java/com/smartbusinesspro/owner"
+          mkdir -p "$DIR" app/src/main/res/drawable app/src/main/res/mipmap-anydpi-v26 app/src/main/res/values
+          cat > settings.gradle <<'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = "SmartBusinessProOwner"
+          include(":app")
+          EOF
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.6.1' apply false
+          }
+          EOF
+          cat > app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.smartbusinesspro.owner'
+              compileSdk 35
+              defaultConfig {
+                  applicationId 'com.smartbusinesspro.owner'
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 2
+                  versionName '1.1.0'
+              }
+          }
+          EOF
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:colorAccent">#D6A83F</item>
+                  <item name="android:statusBarColor">#101827</item>
+                  <item name="android:navigationBarColor">#101827</item>
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowActionModeOverlay">true</item>
+                  <item name="android:windowBackground">@drawable/splash_background</item>
+              </style>
+          </resources>
+          EOF
+          cat > app/src/main/res/drawable/splash_background.xml <<'EOF'
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:drawable="#101827"/>
+              <item android:gravity="center">
+                  <bitmap android:src="@drawable/owner_mark" android:gravity="center"/>
+              </item>
+          </layer-list>
+          EOF
+          cat > app/src/main/res/drawable/owner_mark.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="96dp" android:height="96dp" android:viewportWidth="96" android:viewportHeight="96">
+              <path android:fillColor="#D6A83F" android:pathData="M48,5 L83,25 L83,69 L48,90 L13,69 L13,25 Z"/>
+              <path android:fillColor="#101827" android:pathData="M48,17 L72,31 L72,63 L48,77 L24,63 L24,31 Z"/>
+              <path android:fillColor="#FFFFFF" android:pathData="M29,58 L29,37 L39,37 L48,49 L57,37 L67,37 L67,58 L57,58 L57,51 L48,62 L39,51 L39,58 Z"/>
+          </vector>
+          EOF
+          cat > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="#101827"/>
+              <foreground android:drawable="@drawable/owner_mark"/>
+          </adaptive-icon>
+          EOF
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <application
+                  android:allowBackup="false"
+                  android:usesCleartextTraffic="false"
+                  android:label="Smart Business Pro Owner"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher"
+                  android:theme="@style/AppTheme">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:screenOrientation="unspecified">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          cat > "$DIR/MainActivity.java" <<'EOF'
+          package com.smartbusinesspro.owner;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.graphics.Color;
+          import android.graphics.Typeface;
+          import android.graphics.drawable.GradientDrawable;
+          import android.net.Uri;
+          import android.content.Intent;
+          import android.view.Gravity;
+          import android.view.View;
+          import android.view.Window;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import android.widget.Button;
+          import android.widget.FrameLayout;
+          import android.widget.LinearLayout;
+          import android.widget.ProgressBar;
+          import android.widget.TextView;
+
+          public final class MainActivity extends Activity {
+              private static final String HOST = "smartdigitalseva05-hash.github.io";
+              private static final String BASE = "/smart-grocery-store-pro/";
+              private static final String OWNER_URL = "https://smartdigitalseva05-hash.github.io/smart-grocery-store-pro/owner.html";
+              private WebView web;
+              private ProgressBar progress;
+              private TextView status;
+              private Button backButton;
+
+              private int dp(float value) { return (int)(value * getResources().getDisplayMetrics().density + 0.5f); }
+
+              @Override public void onCreate(Bundle state) {
+                  super.onCreate(state);
+                  getWindow().setStatusBarColor(Color.rgb(16,24,39));
+                  getWindow().setNavigationBarColor(Color.rgb(16,24,39));
+                  buildShell();
+                  configureWebView();
+                  if (state == null) web.loadUrl(OWNER_URL);
+                  else if (web.restoreState(state) == null) web.loadUrl(OWNER_URL);
+              }
+
+              private void buildShell() {
+                  LinearLayout root = new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setBackgroundColor(Color.rgb(11,18,32));
+
+                  LinearLayout header = new LinearLayout(this);
+                  header.setOrientation(LinearLayout.HORIZONTAL);
+                  header.setGravity(Gravity.CENTER_VERTICAL);
+                  header.setPadding(dp(16), dp(12), dp(16), dp(12));
+                  header.setBackgroundColor(Color.rgb(16,24,39));
+
+                  TextView mark = new TextView(this);
+                  mark.setText("SB");
+                  mark.setTextColor(Color.rgb(16,24,39));
+                  mark.setTextSize(17);
+                  mark.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+                  mark.setGravity(Gravity.CENTER);
+                  GradientDrawable badge = new GradientDrawable();
+                  badge.setColor(Color.rgb(214,168,63));
+                  badge.setCornerRadius(dp(12));
+                  mark.setBackground(badge);
+                  header.addView(mark, new LinearLayout.LayoutParams(dp(44), dp(44)));
+
+                  LinearLayout brand = new LinearLayout(this);
+                  brand.setOrientation(LinearLayout.VERTICAL);
+                  brand.setPadding(dp(12), 0, 0, 0);
+                  TextView title = new TextView(this);
+                  title.setText("SMART BUSINESS PRO");
+                  title.setTextColor(Color.WHITE);
+                  title.setTextSize(14);
+                  title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+                  TextView subtitle = new TextView(this);
+                  subtitle.setText("PRIVATE OWNER CONTROL");
+                  subtitle.setTextColor(Color.rgb(159,176,197));
+                  subtitle.setTextSize(10);
+                  brand.addView(title);
+                  brand.addView(subtitle);
+                  header.addView(brand, new LinearLayout.LayoutParams(0, -2, 1));
+
+                  Button refresh = new Button(this);
+                  refresh.setText("↻");
+                  refresh.setTextSize(20);
+                  refresh.setTextColor(Color.WHITE);
+                  refresh.setBackgroundColor(Color.TRANSPARENT);
+                  refresh.setOnClickListener(v -> { if (web != null) web.reload(); });
+                  header.addView(refresh, new LinearLayout.LayoutParams(dp(48), dp(48)));
+                  root.addView(header);
+
+                  progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+                  progress.setMax(100);
+                  progress.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.rgb(214,168,63)));
+                  root.addView(progress, new LinearLayout.LayoutParams(-1, dp(3)));
+
+                  FrameLayout content = new FrameLayout(this);
+                  web = new WebView(this);
+                  content.addView(web, new FrameLayout.LayoutParams(-1, -1));
+                  status = new TextView(this);
+                  status.setTextColor(Color.WHITE);
+                  status.setTextSize(14);
+                  status.setGravity(Gravity.CENTER);
+                  status.setText("Connecting securely to Owner Control…");
+                  status.setBackgroundColor(Color.rgb(11,18,32));
+                  content.addView(status, new FrameLayout.LayoutParams(-1, -1));
+                  root.addView(content, new LinearLayout.LayoutParams(-1, 0, 1));
+
+                  LinearLayout nav = new LinearLayout(this);
+                  nav.setGravity(Gravity.CENTER);
+                  nav.setPadding(dp(8), dp(5), dp(8), dp(5));
+                  nav.setBackgroundColor(Color.rgb(16,24,39));
+                  backButton = navButton("‹  Back");
+                  backButton.setOnClickListener(v -> { if (web.canGoBack()) web.goBack(); });
+                  Button dashboard = navButton("⌂  Owner");
+                  dashboard.setOnClickListener(v -> web.loadUrl(OWNER_URL));
+                  Button reload = navButton("↻  Refresh");
+                  reload.setOnClickListener(v -> web.reload());
+                  nav.addView(backButton, new LinearLayout.LayoutParams(0, dp(48), 1));
+                  nav.addView(dashboard, new LinearLayout.LayoutParams(0, dp(48), 1));
+                  nav.addView(reload, new LinearLayout.LayoutParams(0, dp(48), 1));
+                  root.addView(nav);
+                  setContentView(root);
+              }
+
+              private Button navButton(String label) {
+                  Button b = new Button(this);
+                  b.setText(label);
+                  b.setTextSize(11);
+                  b.setAllCaps(false);
+                  b.setTextColor(Color.rgb(226,232,240));
+                  b.setBackgroundColor(Color.TRANSPARENT);
+                  return b;
+              }
+
+              private void configureWebView() {
+                  WebSettings s = web.getSettings();
+                  s.setJavaScriptEnabled(true);
+                  s.setDomStorageEnabled(true);
+                  s.setAllowFileAccess(false);
+                  s.setAllowContentAccess(false);
+                  s.setJavaScriptCanOpenWindowsAutomatically(false);
+                  s.setSupportMultipleWindows(false);
+                  s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+                  web.setOverScrollMode(View.OVER_SCROLL_NEVER);
+                  web.setWebChromeClient(new WebChromeClient() {
+                      @Override public void onProgressChanged(WebView view, int value) {
+                          progress.setProgress(value);
+                          progress.setVisibility(value >= 100 ? View.GONE : View.VISIBLE);
+                          if (value > 15) status.setVisibility(View.GONE);
+                      }
+                  });
+                  web.setWebViewClient(new WebViewClient() {
+                      @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                          Uri u = request.getUrl();
+                          if ("https".equalsIgnoreCase(u.getScheme()) && HOST.equalsIgnoreCase(u.getHost()) && u.getPath() != null && u.getPath().startsWith(BASE)) return false;
+                          try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignored) {}
+                          return true;
+                      }
+                      @Override public void onReceivedError(WebView view, WebResourceRequest request, android.webkit.WebResourceError error) {
+                          if (request.isForMainFrame()) {
+                              status.setVisibility(View.VISIBLE);
+                              status.setText("Unable to load Owner Control. Check your internet connection and tap Refresh.");
+                          }
+                      }
+                      @Override public void onPageFinished(WebView view, String url) {
+                          status.setVisibility(View.GONE);
+                          backButton.setEnabled(view.canGoBack());
+                          backButton.setAlpha(view.canGoBack() ? 1f : .55f);
+                      }
+                  });
+              }
+
+              @Override protected void onSaveInstanceState(Bundle out) {
+                  if (web != null) web.saveState(out);
+                  super.onSaveInstanceState(out);
+              }
+
+              @Override public void onBackPressed() {
+                  if (web != null && web.canGoBack()) web.goBack();
+                  else super.onBackPressed();
+              }
+
+              @Override protected void onDestroy() {
+                  if (web != null) { web.stopLoading(); web.destroy(); web = null; }
+                  super.onDestroy();
+              }
+          }
+          EOF
+
+      - name: Build Android APK
+        run: gradle --no-daemon assembleDebug
+
+      - name: Publish direct APK release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAG="owner-android-app-v1"
+          gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1 || gh release create "$TAG" --repo "$GH_REPO" --title "Smart Business Pro Owner Android App" --notes "Branded Android owner app shell for the protected Super Admin portal. Owner authentication and database-enforced MFA/RLS remain required. Package: com.smartbusinesspro.owner."
+          gh release upload "$TAG" app/build/outputs/apk/debug/app-debug.apk --repo "$GH_REPO" --clobber
