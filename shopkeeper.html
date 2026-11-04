@@ -480,8 +480,7 @@ a{color:#8ce2b3}
  const db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
  bindGrowthTools();
  const STARTER_CATALOGUES=window.SMART_BUSINESS_STARTER_CATALOGUES||{};
-  const activeStarterProducts=()=>STARTER_CATALOGUES[currentShop?.business_type]||[]
-  const activeStarterProducts=()=>currentShop?.business_type==="daily_needs"?DAILY_NEEDS_PRODUCTS:STARTER_PRODUCTS;
+  const activeStarterProducts=()=>STARTER_CATALOGUES[currentShop?.business_type]||[];
 
  let shops=[],currentShop=null,currentTrial=null,ordersChannel=null,orderPollTimer=null;let restaurantMenuOptions=[],selectedHotelBookingRequestId=null,recentShopOrders=[];
  const say=(id,msg,bad=false)=>{$(id).textContent=msg;$(id).classList.toggle("error",bad)};
