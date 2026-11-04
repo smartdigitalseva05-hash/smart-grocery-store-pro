@@ -1,0 +1,1 @@
+create index if not exists shop_business_ledger_created_by_idx on public.shop_business_ledger(created_by);
