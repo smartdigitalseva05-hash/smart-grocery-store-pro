@@ -123,7 +123,7 @@ These items are not represented as completed:
 ### Latest completed deployment
 - GitHub Pages is deployed successfully from main commit `c244dcf1b3e056d22d702f7829c836e00aa8fb05`. The Pages build/deploy workflow and the custom deploy workflow both completed successfully.
 - Static project validation passed on this commit, including the reachable Git-history secret scan, HTML/inline-JavaScript validation, payment helper tests and category checks.
-- All three production Razorpay Edge Functions passed Deno type-checking in the deployment workflow. `razorpay-verify-subscription-payment` is deployed at version 13.
+- All three production Razorpay Edge Functions passed Deno type-checking in the deployment workflow. `razorpay-verify-subscription-payment` is deployed at version 14.
 - `sitemap.xml` now lists 12 public URLs. Private workspace `shopkeeper.html` has `noindex,nofollow,noarchive`; `owner.html` remains noindex. Private/admin pages are not listed in the sitemap.
 - The approved customer storefront `index.html` was not modified by the latest fixes. Existing database rows and the pending Razorpay transaction were preserved.
 
