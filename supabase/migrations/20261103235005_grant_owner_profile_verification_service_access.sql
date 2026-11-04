@@ -1,0 +1,1 @@
+grant all on table public.owner_profile_verification_tokens to service_role;
