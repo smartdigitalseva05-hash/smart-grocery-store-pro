@@ -81,6 +81,15 @@ assert(shopkeeperCatalogue.includes('<script src="./starter-catalogues.js"></scr
   "Shopkeeper dashboard must load the shared category starter catalogues.");
 assert(shopkeeperCatalogue.includes("STARTER_CATALOGUES[currentShop?.business_type]"),
   "Shopkeeper dashboard must use the selected shop's business type catalogue.");
+assert(shopkeeperCatalogue.includes("bulkStarterSelection.clear();loadShopData()"),
+  "Switching shops must clear selected starter items before loading the next shop.");
+assert(shopkeeperCatalogue.includes('replace(/\\bdaal\\b/g,"dal")'),
+  "Bulk catalogue import must normalize common Dal/Daal spelling duplicates.");
+assert(shopkeeperCatalogue.includes("images:[],is_available:false"),
+  "Bulk catalogue imports must remain hidden drafts without unverified images.");
+const pagesWorkflow = read(".github/workflows/pages.yml");
+assert(pagesWorkflow.includes("password-security.js starter-catalogues.js .pages-site/"),
+  "GitHub Pages artifact must include the shared starter catalogue script.");
 const publicFiles = [...pages, ...publicScripts];
 const secretPatterns = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
