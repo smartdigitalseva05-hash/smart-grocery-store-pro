@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /verify-owner.html
+
+Sitemap: https://smartdigitalseva05-hash.github.io/smart-grocery-store-pro/sitemap.xml
