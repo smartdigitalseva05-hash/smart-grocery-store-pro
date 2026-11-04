@@ -101,8 +101,9 @@ assert(shopkeeperCatalogue.includes('replace(/\\bdaal\\b/g,"dal")'),
 assert(shopkeeperCatalogue.includes("images:[],is_available:false"),
   "Bulk catalogue imports must remain hidden drafts without unverified images.");
 const pagesWorkflow = read(".github/workflows/pages.yml");
-assert(pagesWorkflow.includes("password-security.js starter-catalogues.js .pages-site/"),
-  "GitHub Pages artifact must include the shared starter catalogue script.");
+assert(pagesWorkflow.includes("cp ./*.html ./*.js robots.txt sitemap.xml .pages-site/") &&
+       pagesWorkflow.includes("cp -R owner-profile .pages-site/"),
+  "GitHub Pages artifact must include every root page, script, SEO asset and nested owner profile.");
 const publicFiles = [...pages, ...publicScripts];
 const secretPatterns = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
