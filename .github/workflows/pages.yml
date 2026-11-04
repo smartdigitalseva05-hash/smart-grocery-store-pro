@@ -55,7 +55,7 @@ jobs:
             const ids = [...html.matchAll(/\bid\s*=\s*["']([^"']+)["']/gi)].map(match => match[1]);
             const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
             if (duplicates.length) throw new Error(file + ' has duplicate element IDs: ' + [...new Set(duplicates)].join(', '));
-            const scripts = [...html.matchAll(/<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi)];
+            const scripts = [...html.matchAll(/<script\b(?![^>]*\bsrc\s*=)(?![^>]*\btype\s*=\s*["'](?:application\/ld\+json|application\/json|importmap)["'])[^>]*>([\s\S]*?)<\/script>/gi)];
             scripts.forEach((match, index) => {
               try { new Function(match[1]); }
               catch (error) { throw new Error(file + ' inline script ' + (index + 1) + ' has a syntax error: ' + error.message); }
