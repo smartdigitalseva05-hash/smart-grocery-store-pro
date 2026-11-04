@@ -970,7 +970,7 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Restored all 39 previously missing applied migration source files directly from `supabase_migrations.schema_migrations.statements`. Current production migration history and feature-branch source now match: **188 applied / 188 source files; zero missing or extra versions**.
 - Hardened owner-profile verification: public endpoints are SECURITY INVOKER wrappers; privileged implementation stays in the private schema; issuing a QR requires `private.is_super_admin()` (active Super Admin + AAL2 + verified TOTP); browser roles have no table access and an explicit deny policy is installed.
 - Added the missing Grocery starter-category rows required for product-category matching.
-- Automated PR validation passed: **481 static checks** across 15 pages, 2 public scripts and 11 categories; **23 payment/security helper tests passed**; reachable Git-history secret scan passed.
+- Automated PR validation passed: **614 static checks** across 27 pages, 2 public scripts and 11 categories; **23 payment/security helper tests passed**; reachable Git-history secret scan passed.
 
 ### Current production gates (not claimed complete)
 
