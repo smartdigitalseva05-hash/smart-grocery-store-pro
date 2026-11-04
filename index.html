@@ -5,6 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#087f5b">
+<link rel="icon" type="image/png" href="./assets/smart-business-pro-logo.png">
+<link rel="apple-touch-icon" href="./assets/smart-business-pro-logo.png">
 <title>Smart Business Pro | Local Multi-Business Marketplace</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
@@ -24,7 +26,9 @@ body{margin:0;background:var(--bg);font-family:Arial,sans-serif;color:var(--text
 button,input,select{font:inherit}
 button{cursor:pointer}
 header{background:var(--white);padding:15px 5%;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10;box-shadow:0 2px 12px #0000000d}
-.brand{font-size:19px;font-weight:800;color:var(--green)}
+.brand{display:flex;align-items:center;gap:9px;font-size:19px;font-weight:800;color:var(--green)}
+.brand-logo{width:42px;height:42px;object-fit:contain;border-radius:9px;background:#fff}
+@media(max-width:600px){.brand-logo{width:36px;height:36px}}
 .brand span{color:#f2a900}
 .header-actions{display:flex;gap:8px;align-items:center}
 .btn{border:0;border-radius:9px;padding:11px 16px;background:var(--green);color:white;font-weight:700}
@@ -90,7 +94,7 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
 <body>
 
 <header>
-  <div class="brand">🛍 Smart <span>Market</span></div>
+  <div class="brand"><img class="brand-logo" src="./assets/smart-business-pro-logo.png" alt="Smart Business Pro official logo"><span>SMART <span>BUSINESS PRO</span></span></div>
   <div class="header-actions">
     <button class="btn btn-light" id="cartBtn">🛍 Cart (<span id="cartCount">0</span>)</button>
     <a class="btn btn-light" href="./my-orders.html" style="text-decoration:none">My Orders</a>
