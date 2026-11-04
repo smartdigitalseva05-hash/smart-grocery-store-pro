@@ -1,486 +1,485 @@
-/* Smart Business Pro category-specific starter catalogues.
- * Prices are illustrative suggestions only. All imported items are hidden drafts
- * with zero stock until the shopkeeper confirms actual details.
+/* Category-specific Smart Business Pro starter catalogues.
+ * Prices are illustrative. Bulk-imported items remain hidden drafts with zero stock.
  */
 window.SMART_BUSINESS_STARTER_CATALOGUES = {
   "grocery": [
     {
       "name": "Toor Dal",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 165,
       "emoji": "🌾"
     },
     {
       "name": "Moong Dal",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 145,
       "emoji": "🌾"
     },
     {
       "name": "Masoor Dal",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 110,
       "emoji": "🌾"
     },
     {
       "name": "Chana Dal",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 95,
       "emoji": "🌾"
     },
     {
       "name": "Urad Dal",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 155,
       "emoji": "🌾"
     },
     {
       "name": "Kabuli Chana",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 130,
       "emoji": "🌾"
     },
     {
       "name": "Kala Chana",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 95,
       "emoji": "🌾"
     },
     {
       "name": "Rajma",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 145,
       "emoji": "🌾"
     },
     {
       "name": "White Peas",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 90,
       "emoji": "🌾"
     },
     {
       "name": "Green Moong",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 120,
       "emoji": "🌾"
     },
     {
       "name": "Soya Chunks",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 75,
       "emoji": "🌾"
     },
     {
       "name": "Poha",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 55,
       "emoji": "🌾"
     },
     {
       "name": "Sabudana",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 85,
       "emoji": "🌾"
     },
     {
       "name": "Besan",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 90,
       "emoji": "🌾"
     },
     {
       "name": "Suji",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 55,
       "emoji": "🌾"
     },
     {
       "name": "Maida",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 48,
       "emoji": "🌾"
     },
     {
       "name": "Corn Flour",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 65,
       "emoji": "🌾"
     },
     {
       "name": "Dalia",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 70,
       "emoji": "🌾"
     },
     {
       "name": "Brown Chana",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 105,
       "emoji": "🌾"
     },
     {
       "name": "Mixed Pulses",
-      "category": "Staples & Pulses",
+      "category": "Staples",
       "price": 135,
       "emoji": "🌾"
     },
     {
       "name": "Basmati Rice",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 110,
       "emoji": "🍚"
     },
     {
       "name": "Sona Masoori Rice",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 62,
       "emoji": "🍚"
     },
     {
       "name": "Kolam Rice",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 68,
       "emoji": "🍚"
     },
     {
       "name": "Raw Rice",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 55,
       "emoji": "🍚"
     },
     {
       "name": "Boiled Rice",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 58,
       "emoji": "🍚"
     },
     {
       "name": "Brown Rice",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 95,
       "emoji": "🍚"
     },
     {
       "name": "Idli Rice",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 60,
       "emoji": "🍚"
     },
     {
       "name": "Wheat Atta",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 48,
       "emoji": "🍚"
     },
     {
       "name": "Multigrain Atta",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 75,
       "emoji": "🍚"
     },
     {
       "name": "Chakki Atta",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 55,
       "emoji": "🍚"
     },
     {
       "name": "Jowar Flour",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 85,
       "emoji": "🍚"
     },
     {
       "name": "Ragi Flour",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 90,
       "emoji": "🍚"
     },
     {
       "name": "Bajra Flour",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 70,
       "emoji": "🍚"
     },
     {
       "name": "Rice Flour",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 52,
       "emoji": "🍚"
     },
     {
       "name": "Maize Flour",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 48,
       "emoji": "🍚"
     },
     {
       "name": "Litti Atta",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 65,
       "emoji": "🍚"
     },
     {
       "name": "Puffed Rice",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 45,
       "emoji": "🍚"
     },
     {
       "name": "Flattened Rice Thick",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 58,
       "emoji": "🍚"
     },
     {
       "name": "Broken Rice",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 42,
       "emoji": "🍚"
     },
     {
       "name": "Premium Basmati",
-      "category": "Rice & Atta",
+      "category": "Staples",
       "price": 155,
       "emoji": "🍚"
     },
     {
       "name": "Sunflower Oil",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 145,
       "emoji": "🫙"
     },
     {
       "name": "Mustard Oil",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 165,
       "emoji": "🫙"
     },
     {
       "name": "Soybean Oil",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 135,
       "emoji": "🫙"
     },
     {
       "name": "Groundnut Oil",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 185,
       "emoji": "🫙"
     },
     {
       "name": "Rice Bran Oil",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 155,
       "emoji": "🫙"
     },
     {
       "name": "Ghee",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 320,
       "emoji": "🫙"
     },
     {
       "name": "Cumin Seeds",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 48,
       "emoji": "🫙"
     },
     {
       "name": "Mustard Seeds",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 35,
       "emoji": "🫙"
     },
     {
       "name": "Turmeric Powder",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 42,
       "emoji": "🫙"
     },
     {
       "name": "Red Chilli Powder",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 58,
       "emoji": "🫙"
     },
     {
       "name": "Coriander Powder",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 45,
       "emoji": "🫙"
     },
     {
       "name": "Black Pepper",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 95,
       "emoji": "🫙"
     },
     {
       "name": "Garam Masala",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 65,
       "emoji": "🫙"
     },
     {
       "name": "Kitchen King Masala",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 55,
       "emoji": "🫙"
     },
     {
       "name": "Cumin Powder",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 60,
       "emoji": "🫙"
     },
     {
       "name": "Cardamom",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 160,
       "emoji": "🫙"
     },
     {
       "name": "Cinnamon",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 55,
       "emoji": "🫙"
     },
     {
       "name": "Cloves",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 85,
       "emoji": "🫙"
     },
     {
       "name": "Bay Leaf",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 25,
       "emoji": "🫙"
     },
     {
       "name": "Hing",
-      "category": "Oils & Spices",
+      "category": "Staples",
       "price": 45,
       "emoji": "🫙"
     },
     {
       "name": "Marie Biscuits",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 30,
       "emoji": "🍪"
     },
     {
       "name": "Glucose Biscuits",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 20,
       "emoji": "🍪"
     },
     {
       "name": "Cream Biscuits",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 35,
       "emoji": "🍪"
     },
     {
       "name": "Digestive Biscuits",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 45,
       "emoji": "🍪"
     },
     {
       "name": "Salted Crackers",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 30,
       "emoji": "🍪"
     },
     {
       "name": "Potato Chips",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 20,
       "emoji": "🍪"
     },
     {
       "name": "Banana Chips",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 45,
       "emoji": "🍪"
     },
     {
       "name": "Mixture Namkeen",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 55,
       "emoji": "🍪"
     },
     {
       "name": "Aloo Bhujia",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 50,
       "emoji": "🍪"
     },
     {
       "name": "Moong Dal Snack",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 45,
       "emoji": "🍪"
     },
     {
       "name": "Peanut Chikki",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 35,
       "emoji": "🍪"
     },
     {
       "name": "Popcorn",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 30,
       "emoji": "🍪"
     },
     {
       "name": "Instant Noodles",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 15,
       "emoji": "🍪"
     },
     {
       "name": "Cup Noodles",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 45,
       "emoji": "🍪"
     },
     {
       "name": "Pasta",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 55,
       "emoji": "🍪"
     },
     {
       "name": "Macaroni",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 50,
       "emoji": "🍪"
     },
     {
       "name": "Roasted Peanuts",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 40,
       "emoji": "🍪"
     },
     {
       "name": "Khakhra",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 65,
       "emoji": "🍪"
     },
     {
       "name": "Toast Rusk",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 45,
       "emoji": "🍪"
     },
     {
       "name": "Chocolate Wafer",
-      "category": "Snacks & Biscuits",
+      "category": "Snacks & Beverages",
       "price": 25,
       "emoji": "🍪"
     },
@@ -606,361 +605,361 @@ window.SMART_BUSINESS_STARTER_CATALOGUES = {
     },
     {
       "name": "Tea Powder",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 125,
       "emoji": "🥤"
     },
     {
       "name": "Green Tea",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 95,
       "emoji": "🥤"
     },
     {
       "name": "Instant Coffee",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 145,
       "emoji": "🥤"
     },
     {
       "name": "Filter Coffee",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 110,
       "emoji": "🥤"
     },
     {
       "name": "Hot Chocolate Mix",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 160,
       "emoji": "🥤"
     },
     {
       "name": "Mango Drink",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 20,
       "emoji": "🥤"
     },
     {
       "name": "Orange Drink",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 20,
       "emoji": "🥤"
     },
     {
       "name": "Lemon Drink",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 20,
       "emoji": "🥤"
     },
     {
       "name": "Cola 750 ml",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 40,
       "emoji": "🥤"
     },
     {
       "name": "Lime Soda",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 35,
       "emoji": "🥤"
     },
     {
       "name": "Packaged Water 1L",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 20,
       "emoji": "🥤"
     },
     {
       "name": "Coconut Water",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 45,
       "emoji": "🥤"
     },
     {
       "name": "Energy Drink",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 55,
       "emoji": "🥤"
     },
     {
       "name": "Lassi",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 30,
       "emoji": "🥤"
     },
     {
       "name": "Sharbat Syrup",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 85,
       "emoji": "🥤"
     },
     {
       "name": "Glucose Powder",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 95,
       "emoji": "🥤"
     },
     {
       "name": "Iced Tea",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 35,
       "emoji": "🥤"
     },
     {
       "name": "Badam Drink Mix",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 145,
       "emoji": "🥤"
     },
     {
       "name": "Herbal Tea",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 125,
       "emoji": "🥤"
     },
     {
       "name": "Sattu Drink Mix",
-      "category": "Beverages",
+      "category": "Snacks & Beverages",
       "price": 65,
       "emoji": "🥤"
     },
     {
       "name": "Bathing Soap",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 38,
       "emoji": "🧴"
     },
     {
       "name": "Hand Wash",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 75,
       "emoji": "🧴"
     },
     {
       "name": "Shampoo Sachet Pack",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 45,
       "emoji": "🧴"
     },
     {
       "name": "Shampoo Bottle",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 145,
       "emoji": "🧴"
     },
     {
       "name": "Conditioner",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 125,
       "emoji": "🧴"
     },
     {
       "name": "Toothpaste",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 65,
       "emoji": "🧴"
     },
     {
       "name": "Toothbrush",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 25,
       "emoji": "🧴"
     },
     {
       "name": "Mouthwash",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 110,
       "emoji": "🧴"
     },
     {
       "name": "Face Wash",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 95,
       "emoji": "🧴"
     },
     {
       "name": "Face Cream",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 85,
       "emoji": "🧴"
     },
     {
       "name": "Body Lotion",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 135,
       "emoji": "🧴"
     },
     {
       "name": "Hair Oil",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 75,
       "emoji": "🧴"
     },
     {
       "name": "Hair Colour",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 95,
       "emoji": "🧴"
     },
     {
       "name": "Talcum Powder",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 65,
       "emoji": "🧴"
     },
     {
       "name": "Deodorant",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 155,
       "emoji": "🧴"
     },
     {
       "name": "Sanitary Pads",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 95,
       "emoji": "🧴"
     },
     {
       "name": "Cotton Buds",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 35,
       "emoji": "🧴"
     },
     {
       "name": "Comb",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 25,
       "emoji": "🧴"
     },
     {
       "name": "Shaving Cream",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 65,
       "emoji": "🧴"
     },
     {
       "name": "Razor",
-      "category": "Personal Care",
+      "category": "Grocery Personal Care",
       "price": 45,
       "emoji": "🧴"
     },
     {
       "name": "Detergent Powder",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 95,
       "emoji": "🧹"
     },
     {
       "name": "Detergent Bar",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 25,
       "emoji": "🧹"
     },
     {
       "name": "Dishwash Bar",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 20,
       "emoji": "🧹"
     },
     {
       "name": "Dishwash Liquid",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 85,
       "emoji": "🧹"
     },
     {
       "name": "Floor Cleaner",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 95,
       "emoji": "🧹"
     },
     {
       "name": "Toilet Cleaner",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 90,
       "emoji": "🧹"
     },
     {
       "name": "Glass Cleaner",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 85,
       "emoji": "🧹"
     },
     {
       "name": "Phenyl",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 65,
       "emoji": "🧹"
     },
     {
       "name": "Bleaching Powder",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 35,
       "emoji": "🧹"
     },
     {
       "name": "Scrub Pad",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 15,
       "emoji": "🧹"
     },
     {
       "name": "Steel Scrubber",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 20,
       "emoji": "🧹"
     },
     {
       "name": "Garbage Bags",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 55,
       "emoji": "🧹"
     },
     {
       "name": "Tissue Box",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 65,
       "emoji": "🧹"
     },
     {
       "name": "Kitchen Towels",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 45,
       "emoji": "🧹"
     },
     {
       "name": "Air Freshener",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 125,
       "emoji": "🧹"
     },
     {
       "name": "Room Spray",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 110,
       "emoji": "🧹"
     },
     {
       "name": "Mosquito Repellent",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 95,
       "emoji": "🧹"
     },
     {
       "name": "Laundry Liquid",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 145,
       "emoji": "🧹"
     },
     {
       "name": "Fabric Softener",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 125,
       "emoji": "🧹"
     },
     {
       "name": "Toilet Brush",
-      "category": "Home Cleaning",
+      "category": "Grocery Home Cleaning",
       "price": 55,
       "emoji": "🧹"
     },
@@ -1086,121 +1085,121 @@ window.SMART_BUSINESS_STARTER_CATALOGUES = {
     },
     {
       "name": "Baby Diapers Small Pack",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 95,
       "emoji": "🍼"
     },
     {
       "name": "Baby Wipes",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 75,
       "emoji": "🍼"
     },
     {
       "name": "Baby Soap",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 45,
       "emoji": "🍼"
     },
     {
       "name": "Baby Shampoo",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 85,
       "emoji": "🍼"
     },
     {
       "name": "Baby Lotion",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 110,
       "emoji": "🍼"
     },
     {
       "name": "Baby Powder",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 75,
       "emoji": "🍼"
     },
     {
       "name": "Feeding Bottle",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 125,
       "emoji": "🍼"
     },
     {
       "name": "Baby Cereal",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 185,
       "emoji": "🍼"
     },
     {
       "name": "Baby Oil",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 95,
       "emoji": "🍼"
     },
     {
       "name": "Cotton Balls",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 35,
       "emoji": "🍼"
     },
     {
       "name": "Bandage Roll",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 30,
       "emoji": "🍼"
     },
     {
       "name": "Adhesive Bandages",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 45,
       "emoji": "🍼"
     },
     {
       "name": "Cotton Roll",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 55,
       "emoji": "🍼"
     },
     {
       "name": "Antiseptic Liquid",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 75,
       "emoji": "🍼"
     },
     {
       "name": "Hand Sanitizer",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 55,
       "emoji": "🍼"
     },
     {
       "name": "Disposable Masks",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 35,
       "emoji": "🍼"
     },
     {
       "name": "Thermometer",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 125,
       "emoji": "🍼"
     },
     {
       "name": "ORS Sachet",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 22,
       "emoji": "🍼"
     },
     {
       "name": "Vitamin C Candy",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 45,
       "emoji": "🍼"
     },
     {
       "name": "First Aid Tape",
-      "category": "Baby & Health Essentials",
+      "category": "Grocery Baby & Health Essentials",
       "price": 35,
       "emoji": "🍼"
     }
