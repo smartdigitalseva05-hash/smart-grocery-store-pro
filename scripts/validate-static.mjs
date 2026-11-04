@@ -9,7 +9,7 @@ const pages = [
   "digital-service-request.html", "electronics-repair.html", "hotel-booking.html",
   "my-orders.html", "restaurant-booking.html", "shopkeeper-benefits.html", "business-category.html"
 ];
-const publicScripts = ["password-security.js"];
+const publicScripts = ["password-security.js", "starter-catalogues.js"];
 const categories = [
   ["grocery", "Grocery"], ["daily_needs", "Daily Needs"], ["garments", "Garments"],
   ["jewellery", "Jewellery"], ["restaurant", "Restaurant"], ["hotel", "Hotel"],
@@ -63,6 +63,24 @@ for (const page of pages) {
 }
 
 for (const file of publicScripts) read(file);
+const starterSource = read("starter-catalogues.js");
+const starterSandbox = { window: {} };
+vm.runInNewContext(starterSource, starterSandbox, { filename: "starter-catalogues.js" });
+const starterCatalogues = starterSandbox.window.SMART_BUSINESS_STARTER_CATALOGUES;
+assert(starterCatalogues && typeof starterCatalogues === "object", "Starter catalogue data is not exposed.");
+for (const [key] of categories) {
+  const items = starterCatalogues[key];
+  assert(Array.isArray(items) && items.length === 200, key + " must have exactly 200 starter catalogue items.");
+  const names = items.map(item => String(item.name || "").trim().toLowerCase());
+  assert(names.every(Boolean) && new Set(names).size === 200, key + " starter catalogue names must be non-empty and unique.");
+  assert(items.every(item => item.category && Number.isFinite(Number(item.price)) && Number(item.price) > 0),
+    key + " starter catalogue items must include category and positive suggested price.");
+}
+const shopkeeperCatalogue = read("shopkeeper.html");
+assert(shopkeeperCatalogue.includes('<script src="./starter-catalogues.js"></script>'),
+  "Shopkeeper dashboard must load the shared category starter catalogues.");
+assert(shopkeeperCatalogue.includes("STARTER_CATALOGUES[currentShop?.business_type]"),
+  "Shopkeeper dashboard must use the selected shop's business type catalogue.");
 const publicFiles = [...pages, ...publicScripts];
 const secretPatterns = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
