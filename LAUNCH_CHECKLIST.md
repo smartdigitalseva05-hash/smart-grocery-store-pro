@@ -116,3 +116,25 @@ These items are not represented as completed:
 - Expanded static validation passed on commit `ab83f827e611403b6d786fddef5d0a90669a9a31`, GitHub Actions run `41377126260`: **283 checks across 14 HTML pages, 1 public script and 11 business categories**.
 - The new checks cover local links/assets, target=_blank opener safety and common private credential patterns in public HTML/JS, in addition to the earlier syntax, duplicate-ID and category checks.
 - GitHub Pages deployment/build for this exact commit was pending at the time of this update. Do not assume the latest code is live until those runs succeed.
+
+
+## Execution update — 2026-11-04
+
+### Completed on feature branch (not yet deployed to GitHub Pages)
+- Added 200 unique, category-specific starter catalogue templates for each of the 11 business types: **2,200 total**. The shopkeeper dashboard loads the catalogue matching the selected shop's immutable `business_type`.
+- Bulk imports remain safe drafts: zero stock, unavailable to customers, no photos or live-price assumptions. Shopkeepers must verify prices, stock and photos before publishing. Existing shop inventory is not overwritten.
+- Rebuilt `catalogue.html` to browse all 11 category catalogues; added automated checks for exactly 200 unique entries per category.
+- Fixed malformed nested script markup in `shopkeeper.html`, which was the cause of the latest static-validation and Pages deployment workflow failures. Added `starter-catalogues.js` to the Pages artifact.
+- Restored all 39 previously missing applied migration source files directly from `supabase_migrations.schema_migrations.statements`. Current production migration history and feature-branch source now match: **188 applied / 188 source files; zero missing or extra versions**.
+- Hardened owner-profile verification: public endpoints are SECURITY INVOKER wrappers; privileged implementation stays in the private schema; issuing a QR requires `private.is_super_admin()` (active Super Admin + AAL2 + verified TOTP); browser roles have no table access and an explicit deny policy is installed.
+- Added the missing Grocery starter-category rows required for product-category matching.
+- Automated PR validation passed: **481 static checks** across 15 pages, 2 public scripts and 11 categories; **23 payment/security helper tests passed**; reachable Git-history secret scan passed.
+
+### Current production gates (not claimed complete)
+- The feature branch is awaiting PR merge; these website/catalogue changes are not live until merged and the Pages deployment succeeds.
+- Live database still has 1 active shop and 1 live product. The 2,200 entries are templates, not automatically published inventory. The current shop's existing `Toor daal` item is retained; duplicate starter import is skipped.
+- Current payment record: ₹99 INR, Razorpay, status `pending`, `verified=false`; there are 0 active paid subscriptions and 1 active trial. Do not treat the payment as confirmed or activate a paid plan until a valid signed webhook/verification completes.
+- Security Advisor now reports only the leaked-password-protection warning, which is plan-gated on the current Free tier. Enable after moving to an eligible plan.
+- Performance Advisor reports unused indexes; do not drop them without workload evidence.
+- Real browser acceptance testing for all 11 categories, live Razorpay signed-webhook tests, and recovery/backup restore tests remain open. No physical browser/device tests are claimed.
+- `index.html` was not modified in this work.
