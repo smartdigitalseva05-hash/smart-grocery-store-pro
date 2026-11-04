@@ -29,4 +29,14 @@ jobs:
           gradle-version: "8.7"
       - name: Assemble Owner, Shopkeeper and Customer debug APKs
         working-directory: mobile
-        run: gradle --no-daemon :app-owner:assembleDebug :app-shopkeeper:assembleDebug :app-customer:assembleDebug
+        run: gradle --no-daemon --stacktrace :app-owner:assembleDebug :app-shopkeeper:assembleDebug :app-customer:assembleDebug
+      - name: Publish three debug APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-business-pro-android-debug-apks
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            mobile/app-owner/build/outputs/apk/debug/*.apk
+            mobile/app-shopkeeper/build/outputs/apk/debug/*.apk
+            mobile/app-customer/build/outputs/apk/debug/*.apk
