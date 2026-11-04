@@ -39,7 +39,9 @@ for (const page of pages) {
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     const attrs = match[1] || "";
     const code = match[2] || "";
-    if (!code.trim() || /type=["']module["']/i.test(attrs)) continue;
+    const scriptType = attrs.match(/\\btype=["']([^"']+)["']/i)?.[1]?.toLowerCase();
+    if (!code.trim() || scriptType === "module" ||
+        (scriptType && !["text/javascript","application/javascript"].includes(scriptType))) continue;
     scriptIndex++;
     try { new vm.Script(code, { filename: page + " inline script #" + scriptIndex }); }
     catch (error) { throw new Error(page + " inline script #" + scriptIndex + ": " + error.message); }
