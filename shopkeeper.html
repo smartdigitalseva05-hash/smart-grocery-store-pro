@@ -1418,6 +1418,18 @@ async function loadShopData(){
     }});
     if(error)throw new Error(data?.error||error.message||"Checkout service is unavailable.");
     if(!data?.order_id||!data?.key_id||!data?.payment_id)throw new Error(data?.error||"Payment order response is incomplete. Please retry.");
+    // Reconcile the saved order first. A captured payment is applied without opening checkout again.
+    const {data:recovery,error:recoveryError}=await db.functions.invoke("razorpay-verify-subscription-payment",{body:{payment_id:data.payment_id}});
+    if(recoveryError)throw new Error(recovery?.error||recoveryError.message||"Could not safely check the existing payment. No new payment was started.");
+    if(recovery?.verified===true){
+      say("subscriptionMessage","Existing Razorpay payment verified. Your subscription is active.");
+      await boot();
+      return;
+    }
+    if(recovery?.retry_checkout!==true){
+      say("subscriptionMessage",recovery?.message||recovery?.error||"Payment needs verification. No new payment was started.",true);
+      return;
+    }
     const options={
       key:data.key_id,amount:data.amount,currency:data.currency,order_id:data.order_id,
       name:data.name,description:data.description,prefill:data.prefill||{},
@@ -1431,6 +1443,7 @@ async function loadShopData(){
             razorpay_payment_id:response.razorpay_payment_id,razorpay_signature:response.razorpay_signature
           }});
           if(verifyError)throw new Error(verified?.error||verifyError.message+" If money was debited, do not pay again; contact support with reference "+data.payment_id);
+          if(verified?.verified!==true)throw new Error(verified?.message||verified?.error||"Payment verification is incomplete. Do not pay again; support reference "+data.payment_id);
           say("subscriptionMessage","Payment verified successfully. Your subscription is active.");
           await boot();
         }catch(e){
