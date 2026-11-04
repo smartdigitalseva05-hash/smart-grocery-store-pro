@@ -7,9 +7,13 @@ const pages = [
   "index.html", "owner.html", "apply-shop.html", "shopkeeper.html",
   "portal.html", "showcase.html", "catalogue.html", "demo-store.html",
   "digital-service-request.html", "electronics-repair.html", "hotel-booking.html",
-  "my-orders.html", "restaurant-booking.html", "shopkeeper-benefits.html", "business-category.html"
+  "my-orders.html", "restaurant-booking.html", "shopkeeper-benefits.html", "business-category.html",
+  "customer-manual-odia.html", "manual-center.html", "owner-id-center.html", "owner-profile.html",
+  "owner-profile/index.html", "shopkeeper-manual-odia.html", "storefront.html",
+  "super-admin-manual-english.html", "super-admin-manual-odia.html", "verify-owner.html",
+  "googlee231ccb6a07a2d79.html", "googlee231ccb6a07a2d79 (1).html"
 ];
-const publicScripts = ["password-security.js"];
+const publicScripts = ["password-security.js", "starter-catalogues.js"];
 const categories = [
   ["grocery", "Grocery"], ["daily_needs", "Daily Needs"], ["garments", "Garments"],
   ["jewellery", "Jewellery"], ["restaurant", "Restaurant"], ["hotel", "Hotel"],
@@ -35,7 +39,16 @@ for (const page of pages) {
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     const attrs = match[1] || "";
     const code = match[2] || "";
-    if (!code.trim() || /type=["']module["']/i.test(attrs)) continue;
+    const scriptType = attrs.match(/\btype=["']([^"']+)["']/i)?.[1]?.toLowerCase();
+    if (!code.trim()) continue;
+    if (["application/ld+json","application/json","importmap"].includes(scriptType)) {
+      try { JSON.parse(code); }
+      catch (error) { throw new Error(page + " JSON script #" + (scriptIndex + 1) + ": " + error.message); }
+      checks++;
+      continue;
+    }
+    if (scriptType === "module" ||
+        (scriptType && !["text/javascript","application/javascript"].includes(scriptType))) continue;
     scriptIndex++;
     try { new vm.Script(code, { filename: page + " inline script #" + scriptIndex }); }
     catch (error) { throw new Error(page + " inline script #" + scriptIndex + ": " + error.message); }
@@ -63,6 +76,34 @@ for (const page of pages) {
 }
 
 for (const file of publicScripts) read(file);
+const starterSource = read("starter-catalogues.js");
+const starterSandbox = { window: {} };
+vm.runInNewContext(starterSource, starterSandbox, { filename: "starter-catalogues.js" });
+const starterCatalogues = starterSandbox.window.SMART_BUSINESS_STARTER_CATALOGUES;
+assert(starterCatalogues && typeof starterCatalogues === "object", "Starter catalogue data is not exposed.");
+for (const [key] of categories) {
+  const items = starterCatalogues[key];
+  assert(Array.isArray(items) && items.length === 200, key + " must have exactly 200 starter catalogue items.");
+  const names = items.map(item => String(item.name || "").trim().toLowerCase());
+  assert(names.every(Boolean) && new Set(names).size === 200, key + " starter catalogue names must be non-empty and unique.");
+  assert(items.every(item => item.category && Number.isFinite(Number(item.price)) && Number(item.price) > 0),
+    key + " starter catalogue items must include category and positive suggested price.");
+}
+const shopkeeperCatalogue = read("shopkeeper.html");
+assert(shopkeeperCatalogue.includes('<script src="./starter-catalogues.js"></script>'),
+  "Shopkeeper dashboard must load the shared category starter catalogues.");
+assert(shopkeeperCatalogue.includes("STARTER_CATALOGUES[currentShop?.business_type]"),
+  "Shopkeeper dashboard must use the selected shop's business type catalogue.");
+assert(shopkeeperCatalogue.includes("bulkStarterSelection.clear();loadShopData()"),
+  "Switching shops must clear selected starter items before loading the next shop.");
+assert(shopkeeperCatalogue.includes('replace(/\\bdaal\\b/g,"dal")'),
+  "Bulk catalogue import must normalize common Dal/Daal spelling duplicates.");
+assert(shopkeeperCatalogue.includes("images:[],is_available:false"),
+  "Bulk catalogue imports must remain hidden drafts without unverified images.");
+const pagesWorkflow = read(".github/workflows/pages.yml");
+assert(pagesWorkflow.includes("cp ./*.html ./*.js robots.txt sitemap.xml .pages-site/") &&
+       pagesWorkflow.includes("cp -R owner-profile .pages-site/"),
+  "GitHub Pages artifact must include every root page, script, SEO asset and nested owner profile.");
 const publicFiles = [...pages, ...publicScripts];
 const secretPatterns = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,

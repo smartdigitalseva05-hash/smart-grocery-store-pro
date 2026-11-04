@@ -1,0 +1,1 @@
+create index if not exists shop_advanced_records_created_by_idx on public.shop_advanced_records(created_by);

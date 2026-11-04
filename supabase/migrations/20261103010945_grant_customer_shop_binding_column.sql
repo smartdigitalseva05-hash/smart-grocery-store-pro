@@ -1,0 +1,1 @@
+grant update (connected_shop_id) on table public.profiles to authenticated;

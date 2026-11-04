@@ -10,12 +10,12 @@
 | # | Mandatory security feature | Current evidence-based status (2026-11-02) | Remaining completion gate |
 |---|---|---|---|
 | 1 | Zero-Trust Security | **In Progress** | SQL role tests cover two-tenant shops/products/orders/payments/Storage and seven additional business-module tables; owner A/B each saw only their own module rows, unrelated customer saw zero. Complete remaining HTTP/PostgREST tests and remaining RPCs. |
-| 2 | Super Admin Lock | **In Progress** | Owner TOTP enrollment/challenge UI exists and `private.is_super_admin()` requires active Super Admin + JWT AAL2 + a currently verified TOTP factor. No live factor is enrolled yet; complete real enrollment, fresh-session verification, recovery and sensitive-operation HTTP tests. |
+| 2 | Super Admin Lock | **In Progress** | Owner TOTP enrollment/challenge UI exists and `private.is_super_admin()` requires active Super Admin + JWT AAL2 + a currently verified TOTP factor. One active Super Admin now has a verified TOTP factor (checked 2026-11-04); complete fresh-session verification, recovery and sensitive-operation HTTP tests. |
 | 3 | Database Fortress | **In Progress** | 41/41 public tables have RLS and policies. Two-tenant SQL isolation passes across Electronics, Hotel, Office and Restaurant operational tables; anonymous catalog reads are column-allowlisted; shopkeeper grants are least-privilege; private limiter tables are deny-all. `grocery_expenses` UPDATE has tenant-scoped `WITH CHECK`; the creator/shop identity trigger is immutable, and the AAL2+verified-TOTP Super Admin override is restricted by `private.is_super_admin()`. Complete remaining table/API matrix and HTTP/PostgREST tests. |
 | 4 | Anti-Brute-Force | **In Progress** | Concurrency-safe sliding 60-minute limits cover public intake forms. Payment endpoints now enforce account-based 15-minute limits: 5 checkout attempts and 10 verification attempts; sequential threshold tests rejected attempts 6 and 11. Still implement/test login/Auth limits, IP/device controls, concurrent load and recovery. |
 | 5 | Secret Vault | **In Progress** | Current-tree scan and automated reachable-Git-history scan cover Supabase, Razorpay, AWS, Google, GitHub, Slack and private-key patterns; no findings. Selected secret-file paths have zero commits. External credential inventory and rotation review remain. |
 | 6 | Attack Protection | **In Progress** | Checkout and verification CORS allow only `https://smartdigitalseva05-hash.github.io`; both enforce JSON content type, 16 KiB streamed body limits and account-based rate limits. Checkout v12 and verification v10 are deployed with JWT required. Broad server-side validation/XSS/CSRF/SQLi/IDOR/upload/redirect and live disallowed-origin HTTP tests remain. |
-| 7 | Real-Time Alerts | **In Progress** | Owner dashboard now subscribes to `audit_logs` INSERT events through Supabase Realtime; publication enabled and SELECT is AAL2+verified-TOTP RLS-gated. Live connection awaits real Owner TOTP enrollment; failed-login alerts and out-of-app delivery remain open. |
+| 7 | Real-Time Alerts | **In Progress** | Owner dashboard now subscribes to `audit_logs` INSERT events through Supabase Realtime; publication enabled and SELECT is AAL2+verified-TOTP RLS-gated. Verified Owner TOTP is present; live connection testing, failed-login alerts and out-of-app delivery remain open. |
 | 8 | Backup & Recovery | **Blocked (managed daily backups on Free tier); manual export path In Progress** | Supabase docs say daily managed backups are Pro/Team/Enterprise; Free projects must use CLI db dump and off-site exports. Database exports do not include Storage objects. Build and verify manual DB + Storage backup and restore. |
 | 9 | Audit Trail | **In Progress** | Trigger-based audit logging now covers 38 public tables, including profiles, shops and shop_trials security changes, plus orders/payments, grocery finance, catalogue, inventory, customer address metadata, bookings, staff and platform settings. Sensitive identity/shop audit fields are explicitly allowlisted; direct audit writes are denied. Continue remaining mutation paths, retention and alert linkage. |
 | 10 | Payment Shield | **In Progress** | Database negative/amount-mismatch and idempotent activation tests passed; webhook v9 caps raw bodies at 1 MiB and verifies exact-byte HMAC. Checkout v12 and verification v10 require JWT, allow only the production origin, enforce JSON/16 KiB limits and account rate limits (5 checkout / 10 verify per 15 minutes). Still test real signed deliveries, invalid signatures, replay/duplicate delivery and concurrent payment flows. |
@@ -958,3 +958,27 @@ Executed inside explicit transactions using `SET LOCAL ROLE` and synthetic JWT s
 - Static validation passed on commit `02ee345062aa28d7d321b8d17de6f0fe0fcdd9e2` (run `41482452575`). GitHub Pages custom deployment passed on commit `315f0c4d1861a9d33a67c327e831be1a515ba564` (run `41482452299`).
 - The preceding category-alert/report build `5543c4a83658940c31ee1ef3f748afa665fdc3` also passed static validation (run `41468719349`), custom deployment (run `41468720197`) and Pages build/deployment (run `41468718639`).
 - This closes a schema mismatch found by inspection; actual authenticated CSV download on a live shopkeeper account remains a browser acceptance test.
+
+
+## Execution update — 2026-11-04
+
+### Completed on feature branch (not yet deployed to GitHub Pages)
+- Added 200 unique, category-specific starter catalogue templates for each of the 11 business types: **2,200 total**. The shopkeeper dashboard loads the catalogue matching the selected shop's immutable `business_type`.
+- Bulk imports remain safe drafts: zero stock, unavailable to customers, no photos or live-price assumptions. Shopkeepers must verify prices, stock and photos before publishing. Existing shop inventory is not overwritten.
+- Rebuilt `catalogue.html` to browse all 11 category catalogues; added automated checks for exactly 200 unique entries per category.
+- Fixed malformed nested script markup in `shopkeeper.html`, which was the cause of the latest static-validation and Pages deployment workflow failures. Added `starter-catalogues.js` to the Pages artifact.
+- Restored all 39 previously missing applied migration source files directly from `supabase_migrations.schema_migrations.statements`. Current production migration history and feature-branch source now match: **188 applied / 188 source files; zero missing or extra versions**.
+- Hardened owner-profile verification: public endpoints are SECURITY INVOKER wrappers; privileged implementation stays in the private schema; issuing a QR requires `private.is_super_admin()` (active Super Admin + AAL2 + verified TOTP); browser roles have no table access and an explicit deny policy is installed.
+- Added the missing Grocery starter-category rows required for product-category matching.
+- Automated PR validation passed: **614 static checks** across 27 pages, 2 public scripts and 11 categories; **23 payment/security helper tests passed**; reachable Git-history secret scan passed.
+
+### Current production gates (not claimed complete)
+
+- Current MFA check (2026-11-04): **1 active Super Admin has a verified TOTP factor**. This confirms enrollment, not the full Super Admin Lock acceptance suite; fresh-session, recovery and sensitive-operation negative API tests remain open.
+- The feature branch is awaiting PR merge; these website/catalogue changes are not live until merged and the Pages deployment succeeds.
+- Live database still has 1 active shop and 1 live product. The 2,200 entries are templates, not automatically published inventory. The current shop's existing `Toor daal` item is retained; duplicate starter import is skipped.
+- Current payment record: ₹99 INR, Razorpay, status `pending`, `verified=false`; there are 0 active paid subscriptions and 1 active trial. Do not treat the payment as confirmed or activate a paid plan until a valid signed webhook/verification completes.
+- Security Advisor now reports only the leaked-password-protection warning, which is plan-gated on the current Free tier. Enable after moving to an eligible plan.
+- Performance Advisor reports unused indexes; do not drop them without workload evidence.
+- Real browser acceptance testing for all 11 categories, live Razorpay signed-webhook tests, and recovery/backup restore tests remain open. No physical browser/device tests are claimed.
+- `index.html` was not modified in this work.
