@@ -46,7 +46,7 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require('node:fs');
-          const required = ['index.html', 'portal.html', 'showcase.html', 'catalogue.html', 'apply-shop.html', 'owner.html', 'shopkeeper.html', 'my-orders.html', 'shopkeeper-benefits.html', 'demo-store.html', 'restaurant-booking.html', 'hotel-booking.html', 'electronics-repair.html', 'digital-service-request.html', 'business-category.html', 'starter-catalogues.js', 'PAYMENT_SETUP.md'];
+          const required = ['index.html', 'portal.html', 'showcase.html', 'catalogue.html', 'apply-shop.html', 'owner.html', 'shopkeeper.html', 'my-orders.html', 'shopkeeper-benefits.html', 'demo-store.html', 'restaurant-booking.html', 'hotel-booking.html', 'electronics-repair.html', 'digital-service-request.html', 'business-category.html', 'customer-manual-odia.html', 'manual-center.html', 'owner-id-center.html', 'owner-profile.html', 'owner-profile/index.html', 'shopkeeper-manual-odia.html', 'storefront.html', 'super-admin-manual-english.html', 'super-admin-manual-odia.html', 'verify-owner.html', 'googlee231ccb6a07a2d79.html', 'googlee231ccb6a07a2d79 (1).html', 'password-security.js', 'starter-catalogues.js', 'robots.txt', 'sitemap.xml', 'PAYMENT_SETUP.md'];
           const missing = required.filter(file => !fs.existsSync(file));
           if (missing.length) throw new Error('Missing required project files: ' + missing.join(', '));
           const pages = required.filter(file => file.endsWith('.html'));
@@ -71,11 +71,12 @@ jobs:
       - name: Prepare clean website artifact
         run: |
           mkdir -p .pages-site
-          cp index.html portal.html showcase.html catalogue.html demo-store.html apply-shop.html owner.html shopkeeper.html shopkeeper-benefits.html my-orders.html restaurant-booking.html hotel-booking.html electronics-repair.html digital-service-request.html business-category.html password-security.js starter-catalogues.js .pages-site/
+          cp ./*.html ./*.js robots.txt sitemap.xml .pages-site/
+          cp -R owner-profile .pages-site/
 
       - name: Verify published artifact contains every website page
         run: |
-          required=('index.html' 'portal.html' 'showcase.html' 'catalogue.html' 'demo-store.html' 'apply-shop.html' 'owner.html' 'shopkeeper.html' 'shopkeeper-benefits.html' 'my-orders.html' 'restaurant-booking.html' 'hotel-booking.html' 'electronics-repair.html' 'digital-service-request.html' 'business-category.html' 'password-security.js' 'starter-catalogues.js')
+          required=('index.html' 'portal.html' 'showcase.html' 'catalogue.html' 'demo-store.html' 'apply-shop.html' 'owner.html' 'shopkeeper.html' 'shopkeeper-benefits.html' 'my-orders.html' 'restaurant-booking.html' 'hotel-booking.html' 'electronics-repair.html' 'digital-service-request.html' 'business-category.html' 'customer-manual-odia.html' 'manual-center.html' 'owner-id-center.html' 'owner-profile.html' 'owner-profile/index.html' 'shopkeeper-manual-odia.html' 'storefront.html' 'super-admin-manual-english.html' 'super-admin-manual-odia.html' 'verify-owner.html' 'googlee231ccb6a07a2d79.html' 'googlee231ccb6a07a2d79 (1).html' 'password-security.js' 'starter-catalogues.js' 'robots.txt' 'sitemap.xml')
           for file in "${required[@]}"; do
             if [ ! -f ".pages-site/$file" ]; then
               echo "Missing published artifact file: $file"
