@@ -7,7 +7,11 @@ const pages = [
   "index.html", "owner.html", "apply-shop.html", "shopkeeper.html",
   "portal.html", "showcase.html", "catalogue.html", "demo-store.html",
   "digital-service-request.html", "electronics-repair.html", "hotel-booking.html",
-  "my-orders.html", "restaurant-booking.html", "shopkeeper-benefits.html", "business-category.html"
+  "my-orders.html", "restaurant-booking.html", "shopkeeper-benefits.html", "business-category.html",
+  "customer-manual-odia.html", "manual-center.html", "owner-id-center.html", "owner-profile.html",
+  "owner-profile/index.html", "shopkeeper-manual-odia.html", "storefront.html",
+  "super-admin-manual-english.html", "super-admin-manual-odia.html", "verify-owner.html",
+  "googlee231ccb6a07a2d79.html", "googlee231ccb6a07a2d79 (1).html"
 ];
 const publicScripts = ["password-security.js", "starter-catalogues.js"];
 const categories = [
