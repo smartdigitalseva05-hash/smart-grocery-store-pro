@@ -40,7 +40,14 @@ for (const page of pages) {
     const attrs = match[1] || "";
     const code = match[2] || "";
     const scriptType = attrs.match(/\btype=["']([^"']+)["']/i)?.[1]?.toLowerCase();
-    if (!code.trim() || scriptType === "module" ||
+    if (!code.trim()) continue;
+    if (["application/ld+json","application/json","importmap"].includes(scriptType)) {
+      try { JSON.parse(code); }
+      catch (error) { throw new Error(page + " JSON script #" + (scriptIndex + 1) + ": " + error.message); }
+      checks++;
+      continue;
+    }
+    if (scriptType === "module" ||
         (scriptType && !["text/javascript","application/javascript"].includes(scriptType))) continue;
     scriptIndex++;
     try { new vm.Script(code, { filename: page + " inline script #" + scriptIndex }); }
