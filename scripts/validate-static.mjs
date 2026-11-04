@@ -39,7 +39,7 @@ for (const page of pages) {
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     const attrs = match[1] || "";
     const code = match[2] || "";
-    const scriptType = attrs.match(/\\btype=["']([^"']+)["']/i)?.[1]?.toLowerCase();
+    const scriptType = attrs.match(/\btype=["']([^"']+)["']/i)?.[1]?.toLowerCase();
     if (!code.trim() || scriptType === "module" ||
         (scriptType && !["text/javascript","application/javascript"].includes(scriptType))) continue;
     scriptIndex++;
