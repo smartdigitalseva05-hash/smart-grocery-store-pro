@@ -1,17 +1,17 @@
 # Smart Business Pro — Launch Readiness Checklist
 
-Last verified: 2026-11-02
+Last verified: 2026-11-04
 
 ## Verified and deployed
 
-- GitHub Pages deployment workflow succeeded for commit `5f6958431359f23bed0c67ba29fdfe7c3035c885`.
+- GitHub Pages deployment workflow succeeded for latest verified website commit `c244dcf1b3e056d22d702f7829c836e00aa8fb05`.
 - All 14 deployed HTML pages passed inline JavaScript syntax and duplicate-ID validation.
 - All three deployed Supabase Edge Functions passed Deno type-checking:
   - `razorpay-subscription-checkout`
   - `razorpay-verify-subscription-payment`
   - `razorpay-payment-webhook`
 - The approved customer storefront `index.html` remains unchanged. Its protected Git blob SHA is `854f4646215be9f0a5aaacc72ad4b7b56ac58f3e`.
-- All 41 public application tables have Row Level Security enabled.
+- All 48 public application tables have Row Level Security enabled (latest production query: 48 enabled, 0 disabled).
 - Security Advisor has one remaining warning: leaked-password protection is disabled.
 - Performance Advisor has no remaining unindexed-foreign-key or multiple-permissive-policy findings. It reports unused indexes; do not remove those until real workload data is available.
 - Temporary smoke-test rows were rolled back. No smoke-test shops, reservations, payroll rows, repair jobs or service requests remain.
@@ -29,7 +29,7 @@ Last verified: 2026-11-02
 - 1 shop exists and is active: Grocery.
 - The grocery shop is on its one-time 7-day trial, started 2026-10-31 03:53 UTC and expiring 2026-11-07 03:53 UTC.
 - 1 product; 0 customer orders.
-- 0 payment records; 0 paid subscriptions; 1 trial record.
+- 1 ₹99 INR Razorpay payment record remains `pending` and `verified=false`; 0 paid subscriptions; 1 trial record.
 - 3 active subscription plans:
   - Basic: ₹99 monthly / ₹990 yearly
   - Pro: ₹199 monthly / ₹1,990 yearly
@@ -120,21 +120,32 @@ These items are not represented as completed:
 
 ## Execution update — 2026-11-04
 
-### Completed on feature branch (not yet deployed to GitHub Pages)
+### Latest completed deployment
+- GitHub Pages is deployed successfully from main commit `c244dcf1b3e056d22d702f7829c836e00aa8fb05`. The Pages build/deploy workflow and the custom deploy workflow both completed successfully.
+- Static project validation passed on this commit, including the reachable Git-history secret scan, HTML/inline-JavaScript validation, payment helper tests and category checks.
+- All three production Razorpay Edge Functions passed Deno type-checking in the deployment workflow. `razorpay-verify-subscription-payment` is deployed at version 13.
+- `sitemap.xml` now lists 12 public URLs. Private workspace `shopkeeper.html` has `noindex,nofollow,noarchive`; `owner.html` remains noindex. Private/admin pages are not listed in the sitemap.
+- The approved customer storefront `index.html` was not modified by the latest fixes. Existing database rows and the pending Razorpay transaction were preserved.
+
+### Catalogue and migration status
 - Added 200 unique, category-specific starter catalogue templates for each of the 11 business types: **2,200 total**. The shopkeeper dashboard loads the catalogue matching the selected shop's immutable `business_type`.
 - Bulk imports remain safe drafts: zero stock, unavailable to customers, no photos or live-price assumptions. Shopkeepers must verify prices, stock and photos before publishing. Existing shop inventory is not overwritten.
-- Rebuilt `catalogue.html` to browse all 11 category catalogues; added automated checks for exactly 200 unique entries per category.
-- Fixed malformed nested script markup in `shopkeeper.html`, which was the cause of the latest static-validation and Pages deployment workflow failures. Added `starter-catalogues.js` to the Pages artifact.
-- Restored all 39 previously missing applied migration source files directly from `supabase_migrations.schema_migrations.statements`. Current production migration history and feature-branch source now match: **188 applied / 188 source files; zero missing or extra versions**.
-- Hardened owner-profile verification: public endpoints are SECURITY INVOKER wrappers; privileged implementation stays in the private schema; issuing a QR requires `private.is_super_admin()` (active Super Admin + AAL2 + verified TOTP); browser roles have no table access and an explicit deny policy is installed.
-- Added the missing Grocery starter-category rows required for product-category matching.
-- Automated PR validation passed: **614 static checks** across 27 pages, 2 public scripts and 11 categories; **23 payment/security helper tests passed**; reachable Git-history secret scan passed.
+- `catalogue.html` browses all 11 category catalogues; automated checks enforce exactly 200 unique entries per category.
+- Restored all 39 previously missing applied migration source files directly from `supabase_migrations.schema_migrations.statements`. Production migration history and repository source match: **188 applied / 188 source files; zero missing or extra versions**.
+- Owner-profile verification uses SECURITY INVOKER public wrappers; privileged implementation remains in the private schema; issuing a QR requires active Super Admin + AAL2 + verified TOTP. Browser roles have no token-table access and an explicit deny policy is installed.
+- Added missing Grocery starter-category rows required for product-category matching.
+
+### Payment reconciliation status
+- Existing payment reference: ₹99 INR, payment row `16699710-ccb0-4d42-93fe-66ff2c80e896`, Razorpay order `order_Tva9s7C35qvxmA`.
+- At the latest database check, this record is still `pending`, `verified=false`, with no stored Razorpay payment ID. No paid subscription has been activated.
+- Edge Function version 13 now supports authenticated server-side reconciliation against the existing Razorpay order's payments API. The shopkeeper checkout first checks this saved order; a captured matching payment can be applied without opening checkout again. If no payment is captured, it reuses the existing order. It never creates a replacement order during reconciliation.
+- This reconciliation path is deployed but still needs an authenticated user-session invocation against Razorpay. Do not claim the payment is captured until the database shows `verified=true` after gateway confirmation. Do not pay again merely to test recovery.
 
 ### Current production gates (not claimed complete)
-- The feature branch is awaiting PR merge; these website/catalogue changes are not live until merged and the Pages deployment succeeds.
-- Live database still has 1 active shop and 1 live product. The 2,200 entries are templates, not automatically published inventory. The current shop's existing `Toor daal` item is retained; duplicate starter import is skipped.
-- Current payment record: ₹99 INR, Razorpay, status `pending`, `verified=false`; there are 0 active paid subscriptions and 1 active trial. Do not treat the payment as confirmed or activate a paid plan until a valid signed webhook/verification completes.
-- Security Advisor now reports only the leaked-password-protection warning, which is plan-gated on the current Free tier. Enable after moving to an eligible plan.
-- Performance Advisor reports unused indexes; do not drop them without workload evidence.
-- Real browser acceptance testing for all 11 categories, live Razorpay signed-webhook tests, and recovery/backup restore tests remain open. No physical browser/device tests are claimed.
-- `index.html` was not modified in this work.
+- Live database has 1 active shop (Grocery) and 1 live product. The 2,200 entries are templates, not automatically published inventory. The current shop's existing `Toor daal` item is retained; duplicate starter import is skipped.
+- Supabase Security Advisor reports one warning: leaked-password protection is disabled and is plan-gated on the current Free tier. Enable it after moving to an eligible plan and re-verify.
+- Performance Advisor reports unused-index notices. Do not drop indexes without workload evidence.
+- One active Super Admin account has a verified TOTP factor. Auth logs record a successful TOTP verification and MFA login on 2026-11-03 23:54:53 UTC; a fresh production-domain browser login and Owner dashboard access still need confirmation.
+- Real browser acceptance testing for all 11 categories, end-to-end Razorpay captured/failed/dismissed/duplicate-webhook cases, and recovery/backup restore tests remain open. No physical Android/browser tests are claimed.
+- Medical workflows remain inventory support only; prescription/dispensing and regulatory workflows are not complete. Other specialist scope listed above remains pending.
+- Preserve the existing customer storefront and production data. Never manually mark a payment successful or activate a subscription without gateway verification.
