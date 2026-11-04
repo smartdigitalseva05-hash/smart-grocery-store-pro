@@ -23,7 +23,9 @@ This directory is the isolated foundation for three separately distributable And
 
 ## Current status
 
-This branch now includes branded launch screens for all three apps. Each launch screen uses an auto-fit centered brand mark and renders every word from the supplied logo as crisp native text: “SMART BUSINESS PRO”, “Every Business, One Smart Platform”, “Discover Local Shops”, “Shop Smart”, “Connect Easily”, and “Grow Together”. The simplified launcher mark is used at small Android icon sizes because detailed logo copy cannot remain readable inside a tiny launcher icon. This remains a source foundation until the CI build succeeds and the APKs are installed and checked on real devices. The existing Owner APK workflow and production website on `main` remain unchanged.
+All three AndroidManifest.xml files have been fetched from the current branch and confirmed to contain normal XML line breaks and well-formed application/activity elements. The previous failed CI run used an earlier commit and reported a manifest parse error; a fresh build is being triggered from the corrected branch state. The branded launch screens use an auto-fit centered simplified brand mark and crisp native text for the logo wording. The original high-resolution logo artwork still needs to be integrated and verified in the mobile app assets.
+
+This remains a source foundation until the CI build succeeds and the APKs are installed and checked on real devices. The existing Owner APK workflow and production website on `main` remain unchanged.
 
 ## Next implementation sequence
 
