@@ -58,6 +58,11 @@ jobs:
               }
           }
           EOF
+          cat > app/src/main/res/values/colors.xml <<'EOF'
+          <resources>
+              <color name="owner_navy">#101827</color>
+          </resources>
+          EOF
           cat > app/src/main/res/values/styles.xml <<'EOF'
           <resources>
               <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
@@ -73,10 +78,8 @@ jobs:
           EOF
           cat > app/src/main/res/drawable/splash_background.xml <<'EOF'
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-              <item android:drawable="#101827"/>
-              <item android:gravity="center">
-                  <bitmap android:src="@drawable/owner_mark" android:gravity="center"/>
-              </item>
+              <item android:drawable="@color/owner_navy"/>
+              <item android:drawable="@drawable/owner_mark" android:gravity="center"/>
           </layer-list>
           EOF
           cat > app/src/main/res/drawable/owner_mark.xml <<'EOF'
@@ -88,7 +91,7 @@ jobs:
           EOF
           cat > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="#101827"/>
+              <background android:drawable="@color/owner_navy"/>
               <foreground android:drawable="@drawable/owner_mark"/>
           </adaptive-icon>
           EOF
