@@ -1573,8 +1573,9 @@ async function loadShopData(){
   try{
    const {data:existing,error:readError}=await db.from("products").select("name").eq("shop_id",currentShop.id);
    if(readError)throw readError;
-   const existingNames=new Set((existing||[]).map(p=>String(p.name||"").trim().toLowerCase()));
-   const fresh=chosen.filter(p=>!existingNames.has(p.name.trim().toLowerCase()));
+   const normalizeProductName=value=>String(value||"").normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/\\bdaal\\b/g,"dal").replace(/[^a-z0-9]+/g," ").trim();
+   const existingNames=new Set((existing||[]).map(p=>normalizeProductName(p.name)));
+   const fresh=chosen.filter(p=>!existingNames.has(normalizeProductName(p.name)));
    if(!fresh.length){say("bulkStarterMessage","All selected products already exist in this shop.",true);return}
    const categoryOptions=[...$("pCategory").options];
    const rows=fresh.map(p=>{
