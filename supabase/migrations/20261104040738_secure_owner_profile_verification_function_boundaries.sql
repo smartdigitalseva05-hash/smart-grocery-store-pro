@@ -1,3 +1,4 @@
+
 -- Keep the public owner-profile verification endpoints as SECURITY INVOKER wrappers.
 -- All privileged table access stays in the private schema and the issue path requires
 -- an active Super Admin with AAL2 and a verified TOTP factor.
@@ -19,8 +20,10 @@ begin
   end if;
 
   if exists (
-    select 1 from public.owner_profile_verification_tokens t
-    where t.owner_user_id=v_uid and t.created_at > now() - interval '30 seconds'
+    select 1
+    from public.owner_profile_verification_tokens t
+    where t.owner_user_id=v_uid
+      and t.created_at > now() - interval '30 seconds'
   ) then
     raise exception using errcode='P0001',
       message='Please wait 30 seconds before creating another QR.';
@@ -36,8 +39,13 @@ begin
   insert into public.owner_profile_verification_tokens
     (owner_user_id, token_hash, display_name, designation, organization, status, expires_at)
   values
-    (v_uid, encode(extensions.digest(convert_to(v_code,'UTF8'),'sha256'),'hex'),
-     'Hemanta Sahu', 'Founder & Platform Owner', 'Smart Business Pro', 'active', v_expires);
+    (v_uid,
+     encode(extensions.digest(convert_to(v_code,'UTF8'),'sha256'),'hex'),
+     'Hemanta Sahu',
+     'Founder & Platform Owner',
+     'Smart Business Pro',
+     'active',
+     v_expires);
 
   return query
     select 'https://smartdigitalseva05-hash.github.io/smart-grocery-store-pro/verify-owner.html?code=' || v_code,
@@ -58,10 +66,12 @@ begin
     return jsonb_build_object('verified',false,'error','Invalid or missing verification code.');
   end if;
 
-  select * into v_record
+  select *
+  into v_record
   from public.owner_profile_verification_tokens t
   where t.token_hash=encode(extensions.digest(convert_to(p_code,'UTF8'),'sha256'),'hex')
-    and t.status='active' and t.expires_at > now()
+    and t.status='active'
+    and t.expires_at > now()
   limit 1;
 
   if not found then
@@ -73,9 +83,15 @@ begin
   where id=v_record.id;
 
   return jsonb_build_object(
-    'verified',true,'status','ACTIVE',
-    'profile',jsonb_build_object('name',v_record.display_name,'designation',v_record.designation,'organization',v_record.organization),
-    'issued_at',v_record.created_at,'expires_at',v_record.expires_at,
+    'verified',true,
+    'status','ACTIVE',
+    'profile',jsonb_build_object(
+      'name',v_record.display_name,
+      'designation',v_record.designation,
+      'organization',v_record.organization
+    ),
+    'issued_at',v_record.created_at,
+    'expires_at',v_record.expires_at,
     'notice','This confirms an active Smart Business Pro owner profile record. It is not a government identity document.'
   );
 end;
@@ -83,14 +99,18 @@ $function$;
 
 create or replace function public.issue_owner_profile_verification()
 returns table(verify_url text, expires_at timestamptz)
-language sql security invoker set search_path = ''
+language sql
+security invoker
+set search_path = ''
 as $function$
   select * from private.issue_owner_profile_verification_impl();
 $function$;
 
 create or replace function public.verify_owner_profile_token(p_code text)
 returns jsonb
-language sql security invoker set search_path = ''
+language sql
+security invoker
+set search_path = ''
 as $function$
   select private.verify_owner_profile_token_impl(p_code);
 $function$;
@@ -109,5 +129,8 @@ grant execute on function public.verify_owner_profile_token(text) to anon, authe
 revoke all on table public.owner_profile_verification_tokens from public, anon, authenticated;
 drop policy if exists owner_profile_verification_tokens_deny_browser on public.owner_profile_verification_tokens;
 create policy owner_profile_verification_tokens_deny_browser
-on public.owner_profile_verification_tokens for all to anon, authenticated
-using (false) with check (false);
+on public.owner_profile_verification_tokens
+for all
+to anon, authenticated
+using (false)
+with check (false);
