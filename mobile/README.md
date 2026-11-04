@@ -23,7 +23,7 @@ This directory is the isolated foundation for three separately distributable And
 
 ## Current status
 
-This is a source-controlled foundation/architecture scaffold, not three completed or tested APKs. The existing Owner APK workflow remains unchanged on `main`. Build and device acceptance tests are still required before public release.
+This branch now includes branded launch screens for all three apps. Each launch screen uses an auto-fit centered brand mark and renders every word from the supplied logo as crisp native text: “SMART BUSINESS PRO”, “Every Business, One Smart Platform”, “Discover Local Shops”, “Shop Smart”, “Connect Easily”, and “Grow Together”. The simplified launcher mark is used at small Android icon sizes because detailed logo copy cannot remain readable inside a tiny launcher icon. This remains a source foundation until the CI build succeeds and the APKs are installed and checked on real devices. The existing Owner APK workflow and production website on `main` remain unchanged.
 
 ## Next implementation sequence
 
