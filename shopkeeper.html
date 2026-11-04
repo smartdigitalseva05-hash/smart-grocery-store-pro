@@ -1576,21 +1576,16 @@ async function loadShopData(){
    const existingNames=new Set((existing||[]).map(p=>String(p.name||"").trim().toLowerCase()));
    const fresh=chosen.filter(p=>!existingNames.has(p.name.trim().toLowerCase()));
    if(!fresh.length){say("bulkStarterMessage","All selected products already exist in this shop.",true);return}
-   const categoryOptions=[...$("pCategory").options],rows=[];
-   for(let start=0;start<fresh.length;start+=3){
-    const batch=fresh.slice(start,start+3),photos=await Promise.all(batch.map(p=>findCommonsPhoto(p.name,p.category)));
-    batch.forEach((p,index)=>{
-     const category=categoryOptions.find(o=>o.textContent.trim().toLowerCase()===p.category.toLowerCase());
-     const slug=p.name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,65)+"-"+crypto.randomUUID().slice(0,8);
-     const photo=photos[index];
-     rows.push({shop_id:currentShop.id,category_id:category?.value||null,name:p.name,slug,description:p.category+" · Starter draft. Verify local price and stock before publishing.",price:p.price,sale_price:null,stock:0,images:photo?[photo]:[],is_available:false,offer_text:null});
-    });
-    say("bulkStarterMessage","Finding licensed real photos… "+Math.min(start+batch.length,fresh.length)+"/"+fresh.length+" checked");
-   }
+   const categoryOptions=[...$("pCategory").options];
+   const rows=fresh.map(p=>{
+    const category=categoryOptions.find(o=>o.textContent.trim().toLowerCase()===p.category.toLowerCase());
+    const slug=p.name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,65)+"-"+crypto.randomUUID().slice(0,8);
+    return {shop_id:currentShop.id,category_id:category?.value||null,name:p.name,slug,description:p.category+" · Starter draft. Verify local price, stock and product details before publishing.",price:p.price,sale_price:null,stock:0,images:[],is_available:false,offer_text:null};
+   });
+   say("bulkStarterMessage","Saving "+rows.length+" hidden drafts…");
    const {error}=await db.from("products").insert(rows);if(error)throw error;
    fresh.forEach(p=>{const i=activeStarterProducts().findIndex(x=>x.name===p.name);if(i>=0)bulkStarterSelection.delete(i)});
-   const matched=rows.filter(x=>x.images.length).length;
-   say("bulkStarterMessage",fresh.length+" hidden drafts added; "+matched+" matched Wikimedia photos attached; "+(fresh.length-matched)+" need a manual photo match. "+(chosen.length-fresh.length)+" duplicates skipped.");
+   say("bulkStarterMessage",fresh.length+" hidden drafts added with zero stock and no public visibility. Upload verified photos and confirm local prices before publishing. "+(chosen.length-fresh.length)+" duplicates skipped.");
    renderBulkStarterList();await loadProducts();
   }catch(error){say("bulkStarterMessage","Import failed: "+(error.message||"Unknown error"),true)}
   finally{btn.disabled=false;updateBulkStarterCount()}
