@@ -173,7 +173,7 @@ jobs:
                   header.setPadding(dp(16), dp(12), dp(16), dp(12));
                   header.setBackgroundColor(Color.rgb(16,24,39));
 
-                  TextView mark = new TextView(this);
+                  android.widget.ImageView mark = new android.widget.ImageView(this);\n                  mark.setImageResource(com.smartbusinesspro.owner.R.drawable.owner_mark);\n                  mark.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
                   mark.setText("SB");
                   mark.setTextColor(Color.rgb(16,24,39));
                   mark.setTextSize(17);
