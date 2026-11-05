@@ -329,7 +329,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
    if(error){status.textContent="Could not load protected shop list: "+error.message;status.classList.add("error");return;}
    status.classList.remove("error");
    if(!shops?.length){status.textContent="No shops registered yet.";return;}
-   const labels={grocery:"Grocery",daily_needs:"Daily Needs",garments:"Garments",jewellery:"Jewellery",restaurant:"Restaurant",hotel:"Hotel",office_company:"Office / Company",electronics:"Electronics",medical:"Medical",digital_services:"Digital Services",other:"Other Businesses"};
+   const labels={grocery:"Grocery",daily_needs:"Daily Needs",garments:"Garments",jewellery:"Jewellery",restaurant:"Restaurant",hotel:"Hotel",office_company:"Office / Company",electronics:"Electronics",medical:"Medical",digital_services:"Digital Services",other:"Other Businesses",healthy_food_breakfast:"Healthy Food & Breakfast"};
    let readyCount=0;
    for(const shop of shops){
      const card=document.createElement("article");card.className="shop-card";
@@ -522,7 +522,7 @@ async function loadApplicationHub(){
   else if(sub?.status==="expired"||(sub?.ends_at&&new Date(sub.ends_at).getTime()<=now)){subscriptionState="expired";subscriptionLabel="Expired"}
   else if(sub?.status==="cancelled"){subscriptionState="cancelled";subscriptionLabel="Cancelled"}
   else if(active){subscriptionState="active_unverified";subscriptionLabel="Active status · payment not verified in linked record"}
-  return {shop,profile,subscription:sub,subscriptionState,subscriptionLabel,subscriptionEnds:sub?.ends_at||shop.subscription_expires_at,planName:planMap.get(sub?.plan_id||shop.subscription_plan_id)?.name||"",categoryLabel:({grocery:"Grocery",daily_needs:"Daily Needs",garments:"Garments",jewellery:"Jewellery",restaurant:"Restaurant",hotel:"Hotel",office_company:"Office / Company",electronics:"Electronics",medical:"Medical",digital_services:"Digital Services",other:"Other"})[shop.business_type]||shop.business_type||"Unknown"};
+  return {shop,profile,subscription:sub,subscriptionState,subscriptionLabel,subscriptionEnds:sub?.ends_at||shop.subscription_expires_at,planName:planMap.get(sub?.plan_id||shop.subscription_plan_id)?.name||"",categoryLabel:({grocery:"Grocery",daily_needs:"Daily Needs",garments:"Garments",jewellery:"Jewellery",restaurant:"Restaurant",hotel:"Hotel",office_company:"Office / Company",electronics:"Electronics",medical:"Medical",digital_services:"Digital Services",other:"Other",healthy_food_breakfast:"Healthy Food & Breakfast"})[shop.business_type]||shop.business_type||"Unknown"};
  });
  $("hubApplicationsCount").textContent=hubRecords.length.toLocaleString("en-IN");
  $("hubPendingCount").textContent=hubRecords.filter(x=>x.profile?.role!=="shopkeeper").length.toLocaleString("en-IN");
