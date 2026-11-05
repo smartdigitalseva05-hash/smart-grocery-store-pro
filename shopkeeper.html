@@ -1120,8 +1120,8 @@ async function loadGroceryProcurement(){
  if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)){panel.classList.add("hidden");return}
  panel.classList.remove("hidden");
  const dailyNeedsMode=currentShop.business_type==="daily_needs";const healthyFoodMode=currentShop.business_type==="healthy_food_breakfast";
- $("procurementHeading").textContent=dailyNeedsMode?"Daily Needs · Supplier & Purchase Manager":"Grocery · Supplier & Purchase Manager";
- $("procurementDescription").textContent=dailyNeedsMode?"Manage suppliers, household essentials purchases, stock receipts, supplier payments and shop expenses.":"Manage suppliers, grocery purchases, stock receipts, supplier payments and shop expenses.";
+ $("procurementHeading").textContent=healthyFoodMode?"Fresh Ingredients · Supplier & Purchase Manager":dailyNeedsMode?"Daily Needs · Supplier & Purchase Manager":"Grocery · Supplier & Purchase Manager";
+ $("procurementDescription").textContent=healthyFoodMode?"Manage fruit, vegetable, dairy and breakfast-ingredient suppliers, stock receipts, supplier payments and shop expenses.":dailyNeedsMode?"Manage suppliers, household essentials purchases, stock receipts, supplier payments and shop expenses.":"Manage suppliers, grocery purchases, stock receipts, supplier payments and shop expenses.";
  if(!$("groceryPurchaseDate").value)$("groceryPurchaseDate").value=new Date().toISOString().slice(0,10);
  if(!$("groceryExpenseDate").value)$("groceryExpenseDate").value=new Date().toISOString().slice(0,10);
  if(!$("groceryPaymentDate").value)$("groceryPaymentDate").value=new Date().toISOString().slice(0,10);
