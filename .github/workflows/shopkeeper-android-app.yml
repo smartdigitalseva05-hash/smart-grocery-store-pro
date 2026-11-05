@@ -1,0 +1,169 @@
+name: Build One Shopkeeper Android App
+
+on:
+  workflow_dispatch:
+    inputs:
+      shop_id:
+        description: Approved shop UUID
+        required: true
+        type: string
+      shop_name:
+        description: Verified shop name from Supabase
+        required: true
+        type: string
+      package_suffix:
+        description: Unique lowercase hex suffix
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-35 build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Validate shop identity and generate isolated Android app
+        env:
+          SHOP_ID: ${{ inputs.shop_id }}
+          SHOP_NAME: ${{ inputs.shop_name }}
+          PACKAGE_SUFFIX: ${{ inputs.package_suffix }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SHOP_ID" =~ ^[0-9a-fA-F-]{36}$ ]]
+          [[ "$PACKAGE_SUFFIX" =~ ^[0-9a-f]{12}$ ]]
+          python3 - <<'PY'
+          import os, re, html
+          from pathlib import Path
+          shop_id=os.environ["SHOP_ID"]
+          shop_name=os.environ["SHOP_NAME"].strip()
+          suffix=os.environ["PACKAGE_SUFFIX"]
+          if not shop_name or len(shop_name)>80 or any(ord(c)<32 for c in shop_name):
+              raise SystemExit("Invalid shop name")
+          pkg="com.smartbusinesspro.shop.s"+suffix
+          label=html.escape(" ".join(shop_name.split())[:55], quote=True)
+          url="https://smartdigitalseva05-hash.github.io/smart-grocery-store-pro/shopkeeper.html?shop_id="+shop_id+"&app=1"
+          Path("app/src/main/java/"+pkg.replace(".","/")).mkdir(parents=True,exist_ok=True)
+          Path("app/src/main/res/drawable").mkdir(parents=True,exist_ok=True)
+          Path("app/src/main/res/values").mkdir(parents=True,exist_ok=True)
+          Path("app/src/main/res/mipmap-anydpi-v26").mkdir(parents=True,exist_ok=True)
+          Path("app/src/main/res/values/strings.xml").write_text(
+              '<resources><string name="app_name">'+label+'</string></resources>', encoding="utf-8")
+          Path("app/src/main/res/values/styles.xml").write_text("""<resources>
+            <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+              <item name="android:fontFamily">sans</item>
+              <item name="android:colorAccent">#8FDCA0</item>
+              <item name="android:statusBarColor">#0B1B14</item>
+              <item name="android:navigationBarColor">#0B1B14</item>
+              <item name="android:windowLightStatusBar">false</item>
+              <item name="android:windowBackground">#07130F</item>
+            </style>
+          </resources>""",encoding="utf-8")
+          Path("app/src/main/res/drawable/shop_mark.xml").write_text("""<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+            <path android:fillColor="#0B1B14" android:pathData="M0,0h108v108h-108z"/>
+            <path android:fillColor="#8FDCA0" android:pathData="M20,39 L27,20 L81,20 L88,39 L84,45 L24,45 Z"/>
+            <path android:fillColor="#E8F7EC" android:pathData="M25,47h58v42h-58z"/>
+            <path android:fillColor="#14532D" android:pathData="M43,59h22v30h-22z"/>
+            <path android:fillColor="#0B1B14" android:pathData="M32,54h10v10h-10z M66,54h10v10h-10z"/>
+          </vector>""",encoding="utf-8")
+          Path("app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml").write_text("""<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+            <background android:drawable="#0B1B14"/>
+            <foreground android:drawable="@drawable/shop_mark"/>
+          </adaptive-icon>""",encoding="utf-8")
+          Path("app/src/main/AndroidManifest.xml").write_text("""<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.INTERNET"/>
+            <application android:allowBackup="false" android:usesCleartextTraffic="false"
+              android:label="@string/app_name" android:icon="@mipmap/ic_launcher"
+              android:roundIcon="@mipmap/ic_launcher" android:theme="@style/AppTheme">
+              <activity android:name=".MainActivity" android:exported="true">
+                <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+              </activity>
+            </application>
+          </manifest>""",encoding="utf-8")
+          java=r'''package PKG;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.graphics.Color;
+          import android.view.View;
+          import android.webkit.*;
+          import android.widget.*;
+          import android.net.Uri;
+          import android.content.Intent;
+          public final class MainActivity extends Activity {
+            private static final String HOST="smartdigitalseva05-hash.github.io";
+            private static final String BASE="/smart-grocery-store-pro/";
+            private static final String START_URL="START_URL";
+            private WebView web;
+            private ProgressBar progress;
+            @Override public void onCreate(Bundle state){
+              super.onCreate(state);
+              getWindow().setStatusBarColor(Color.rgb(11,27,20));
+              getWindow().setNavigationBarColor(Color.rgb(11,27,20));
+              LinearLayout root=new LinearLayout(this);root.setOrientation(1);root.setBackgroundColor(Color.rgb(7,19,15));
+              TextView title=new TextView(this);title.setText("SHOP WORKSPACE");title.setTextColor(Color.WHITE);title.setTextSize(14);title.setPadding(18,14,12,14);root.addView(title);
+              progress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);progress.setMax(100);root.addView(progress,new LinearLayout.LayoutParams(-1,4));
+              web=new WebView(this);root.addView(web,new LinearLayout.LayoutParams(-1,0,1));
+              LinearLayout nav=new LinearLayout(this);nav.setBackgroundColor(Color.rgb(11,27,20));
+              Button back=button("‹ Back");back.setOnClickListener(v->{if(web.canGoBack())web.goBack();});
+              Button home=button("⌂ My Shop");home.setOnClickListener(v->web.loadUrl(START_URL));
+              Button refresh=button("↻ Refresh");refresh.setOnClickListener(v->web.reload());
+              nav.addView(back,new LinearLayout.LayoutParams(0,52,1));nav.addView(home,new LinearLayout.LayoutParams(0,52,1));nav.addView(refresh,new LinearLayout.LayoutParams(0,52,1));root.addView(nav);
+              setContentView(root);
+              WebSettings ws=web.getSettings();ws.setJavaScriptEnabled(true);ws.setDomStorageEnabled(true);ws.setAllowFileAccess(false);ws.setAllowContentAccess(false);ws.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);ws.setSupportMultipleWindows(false);
+              web.setWebChromeClient(new WebChromeClient(){@Override public void onProgressChanged(WebView v,int p){progress.setProgress(p);progress.setVisibility(p>=100?View.GONE:View.VISIBLE);}});
+              web.setWebViewClient(new WebViewClient(){@Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){Uri u=r.getUrl();if("https".equalsIgnoreCase(u.getScheme())&&HOST.equalsIgnoreCase(u.getHost())&&u.getPath()!=null&&u.getPath().startsWith(BASE))return false;try{startActivity(new Intent(Intent.ACTION_VIEW,u));}catch(Exception ignored){}return true;}});
+              if(state==null||web.restoreState(state)==null)web.loadUrl(START_URL);
+            }
+            private Button button(String text){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextColor(Color.WHITE);b.setBackgroundColor(Color.rgb(20,83,45));return b;}
+            @Override public void onBackPressed(){if(web!=null&&web.canGoBack())web.goBack();else super.onBackPressed();}
+            @Override protected void onDestroy(){if(web!=null){web.stopLoading();web.destroy();web=null;}super.onDestroy();}
+          }'''
+          java=java.replace("PKG",pkg).replace("START_URL",url)
+          Path("app/src/main/java/"+pkg.replace(".","/")+"/MainActivity.java").write_text(java,encoding="utf-8")
+          Path("settings.gradle").write_text("""pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = "SmartBusinessProShopkeeper"
+          include(":app")""",encoding="utf-8")
+          Path("build.gradle").write_text("plugins { id 'com.android.application' version '8.6.1' apply false }",encoding="utf-8")
+          Path("app/build.gradle").write_text(f"""plugins {{ id 'com.android.application' }}
+          android {{
+            namespace '{pkg}'
+            compileSdk 35
+            defaultConfig {{ applicationId '{pkg}'; minSdk 23; targetSdk 35; versionCode 1; versionName '1.0.0' }}
+          }}""",encoding="utf-8")
+          print("Building isolated app package:",pkg)
+          PY
+
+      - name: Build shopkeeper APK
+        run: gradle --no-daemon assembleDebug
+
+      - name: Publish per-shop APK release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          SHOP_ID: ${{ inputs.shop_id }}
+          SHOP_NAME: ${{ inputs.shop_name }}
+          PACKAGE_SUFFIX: ${{ inputs.package_suffix }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="shopkeeper-${SHOP_ID}"
+          SLUG="$(printf '%s' "$SHOP_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g' | sed -E 's/^-|-$//g' | cut -c1-32)"
+          FILE="SmartBusinessPro-${SLUG:-shop}-${PACKAGE_SUFFIX}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$FILE"
+          gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1 || gh release create "$TAG" --repo "$GH_REPO" --title "Smart Business Pro · $SHOP_NAME" --notes "Shopkeeper Android app for the approved shop. Package suffix: $PACKAGE_SUFFIX. Login and database RLS remain required."
+          gh release upload "$TAG" "$FILE" --repo "$GH_REPO" --clobber
