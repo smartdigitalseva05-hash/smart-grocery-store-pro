@@ -1931,7 +1931,7 @@ async function loadShopData(){
 
 
  $("grocerySupplierForm").addEventListener("submit",async e=>{
-  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("grocerySupplierMessage","An active Grocery or Daily Needs subscription is required.",true);return}
+  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("grocerySupplierMessage","An active Fresh Food, Grocery or Daily Needs subscription is required.",true);return}
   const name=$("grocerySupplierName").value.trim(),phone=$("grocerySupplierPhone").value.trim(),company=$("grocerySupplierCompany").value.trim(),address=$("grocerySupplierAddress").value.trim();
   if(name.length<2){say("grocerySupplierMessage","Enter a valid supplier name.",true);return}
   $("grocerySupplierAdd").disabled=true;
@@ -1940,7 +1940,7 @@ async function loadShopData(){
   $("grocerySupplierForm").reset();say("grocerySupplierMessage","Supplier saved.");await loadGroceryProcurement();
  });
  $("groceryPurchaseForm").addEventListener("submit",async e=>{
-  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("groceryPurchaseMessage","An active Grocery or Daily Needs subscription is required.",true);return}
+  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("groceryPurchaseMessage","An active Fresh Food, Grocery or Daily Needs subscription is required.",true);return}
   const product=$("groceryPurchaseProduct").value,supplier=$("groceryPurchaseSupplier").value||null,qty=Number($("groceryPurchaseQty").value),cost=Number($("groceryPurchaseCost").value),date=$("groceryPurchaseDate").value,invoice=$("groceryPurchaseInvoice").value.trim(),notes=$("groceryPurchaseNotes").value.trim();
   if(!product||!Number.isInteger(qty)||qty<1||qty>1000000||!Number.isFinite(cost)||cost<0||!date){say("groceryPurchaseMessage","Check product, quantity, purchase cost and date.",true);return}
   $("groceryPurchaseSave").disabled=true;say("groceryPurchaseMessage","Recording purchase and updating stock…");
@@ -1952,7 +1952,7 @@ async function loadShopData(){
   await Promise.all([loadGroceryProcurement(),loadProducts(),loadGrowthInsights()]);
  });
  $("grocerySupplierPaymentForm").addEventListener("submit",async e=>{
-  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("groceryPaymentMessage","An active Grocery or Daily Needs subscription is required.",true);return}
+  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("groceryPaymentMessage","An active Fresh Food, Grocery or Daily Needs subscription is required.",true);return}
   const supplier=$("groceryPaymentSupplier").value,amount=Number($("groceryPaymentAmount").value),date=$("groceryPaymentDate").value,method=$("groceryPaymentMethod").value,reference=$("groceryPaymentReference").value.trim(),notes=$("groceryPaymentNotes").value.trim();
   if(!supplier||!Number.isFinite(amount)||amount<=0||amount>100000000||!date||!["cash","upi","bank","cheque","other"].includes(method)){say("groceryPaymentMessage","Check supplier, amount, date and payment method.",true);return}
   $("groceryPaymentSave").disabled=true;
@@ -1963,7 +1963,7 @@ async function loadShopData(){
  $("groceryProcurementRefresh").addEventListener("click",loadGroceryProcurement);
 
  $("groceryExpenseForm").addEventListener("submit",async e=>{
-  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("groceryExpenseMessage","An active Grocery or Daily Needs subscription is required.",true);return}
+  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("groceryExpenseMessage","An active Fresh Food, Grocery or Daily Needs subscription is required.",true);return}
   const category=$("groceryExpenseCategory").value,amount=Number($("groceryExpenseAmount").value),date=$("groceryExpenseDate").value,description=$("groceryExpenseDescription").value.trim();
   if(!["rent","electricity","transport","staff","packaging","maintenance","other"].includes(category)||!Number.isFinite(amount)||amount<=0||amount>100000000||!date){say("groceryExpenseMessage","Enter a valid category, amount and date.",true);return}
   $("groceryExpenseSave").disabled=true;
