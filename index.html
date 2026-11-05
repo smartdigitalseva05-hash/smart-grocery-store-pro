@@ -145,7 +145,7 @@ footer{text-align:center;padding:25px;color:var(--muted);font-size:13px}
 
 <section id="productsSection">
   <div class="section-title">
-    <h2>Popular Products & Services</h2>
+    <h2 id="productsHeading">Popular Products & Services</h2>
     <span class="small" id="productCount">Loading...</span>
   </div>
 
@@ -445,8 +445,9 @@ async function loadCustomerStore() {
   const openedDifferentShopLink = Boolean((shopLinkId && shopLinkId !== targetShopId) || (shopLinkSlug && shopLinkSlug !== store.slug));
 
   await loadShopStorefrontConfig(requestedShopId);
-  $("storeHeroTitle").textContent = "Shop only from " + store.name;
-  $("publicStoreName").textContent = store.name;
+  $("storeHeroTitle").textContent = (store.business_type==="healthy_food_breakfast"?"Fresh & Healthy Breakfast from ":"Shop only from ") + store.name;
+  $("publicStoreName").textContent = store.name+(store.business_type==="healthy_food_breakfast"?" · Healthy Food & Breakfast":"");
+  if(store.business_type==="healthy_food_breakfast")$("productsHeading").textContent="Fresh Fruits, Juices & Healthy Breakfast";
   $("publicStoreAddress").textContent = [store.address,store.city].filter(Boolean).join(", ");
   const timeLabel=value=>{if(!value)return "";const [h,m]=value.split(":").map(Number);return new Intl.DateTimeFormat("en-IN",{hour:"numeric",minute:"2-digit",hour12:true,timeZone:"Asia/Kolkata"}).format(new Date(Date.UTC(2020,0,1,h-5,m-30)))};
   const opening=timeLabel(store.opening_time),closing=timeLabel(store.closing_time);
