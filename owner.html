@@ -82,7 +82,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  <div class="row"><div><h1>⚡ Owner Command Center</h1><div class="sub">One secure launchpad for every currently available Super Admin control.</div></div><span class="pill">SUPER ADMIN</span></div>
  <div class="grid" id="ownerControlTiles">
  <a class="metric" href="#ownerShopsControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🏪 Business approvals & status</strong><span>Approve, activate, deactivate and suspend shops</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
- <a class="metric" href="#ownerCategoryControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧭 All 11 business categories</strong><span>Category-wise controls and global business search</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
+ <a class="metric" href="#ownerCategoryControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🧭 All 12 business categories</strong><span>Category-wise controls and global business search</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerApplicationHub" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">🗂️ Shopkeeper Applications & Subscriptions</strong><span>One hub with separate tabs for applicants, approvals, paid subscriptions and expiry</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open all tabs →</span></a>
  <a class="metric" href="#ownerShopkeeperControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">👥 Shopkeeper accounts</strong><span>Review linked shopkeeper accounts and access</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open control →</span></a>
  <a class="metric" href="#ownerShopkeeperControl" style="text-decoration:none;color:inherit;display:block"><strong style="font-size:17px;margin:0 0 8px">📇 Shopkeeper Contact Directory</strong><span>All shopkeeper names, mobile numbers, addresses and map locations · Call / WhatsApp</span><span style="display:block;color:#7dd3fc;margin-top:12px;font-weight:700">Open directory →</span></a>
@@ -278,7 +278,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      const info=document.createElement("div");
      const name=document.createElement("div");name.className="shop-name";name.textContent=shop.name||"Unnamed shop";
      const owner=profileMap.get(shop.owner_id);
-     const detail=document.createElement("div");detail.className="sub";const businessLabels={grocery:"Grocery",daily_needs:"Daily Needs",garments:"Garments",jewellery:"Jewellery",restaurant:"Restaurant",hotel:"Hotel",office_company:"Office / Company",electronics:"Electronics",medical:"Medical",digital_services:"Digital Seva",other:"Other"};detail.textContent=[businessLabels[shop.business_type]||"Grocery",owner?.full_name||"Shop owner",owner?.role||"unknown role",shop.city,shop.phone].filter(Boolean).join(" · ")||"No city/contact added";
+     const detail=document.createElement("div");detail.className="sub";const businessLabels={grocery:"Grocery",daily_needs:"Daily Needs",garments:"Garments",jewellery:"Jewellery",restaurant:"Restaurant",hotel:"Hotel",office_company:"Office / Company",electronics:"Electronics",medical:"Medical",digital_services:"Digital Seva",other:"Other",healthy_food_breakfast:"Healthy Food & Breakfast"};detail.textContent=[businessLabels[shop.business_type]||"Grocery",owner?.full_name||"Shop owner",owner?.role||"unknown role",shop.city,shop.phone].filter(Boolean).join(" · ")||"No city/contact added";
      info.append(name,detail);
      const state=document.createElement("span");state.className="pill";state.textContent=(shop.status||"unknown")+" · "+(shop.is_active?"visible":"not active");
      top.append(info,state);card.append(top);
@@ -368,7 +368,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  }
  shopApkPanel.querySelector("#shopApkRefresh").addEventListener("click",loadShopApkCatalog);
  const BUSINESS_TYPES=[
-  {key:"grocery",label:"🛒 Grocery"},{key:"daily_needs",label:"🧴 Daily Needs"},{key:"garments",label:"👕 Garments"},{key:"jewellery",label:"💎 Jewellery"},{key:"restaurant",label:"🍽️ Restaurant"},{key:"hotel",label:"🏨 Hotel"},{key:"office_company",label:"🏢 Office / Company"},{key:"electronics",label:"💻 Electronics"},{key:"medical",label:"💊 Medical"},{key:"digital_services",label:"🌐 Digital Services"},{key:"other",label:"🏪 Other Businesses"}
+  {key:"grocery",label:"🛒 Grocery"},{key:"daily_needs",label:"🧴 Daily Needs"},{key:"garments",label:"👕 Garments"},{key:"jewellery",label:"💎 Jewellery"},{key:"restaurant",label:"🍽️ Restaurant"},{key:"hotel",label:"🏨 Hotel"},{key:"office_company",label:"🏢 Office / Company"},{key:"electronics",label:"💻 Electronics"},{key:"medical",label:"💊 Medical"},{key:"digital_services",label:"🌐 Digital Services"},{key:"other",label:"🏪 Other Businesses"},{key:"healthy_food_breakfast",label:"🥗 Healthy Food & Breakfast"}
  ];
  let websiteShops=[],websiteProfiles=new Map(),selectedWebsiteType="all";
  function getBusinessTypes(){
@@ -1146,7 +1146,7 @@ async function loadShopkeepers(){
   {id:"notifications",label:"🔔 Notifications",nodes:[ownerNotifications]},
   {id:"allManuals",label:"📚 All Manuals",nodes:[allManuals]},
   {id:"ownerShopsControl",label:"🏪 Shops"},
-  {id:"ownerCategoryControl",label:"🧭 11 Categories"},
+  {id:"ownerCategoryControl",label:"🧭 12 Categories"},
   {id:"ownerApplicationHub",label:"🗂️ Applications"},
   {id:"ownerShopkeeperControl",label:"📇 Shopkeepers"},
   {id:"ownerCustomerControl",label:"👥 Customers"},
