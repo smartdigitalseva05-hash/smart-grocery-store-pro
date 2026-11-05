@@ -530,6 +530,16 @@ async function boot(){
   shops=data||[];
   const sel=$("shopSelect");sel.replaceChildren();
   for(const s of shops){const o=document.createElement("option");o.value=s.id;o.textContent=s.name+" ("+s.status+")";sel.append(o)}
+  const appParams=new URLSearchParams(location.search);
+  const appPinned=appParams.get("app")==="1";
+  const pinnedShopId=appParams.get("shop_id");
+  if(appPinned){
+    const pinnedShop=shops.find(s=>s.id===pinnedShopId);
+    if(!pinnedShop){sel.disabled=true;say("shopInfo","This app is linked to a different shopkeeper account or shop. Sign in with the approved account for this shop.",true);return}
+    sel.value=pinnedShopId;
+    sel.disabled=true;
+    say("shopInfo","Dedicated app · "+pinnedShop.name+" · Your account can access only its own approved shop data.");
+  }
   if(!shops.length){say("shopInfo","No shop is linked to this account yet. Contact the Owner for approval.");$("productForm").querySelector("button").disabled=true;return}
   ([loadPlans(),loadShopData()]);
  }

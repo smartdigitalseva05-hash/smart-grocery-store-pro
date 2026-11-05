@@ -147,6 +147,63 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  let ownerMfaFactorId=null, ownerMfaMode=null, checkingOwnerSession=false, ownerAuditChannel=null;
  const money = n => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(n||0));
  function message(id,text,error=false){$(id).textContent=text;$(id).classList.toggle("error",error)}
+ function makeShopkeeperAppButton(shop){
+   const button=document.createElement("button");
+   button.type="button";
+   const active=shop.status==="active"&&shop.is_active===true&&shop.subscription_expires_at&&new Date(shop.subscription_expires_at).getTime()>Date.now();
+   let readyDownloadUrl="";
+   button.className=active?"safe":"secondary";
+   button.textContent="📲 Generate Shopkeeper APK";
+   button.disabled=!active;
+   button.title=active?"Build a separate Android APK for this shop":"Activate this shop with a current verified subscription first";
+   button.addEventListener("click",async()=>{
+     if(readyDownloadUrl){window.location.assign(readyDownloadUrl);return;}
+     if(button.disabled)return;
+     if(!window.confirm("Generate a separate Android app for "+(shop.name||"this shop")+"? It will be pinned to this shop and still require the approved shopkeeper login."))return;
+     button.disabled=true;button.textContent="⏳ Queueing app build…";
+     const {data,error}=await client.functions.invoke("generate-shopkeeper-app",{body:{shop_id:shop.id}});
+     if(error||!data?.queued){
+       let detail=data?.error||error?.message||"App build could not be queued.";
+       try{if(error?.context){const payload=await error.context.clone().json();detail=payload?.error||detail}}catch{}
+       button.textContent="📲 Retry APK build";button.disabled=false;
+       alert(detail);
+       return;
+     }
+     button.textContent="⏳ Building APK…";
+     const tag="shopkeeper-"+shop.id;
+     const releaseUrl="https://api.github.com/repos/smartdigitalseva05-hash/smart-grocery-store-pro/releases/tags/"+encodeURIComponent(tag);
+     const workflowUrl=data.workflow_url||"https://github.com/smartdigitalseva05-hash/smart-grocery-store-pro/actions/workflows/shopkeeper-android-app.yml";
+     let attempts=0;
+     const poll=async()=>{
+       attempts++;
+       try{
+         const response=await fetch(releaseUrl,{headers:{Accept:"application/vnd.github+json"}});
+         if(response.ok){
+           const release=await response.json();
+           const apk=(release.assets||[]).find(asset=>String(asset.name||"").toLowerCase().endsWith(".apk"));
+           if(apk?.browser_download_url){
+             button.textContent="⬇ Download Shopkeeper APK";button.disabled=false;
+             button.className="safe";
+             readyDownloadUrl=apk.browser_download_url;
+             const status=document.createElement("span");status.className="sub";status.textContent="APK ready · "+(apk.name||"Android app");
+             button.insertAdjacentElement("afterend",status);
+             return;
+           }
+         }
+       }catch{}
+       if(attempts>=30){
+         button.textContent="🔄 Check APK status";button.disabled=false;
+         readyDownloadUrl=workflowUrl;
+         const status=document.createElement("span");status.className="sub";status.textContent="Build is taking longer. Open build status to check progress.";
+         button.insertAdjacentElement("afterend",status);
+         return;
+       }
+       window.setTimeout(poll,12000);
+     };
+     window.setTimeout(poll,12000);
+   });
+   return button;
+ }
  function showLogin(text=""){
    stopOwnerAuditRealtime();
    loginPanel.classList.remove("hidden");dashboard.classList.add("hidden");topActions.classList.add("hidden");
@@ -205,7 +262,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
  async function loadShops(){
    message("shopsMessage","Loading shops from protected database…");
    const list=$("shopList");list.replaceChildren();
-   const {data:allShops,error}=await client.from("shops").select("id,owner_id,name,business_type,city,phone,status,is_active,created_at").order("created_at",{ascending:false});
+   const {data:allShops,error}=await client.from("shops").select("id,owner_id,name,business_type,city,phone,status,is_active,subscription_expires_at,created_at").order("created_at",{ascending:false});
    if(error){message("shopsMessage",error.message,true);return}
    if(!allShops?.length){message("shopsMessage","No businesses registered yet.");return}
    const selectedType=$("businessTypeFilter").value;
@@ -255,6 +312,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
        });
        actions.append(btn);
      }
+     actions.append(makeShopkeeperAppButton(shop));
      card.append(actions);list.append(card);
    }
  }
@@ -327,6 +385,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
        const btn=document.createElement("button");btn.type="button";btn.className=choice.cls;btn.textContent=choice.label;
        btn.addEventListener("click",async()=>{const prompt=choice.status==="active"?"Activate this store? A verified, successful, unexpired subscription is required.":choice.status==="suspended"?"Suspend this store?":"Set this store inactive?";if(!confirm(prompt))return;btn.disabled=true;const {error}=await client.rpc("owner_set_shop_status",{p_shop_id:shop.id,p_status:choice.status});if(error){message("businessWebsitesMessage",error.message,true);btn.disabled=false;return}await Promise.all([loadBusinessWebsites(),loadShops(),loadSummary()])});actions.append(btn);
      }
+     actions.append(makeShopkeeperAppButton(shop));
      card.append(actions);list.append(card);
    }
  }
