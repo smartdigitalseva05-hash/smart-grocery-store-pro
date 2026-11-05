@@ -555,7 +555,8 @@ async function boot(){
     electronics:{name:"Electronics / Mobile Store",desc:"Device, warranty and repair workspace",items:["Device catalogue with brand and model","IMEI 1 / IMEI 2 and serial-number tracking","Purchase details and warranty dates","Public repair requests and technician job workflow","Diagnosis, estimate, customer-approved cost and delivery status"],note:"Device and warranty records plus customer repair requests and technician job tracking are available. Formal warranty-claim automation remains future work."},
     medical:{name:"Medical Store",desc:"Pharmacy inventory workspace",items:["Medicine batch and brand register","Batch number, manufacturing and expiry dates","Batch-wise quantity, MRP, purchase price and supplier","Expiry alerts and batch status controls"],note:"Batch inventory and expiry tracking are available. This is not a complete compliant pharmacy system; prescription, dispensing and regulatory workflows are not included."},
     digital_services:{name:"Digital Seva / Service Centre",desc:"Service business workspace",items:["Service application and applicant register","Reference number, applied/expected dates and document checklist","Application status progression","Service fee, amount received and balance tracking"],note:"Application and fee tracking are available. Government portal integration, online document storage and automatic official status verification are not included."},
-    other:{name:"Other Business · Products & Services",desc:"Flexible product and service business workspace",items:["Category-based product and service catalogue","Service descriptions, pricing and availability","Product/service photos and customer-facing shop link","Customer orders, status tracking and CSV catalogue export","Customer contact book and credit ledger"],note:"Use the catalogue for products or clearly described services. Orders, customer contacts, credit entries, customer storefront link and sales insights are available in the shared workspace; appointment scheduling and industry-specific compliance tools are not included."}
+    healthy_food_breakfast:{name:"Healthy Food & Breakfast",desc:"Fresh fruit, healthy breakfast and takeaway food workspace",items:["Fresh fruit, cut-fruit bowls and seasonal produce catalogue","Breakfast bowls: oats, sprouts, yoghurt, milk, nuts and salads","Fresh juice, smoothies and healthy drink menu with portion sizes","Morning opening hours, daily availability and sold-out stock control","Ingredient supplier register, purchase entries and stock movement history","Breakfast combos, add-on items, takeaway and customer online orders"],note:"Use the product catalogue for each menu item, set accurate ingredients and allergen notes in the description, update daily stock, and mark items unavailable when sold out. Keep cut fruit and dairy chilled and follow local food-safety and licensing requirements."},
+     other:{name:"Other Business · Products & Services",desc:"Flexible product and service business workspace",items:["Category-based product and service catalogue","Service descriptions, pricing and availability","Product/service photos and customer-facing shop link","Customer orders, status tracking and CSV catalogue export","Customer contact book and credit ledger"],note:"Use the catalogue for products or clearly described services. Orders, customer contacts, credit entries, customer storefront link and sales insights are available in the shared workspace; appointment scheduling and industry-specific compliance tools are not included."}
   };
   const cfg=types[shop.business_type]||types.other;
   $("workspaceTitle").textContent=cfg.name+" workspace";
@@ -563,12 +564,12 @@ async function boot(){
   $("workspaceFeatures").replaceChildren();
   const universalFeatures=["Shared product and service catalogue with photos, categories, prices, offers and stock","Inventory variants: garment sizes/colours, jewellery specifications, device IMEI/serial and medicine batches/expiry","Supplier register, purchase entries, stock movement history, supplier payments and shop expenses","Customer orders, order status, customer contacts, credit ledger and downloadable reports","Restaurant tools: menu, table register, reservations and kitchen tickets","Hotel tools: rooms, guest bookings, reservations and housekeeping","Office tools: employees, attendance, leave, payroll and task tracking","Electronics tools: device inventory, warranty records and repair jobs","Medical tools: batch inventory, expiry alerts and stock status","Digital Seva tools: applications, document checklist, service fees and payment balance","Customer-facing shop link, WhatsApp promotion, alerts and sales insights"];universalFeatures.forEach(item=>{const row=document.createElement("div");row.className="product";row.textContent="✓ "+item;$("workspaceFeatures").append(row)});
   const note=document.createElement("div");note.className="notice";note.textContent=cfg.note;$("workspaceFeatures").append(note);
-  const retail=["grocery","daily_needs","garments","jewellery","restaurant","electronics","medical","other"].includes(shop.business_type);
-  if(!["grocery","daily_needs"].includes(shop.business_type)){$("groceryProcurementPanel").classList.add("hidden")}else{$("groceryProcurementPanel").classList.remove("hidden")}
+  const retail=["grocery","daily_needs","healthy_food_breakfast","garments","jewellery","restaurant","electronics","medical","other"].includes(shop.business_type);
+  if(!["grocery","daily_needs","healthy_food_breakfast"].includes(shop.business_type)){$("groceryProcurementPanel").classList.add("hidden")}else{$("groceryProcurementPanel").classList.remove("hidden");if(shop.business_type==="healthy_food_breakfast"){$("procurementHeading").textContent="Fresh Ingredients & Supplier Manager";$("procurementDescription").textContent="Track fruit, vegetables, dairy, oats, sprouts and other breakfast ingredients. Record purchases and update stock with movement history."}}
   ["starter-products","bulk-starter-products"].forEach(id=>{const el=$(id);if(el)el.classList.remove("hidden")});
    const dailyMode=shop.business_type==="daily_needs";$("starter-products").querySelector("h1").textContent=dailyMode?"Quick add Daily Needs essentials":"Quick add from 200 grocery starter products";$("starter-products").querySelector("p").textContent=dailyMode?"Choose daily-use household, personal-care, cleaning and convenience items. Suggested prices are examples; confirm your actual price and stock.":"Choose a starter item to prefill the form. Confirm the real price, stock and photo before saving.";$("starterSearch").placeholder=dailyMode?"Search soap, cleaning, stationery…":"Search rice, oil, soap…";$("starterSelect").options[0].textContent=dailyMode?"Choose a Daily Needs item…":"Choose from 200 products…";$("bulk-starter-products").querySelector("h1").textContent=dailyMode?"Bulk add Daily Needs essentials":"Bulk add starter products";$("bulk-starter-products").querySelector("p").textContent=dailyMode?"Select daily essentials to create hidden drafts with zero stock. Confirm local price, stock and photos before publishing.":"Select multiple items from the 200-product starter catalogue. They will be saved as hidden drafts with zero stock, so customers cannot order them until you confirm price, stock and photos.";
   const productTitle=$("productEditorTitle"),productDescription=$("productEditorDescription"),productNameLabel=$("productNameLabel");
-  if(shop.business_type==="other"){
+  if(shop.business_type==="healthy_food_breakfast"){productTitle.textContent="Add a healthy food or breakfast item";productDescription.textContent="List fresh fruit, fruit bowls, juices, smoothies, oats, sprouts, salads or breakfast combos. Include portion size, ingredients and allergen information in the description; set accurate daily stock.";}else if(shop.business_type==="other"){
     productTitle.textContent="Add a product or service";
     productDescription.textContent="List a product or service with a clear description, price and available quantity. Customer orders remain linked to this shop.";
     productNameLabel.firstChild.textContent="Product / service name";
@@ -1116,9 +1117,9 @@ async function loadCustomerCredit(){const panel=$("customerCreditPanel");if(!pan
 
 async function loadGroceryProcurement(){
  const panel=$("groceryProcurementPanel");if(!panel)return
- if(!currentShop||!["grocery","daily_needs"].includes(currentShop.business_type)){panel.classList.add("hidden");return}
+ if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)){panel.classList.add("hidden");return}
  panel.classList.remove("hidden");
- const dailyNeedsMode=currentShop.business_type==="daily_needs";
+ const dailyNeedsMode=currentShop.business_type==="daily_needs";const healthyFoodMode=currentShop.business_type==="healthy_food_breakfast";
  $("procurementHeading").textContent=dailyNeedsMode?"Daily Needs · Supplier & Purchase Manager":"Grocery · Supplier & Purchase Manager";
  $("procurementDescription").textContent=dailyNeedsMode?"Manage suppliers, household essentials purchases, stock receipts, supplier payments and shop expenses.":"Manage suppliers, grocery purchases, stock receipts, supplier payments and shop expenses.";
  if(!$("groceryPurchaseDate").value)$("groceryPurchaseDate").value=new Date().toISOString().slice(0,10);
@@ -1930,7 +1931,7 @@ async function loadShopData(){
 
 
  $("grocerySupplierForm").addEventListener("submit",async e=>{
-  e.preventDefault();if(!currentShop||!["grocery","daily_needs"].includes(currentShop.business_type)||!canManageProducts()){say("grocerySupplierMessage","An active Grocery or Daily Needs subscription is required.",true);return}
+  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("grocerySupplierMessage","An active Grocery or Daily Needs subscription is required.",true);return}
   const name=$("grocerySupplierName").value.trim(),phone=$("grocerySupplierPhone").value.trim(),company=$("grocerySupplierCompany").value.trim(),address=$("grocerySupplierAddress").value.trim();
   if(name.length<2){say("grocerySupplierMessage","Enter a valid supplier name.",true);return}
   $("grocerySupplierAdd").disabled=true;
@@ -1939,7 +1940,7 @@ async function loadShopData(){
   $("grocerySupplierForm").reset();say("grocerySupplierMessage","Supplier saved.");await loadGroceryProcurement();
  });
  $("groceryPurchaseForm").addEventListener("submit",async e=>{
-  e.preventDefault();if(!currentShop||!["grocery","daily_needs"].includes(currentShop.business_type)||!canManageProducts()){say("groceryPurchaseMessage","An active Grocery or Daily Needs subscription is required.",true);return}
+  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("groceryPurchaseMessage","An active Grocery or Daily Needs subscription is required.",true);return}
   const product=$("groceryPurchaseProduct").value,supplier=$("groceryPurchaseSupplier").value||null,qty=Number($("groceryPurchaseQty").value),cost=Number($("groceryPurchaseCost").value),date=$("groceryPurchaseDate").value,invoice=$("groceryPurchaseInvoice").value.trim(),notes=$("groceryPurchaseNotes").value.trim();
   if(!product||!Number.isInteger(qty)||qty<1||qty>1000000||!Number.isFinite(cost)||cost<0||!date){say("groceryPurchaseMessage","Check product, quantity, purchase cost and date.",true);return}
   $("groceryPurchaseSave").disabled=true;say("groceryPurchaseMessage","Recording purchase and updating stock…");
@@ -1951,7 +1952,7 @@ async function loadShopData(){
   await Promise.all([loadGroceryProcurement(),loadProducts(),loadGrowthInsights()]);
  });
  $("grocerySupplierPaymentForm").addEventListener("submit",async e=>{
-  e.preventDefault();if(!currentShop||!["grocery","daily_needs"].includes(currentShop.business_type)||!canManageProducts()){say("groceryPaymentMessage","An active Grocery or Daily Needs subscription is required.",true);return}
+  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("groceryPaymentMessage","An active Grocery or Daily Needs subscription is required.",true);return}
   const supplier=$("groceryPaymentSupplier").value,amount=Number($("groceryPaymentAmount").value),date=$("groceryPaymentDate").value,method=$("groceryPaymentMethod").value,reference=$("groceryPaymentReference").value.trim(),notes=$("groceryPaymentNotes").value.trim();
   if(!supplier||!Number.isFinite(amount)||amount<=0||amount>100000000||!date||!["cash","upi","bank","cheque","other"].includes(method)){say("groceryPaymentMessage","Check supplier, amount, date and payment method.",true);return}
   $("groceryPaymentSave").disabled=true;
@@ -1962,7 +1963,7 @@ async function loadShopData(){
  $("groceryProcurementRefresh").addEventListener("click",loadGroceryProcurement);
 
  $("groceryExpenseForm").addEventListener("submit",async e=>{
-  e.preventDefault();if(!currentShop||!["grocery","daily_needs"].includes(currentShop.business_type)||!canManageProducts()){say("groceryExpenseMessage","An active Grocery or Daily Needs subscription is required.",true);return}
+  e.preventDefault();if(!currentShop||!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)||!canManageProducts()){say("groceryExpenseMessage","An active Grocery or Daily Needs subscription is required.",true);return}
   const category=$("groceryExpenseCategory").value,amount=Number($("groceryExpenseAmount").value),date=$("groceryExpenseDate").value,description=$("groceryExpenseDescription").value.trim();
   if(!["rent","electricity","transport","staff","packaging","maintenance","other"].includes(category)||!Number.isFinite(amount)||amount<=0||amount>100000000||!date){say("groceryExpenseMessage","Enter a valid category, amount and date.",true);return}
   $("groceryExpenseSave").disabled=true;
