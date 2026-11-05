@@ -6,7 +6,7 @@ const root = process.cwd();
 const pages = [
   "index.html", "owner.html", "apply-shop.html", "shopkeeper.html",
   "portal.html", "showcase.html", "catalogue.html", "demo-store.html",
-  "digital-service-request.html", "electronics-repair.html", "hotel-booking.html",
+  "digital-service-request.html", "electronics-repair.html", "repair-request.html", "hotel-booking.html",
   "my-orders.html", "restaurant-booking.html", "shopkeeper-benefits.html", "business-category.html",
   "customer-manual-odia.html", "manual-center.html", "owner-id-center.html", "owner-profile.html",
   "owner-profile/index.html", "shopkeeper-manual-odia.html", "storefront.html",
@@ -19,7 +19,7 @@ const categories = [
   ["jewellery", "Jewellery"], ["restaurant", "Restaurant"], ["hotel", "Hotel"],
   ["office_company", "Office / Company"], ["electronics", "Electronics"],
   ["medical", "Medical"], ["digital_services", "Digital Services"], ["other", "Other Businesses"],
-  ["healthy_food_breakfast", "Healthy Food & Breakfast"]
+  ["healthy_food_breakfast", "Healthy Food & Breakfast"], ["repair_services", "Repair Services"]
 ];
 let checks = 0;
 function assert(condition, message) {
@@ -83,6 +83,7 @@ vm.runInNewContext(starterSource, starterSandbox, { filename: "starter-catalogue
 const starterCatalogues = starterSandbox.window.SMART_BUSINESS_STARTER_CATALOGUES;
 assert(starterCatalogues && typeof starterCatalogues === "object", "Starter catalogue data is not exposed.");
 for (const [key] of categories) {
+  if (key === "repair_services") continue; // Repair shops use service listings and job cards, not grocery-style starter products.
   const items = starterCatalogues[key];
   assert(Array.isArray(items) && items.length === 200, key + " must have exactly 200 starter catalogue items.");
   const names = items.map(item => String(item.name || "").trim().toLowerCase());
@@ -153,6 +154,11 @@ const requiredCategoryPanels = [
 for (const [label, marker] of requiredCategoryPanels) {
   assert(workspace.includes(marker), "Shopkeeper workspace is missing the " + label + " module panel.");
 }
+assert(workspace.includes("repair_services:{name:\"Repair Services / Repair Shop\""), "Repair Services category workspace is missing.");
+assert(workspace.includes('id="electronicsServiceJobsPanel"'), "Repair Services job register panel is missing.");
+assert(workspace.includes('["electronics","repair_services"].includes(currentShop.business_type)'), "Repair job intake must be restricted to Electronics and Repair Services shops.");
+const repairPage = read("repair-request.html");
+assert(repairPage.includes('id="repairCategory"') && repairPage.includes("service_category:repairCategory"), "Repair request form must save the selected repair category.");
 assert(workspace.includes("function renderVariants("), "Garments variant renderer is missing.");
 assert(workspace.includes("function loadJewelleryDetails("), "Jewellery detail loader is missing.");
 assert(workspace.includes('id="customerDirectoryPanel"'), "Shopkeeper workspace is missing the customer contact book.");
