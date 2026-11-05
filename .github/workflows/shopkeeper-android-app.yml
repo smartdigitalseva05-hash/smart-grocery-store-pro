@@ -61,6 +61,7 @@ jobs:
           Path("app/src/main/res/drawable").mkdir(parents=True,exist_ok=True)
           Path("app/src/main/res/values").mkdir(parents=True,exist_ok=True)
           Path("app/src/main/res/mipmap-anydpi-v26").mkdir(parents=True,exist_ok=True)
+          Path("app/src/main/res/values/colors.xml").write_text('<resources><color name="shop_background">#0B1B14</color></resources>', encoding="utf-8")
           Path("app/src/main/res/values/strings.xml").write_text(
               '<resources><string name="app_name">'+label+'</string></resources>', encoding="utf-8")
           Path("app/src/main/res/values/styles.xml").write_text("""<resources>
@@ -81,7 +82,7 @@ jobs:
             <path android:fillColor="#0B1B14" android:pathData="M32,54h10v10h-10z M66,54h10v10h-10z"/>
           </vector>""",encoding="utf-8")
           Path("app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml").write_text("""<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-            <background android:drawable="#0B1B14"/>
+            <background android:drawable="@color/shop_background"/>
             <foreground android:drawable="@drawable/shop_mark"/>
           </adaptive-icon>""",encoding="utf-8")
           Path("app/src/main/AndroidManifest.xml").write_text("""<manifest xmlns:android="http://schemas.android.com/apk/res/android">
