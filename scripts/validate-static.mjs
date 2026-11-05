@@ -18,7 +18,8 @@ const categories = [
   ["grocery", "Grocery"], ["daily_needs", "Daily Needs"], ["garments", "Garments"],
   ["jewellery", "Jewellery"], ["restaurant", "Restaurant"], ["hotel", "Hotel"],
   ["office_company", "Office / Company"], ["electronics", "Electronics"],
-  ["medical", "Medical"], ["digital_services", "Digital Services"], ["other", "Other Businesses"]
+  ["medical", "Medical"], ["digital_services", "Digital Services"], ["other", "Other Businesses"],
+  ["healthy_food_breakfast", "Healthy Food & Breakfast"]
 ];
 let checks = 0;
 function assert(condition, message) {
@@ -178,11 +179,12 @@ assert(workspace.includes("const visibleOrders=data.filter(o=>"), "Shopkeeper or
 assert(workspace.includes('db.from("order_status_history").select("old_status,new_status,reason,created_at").eq("order_id",o.id)'), "Delivery timeline must read status history for the selected order only.");
 assert(workspace.includes('textContent="View delivery timeline"'), "Shopkeeper order cards must expose delivery timeline control.");
 assert(workspace.includes("for(const o of visibleOrders)"), "Shopkeeper order renderer must use filtered orders.");
-assert(workspace.includes('!["grocery","daily_needs"].includes(shop.business_type)'), "Supplier/purchase panel must be limited to Grocery and Daily Needs shops.");
-assert(workspace.includes('!["grocery","daily_needs"].includes(currentShop.business_type)'), "Supplier/purchase loader must enforce the same category allowlist.");
+assert(workspace.includes('!["grocery","daily_needs","healthy_food_breakfast"].includes(shop.business_type)'), "Supplier/purchase panel must be limited to Grocery and Daily Needs shops.");
+assert(workspace.includes('!["grocery","daily_needs","healthy_food_breakfast"].includes(currentShop.business_type)'), "Supplier/purchase loader must enforce the same category allowlist.");
 assert(workspace.includes('id="procurementHeading"'), "Supplier/purchase panel must show its category-specific heading.");
 assert(workspace.includes('textContent="Add a product or service"'), "Other Businesses must have product/service catalogue wording.");
 assert(workspace.includes('textContent="Add a Daily Needs item"'), "Daily Needs must have category-specific item creation wording.");
+assert(workspace.includes('textContent="Add a healthy food or breakfast item"'), "Healthy Food & Breakfast must have category-specific item creation wording.");
 assert(workspace.includes('id="productNameLabel"'), "Category-specific product/service naming label is missing.");
 assert(workspace.includes('category:categories(name)'), "Inventory CSV must resolve category names through the products.category_id foreign key.");
 assert(workspace.includes('x.category?.name||""'), "Inventory CSV must export the joined category name safely.");
