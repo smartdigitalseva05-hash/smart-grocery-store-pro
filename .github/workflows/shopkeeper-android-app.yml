@@ -107,7 +107,7 @@ jobs:
           public final class MainActivity extends Activity {
             private static final String HOST="smartdigitalseva05-hash.github.io";
             private static final String BASE="/smart-grocery-store-pro/";
-            private static final String START_URL="START_URL";
+            private static final String START_URL="__SHOP_START_URL__";
             private WebView web;
             private ProgressBar progress;
             @Override public void onCreate(Bundle state){
@@ -133,7 +133,7 @@ jobs:
             @Override public void onBackPressed(){if(web!=null&&web.canGoBack())web.goBack();else super.onBackPressed();}
             @Override protected void onDestroy(){if(web!=null){web.stopLoading();web.destroy();web=null;}super.onDestroy();}
           }'''
-          java=java.replace("PKG",pkg).replace("START_URL",url)
+          java=java.replace("PKG",pkg).replace("__SHOP_START_URL__",url)
           Path("app/src/main/java/"+pkg.replace(".","/")+"/MainActivity.java").write_text(java,encoding="utf-8")
           Path("settings.gradle").write_text("""pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
