@@ -610,7 +610,7 @@ async function loadRestaurantTables(){
 }
 async function loadRestaurantReservations(){
  const panel=$("restaurantReservationsPanel"),list=$("restaurantReservationList");if(!panel||!list)return;
- const active=!!currentShop;panel.classList.toggle("hidden",!active);if(!active)return;
+ const active=!!currentShop&&currentShop.business_type==="restaurant";panel.classList.toggle("hidden",!active);if(!active)return;const posLink=$("restaurantPosLink");if(posLink){const posUrl=new URL("./restaurant-pos.html",window.location.href);posUrl.searchParams.set("shop_id",currentShop.id);posLink.href=posUrl.href;}
  const bookingUrl=new URL("./restaurant-booking.html",window.location.href);bookingUrl.searchParams.set("shop_id",currentShop.id);$("restaurantBookingUrl").value=bookingUrl.href;
  list.replaceChildren();say("restaurantReservationMessage","Loading customer reservation requests…");
  const [reservationResult,tableResult]=await Promise.all([
