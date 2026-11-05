@@ -13224,4 +13224,40 @@ window.SMART_BUSINESS_STARTER_CATALOGUES = {
       "emoji": "🧑‍💼"
     }
   ]
+,
+  "healthy_food_breakfast": (() => {
+    const products = [
+      ["Apple", "Fresh Fruits", 25, "🍎"], ["Banana", "Fresh Fruits", 8, "🍌"],
+      ["Papaya", "Fresh Fruits", 35, "🍈"], ["Pomegranate", "Fresh Fruits", 45, "🍎"],
+      ["Guava", "Fresh Fruits", 20, "🍐"], ["Orange", "Fresh Fruits", 18, "🍊"],
+      ["Watermelon", "Fresh Fruits", 30, "🍉"], ["Pineapple", "Fresh Fruits", 45, "🍍"],
+      ["Mango", "Fresh Fruits", 35, "🥭"], ["Grapes", "Fresh Fruits", 40, "🍇"],
+      ["Chikoo", "Fresh Fruits", 25, "🍐"], ["Sweet Lime", "Fresh Fruits", 22, "🍋"],
+      ["Mixed Seasonal Fruit Bowl", "Fruit Bowls & Salads", 60, "🥗"], ["Apple Fruit Bowl", "Fruit Bowls & Salads", 55, "🍎"],
+      ["Pomegranate Fruit Bowl", "Fruit Bowls & Salads", 70, "🥣"], ["Papaya Fruit Bowl", "Fruit Bowls & Salads", 50, "🍈"],
+      ["Banana Fruit Bowl", "Fruit Bowls & Salads", 45, "🍌"], ["Sprout Salad", "Sprouts & Protein Bowls", 45, "🥗"],
+      ["Moong Sprouts Bowl", "Sprouts & Protein Bowls", 50, "🌱"], ["Chana Sprouts Bowl", "Sprouts & Protein Bowls", 50, "🌱"],
+      ["Mixed Bean Salad", "Sprouts & Protein Bowls", 65, "🥗"], ["Peanut Sprout Bowl", "Sprouts & Protein Bowls", 55, "🥜"],
+      ["Oats Porridge", "Healthy Breakfast", 45, "🥣"], ["Masala Oats", "Healthy Breakfast", 50, "🥣"],
+      ["Banana Oats Bowl", "Healthy Breakfast", 60, "🥣"], ["Overnight Oats", "Healthy Breakfast", 70, "🥣"],
+      ["Vegetable Poha", "Healthy Breakfast", 35, "🍲"], ["Vegetable Upma", "Healthy Breakfast", 40, "🍲"],
+      ["Idli Sambar", "Healthy Breakfast", 45, "🍽️"], ["Ragi Porridge", "Healthy Breakfast", 40, "🥣"],
+      ["Fresh Orange Juice", "Fresh Juices & Smoothies", 45, "🧃"], ["Watermelon Juice", "Fresh Juices & Smoothies", 40, "🍉"],
+      ["Pomegranate Juice", "Fresh Juices & Smoothies", 65, "🧃"], ["Banana Smoothie", "Fresh Juices & Smoothies", 55, "🥤"],
+      ["Mango Smoothie", "Fresh Juices & Smoothies", 65, "🥭"], ["Green Vegetable Smoothie", "Fresh Juices & Smoothies", 70, "🥬"],
+      ["Plain Curd Bowl", "Oats, Dairy & Nuts", 30, "🥛"], ["Yoghurt Fruit Bowl", "Oats, Dairy & Nuts", 65, "🥣"],
+      ["Mixed Nuts Portion", "Oats, Dairy & Nuts", 35, "🥜"], ["Dates & Almonds Bowl", "Oats, Dairy & Nuts", 50, "🌰"]
+    ];
+    const sizes = [
+      {label:"Small", factor:1}, {label:"Regular", factor:1.5},
+      {label:"Large", factor:2}, {label:"Family", factor:3},
+      {label:"Party Pack", factor:4}
+    ];
+    return products.flatMap(([name, category, price, emoji]) =>
+      sizes.map(size => ({
+        name: name + " - " + size.label,
+        category, price: Math.round(price * size.factor), emoji
+      }))
+    );
+  })()
 };
