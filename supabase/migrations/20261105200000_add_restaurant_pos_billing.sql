@@ -121,9 +121,76 @@ BEGIN
   SELECT count(*) INTO v_line_count
   FROM jsonb_array_elements(p_lines) x
   WHERE (x->>'menu_item_id') IS NULL
-     OR (x->>'quantity') !~ '^[0-9]+$'
-     OR (x->>'quantity')::integer < 1
-     OR (x->>'quantity')::integer > 999;
+     OR CASE
+          WHEN (x->>'quantity') ~ '^[0-9]+
+  IF v_line_count > 0 THEN
+    RAISE EXCEPTION 'Each line needs a valid menu item and quantity (1–999).';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(p_lines) x
+    LEFT JOIN public.restaurant_menu_items m
+      ON m.id = (x->>'menu_item_id')::uuid
+     AND m.shop_id = p_shop_id
+     AND m.is_available = true
+    WHERE m.id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'A selected menu item is unavailable or belongs to another shop.';
+  END IF;
+
+  SELECT round(sum(m.price * (x->>'quantity')::integer), 2)
+    INTO v_subtotal
+  FROM jsonb_array_elements(p_lines) x
+  JOIN public.restaurant_menu_items m
+    ON m.id = (x->>'menu_item_id')::uuid
+   AND m.shop_id = p_shop_id
+   AND m.is_available = true;
+
+  v_discount := round(p_discount, 2);
+  IF v_discount > v_subtotal THEN
+    RAISE EXCEPTION 'Discount cannot exceed subtotal.';
+  END IF;
+  v_tax_rate := p_tax_rate;
+  v_tax := round((v_subtotal - v_discount) * v_tax_rate / 100, 2);
+  v_total := round(v_subtotal - v_discount + v_tax, 2);
+
+  INSERT INTO public.restaurant_invoice_counters(shop_id,last_number)
+  VALUES (p_shop_id,1)
+  ON CONFLICT (shop_id) DO UPDATE
+    SET last_number = public.restaurant_invoice_counters.last_number + 1
+  RETURNING last_number INTO v_invoice;
+
+  v_invoice_number := 'R-' || to_char(pg_catalog.now() AT TIME ZONE 'UTC','YYYYMMDD') || '-' || lpad(v_invoice::text,6,'0');
+
+  INSERT INTO public.restaurant_sales(
+    shop_id,invoice_number,customer_name,subtotal,discount_amount,tax_rate,
+    tax_amount,total_amount,payment_method,payment_status,notes,created_by
+  ) VALUES (
+    p_shop_id,v_invoice_number,nullif(pg_catalog.btrim(p_customer_name),''),
+    v_subtotal,v_discount,v_tax_rate,v_tax,v_total,p_payment_method,p_payment_status,
+    nullif(pg_catalog.btrim(p_notes),''),auth.uid()
+  ) RETURNING id INTO v_sale_id;
+
+  INSERT INTO public.restaurant_sale_items(sale_id,menu_item_id,item_name,quantity,unit_price,line_total)
+  SELECT v_sale_id,m.id,m.name,(x->>'quantity')::integer,m.price,
+         round(m.price * (x->>'quantity')::integer,2)
+  FROM jsonb_array_elements(p_lines) x
+  JOIN public.restaurant_menu_items m
+    ON m.id = (x->>'menu_item_id')::uuid
+   AND m.shop_id = p_shop_id
+   AND m.is_available = true;
+
+  RETURN QUERY SELECT v_sale_id,v_invoice_number,v_subtotal,v_discount,v_tax,v_total;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.restaurant_pos_checkout(uuid,jsonb,numeric,numeric,text,text,text,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.restaurant_pos_checkout(uuid,jsonb,numeric,numeric,text,text,text,text) TO authenticated;
+
+          THEN (x->>'quantity')::integer < 1 OR (x->>'quantity')::integer > 999
+          ELSE true
+        END;
   IF v_line_count > 0 THEN
     RAISE EXCEPTION 'Each line needs a valid menu item and quantity (1–999).';
   END IF;
