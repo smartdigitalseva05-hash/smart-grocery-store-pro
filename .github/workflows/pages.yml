@@ -40,7 +40,8 @@ jobs:
           deno check --node-modules-dir=auto \
             functions/razorpay-subscription-checkout/index.ts \
             functions/razorpay-verify-subscription-payment/index.ts \
-            functions/razorpay-payment-webhook/index.ts
+            functions/razorpay-payment-webhook/index.ts \
+            functions/generate-shopkeeper-app/index.ts
 
       - name: Validate website files and inline JavaScript
         run: |
