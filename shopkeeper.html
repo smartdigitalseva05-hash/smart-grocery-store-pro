@@ -586,7 +586,7 @@ async function boot(){
 }
 async function loadRestaurantTables(){
  const panel=$("restaurantTablesPanel"),list=$("restaurantTablesList");if(!panel||!list)return;
- const isRestaurant=!!currentShop;
+ const isRestaurant=!!currentShop&&currentShop.business_type==="restaurant";
  panel.classList.toggle("hidden",!isRestaurant);if(!isRestaurant)return;
  list.replaceChildren();say("restaurantTablesMessage","Loading restaurant tables…");
  const {data,error}=await db.from("restaurant_tables").select("id,table_code,capacity,table_status,is_enabled").eq("shop_id",currentShop.id).order("table_code");
@@ -671,7 +671,7 @@ function addRestaurantKitchenLine(){
 async function loadRestaurantMenu(){
  const panel=$("restaurantKitchenPanel"),list=$("restaurantMenuList");
  if(!panel||!list)return;
- const active=!!currentShop;panel.classList.toggle("hidden",!active);if(!active)return;
+ const active=!!currentShop&&currentShop.business_type==="restaurant";panel.classList.toggle("hidden",!active);if(!active)return;
  list.replaceChildren();restaurantMenuOptions=[];say("restaurantMenuMessage","Loading menu…");
  const {data,error}=await db.from("restaurant_menu_items").select("id,name,category,description,price,prep_time_minutes,is_available").eq("shop_id",currentShop.id).order("category").order("name");
  if(error){say("restaurantMenuMessage","Menu load failed: "+error.message,true);return}
