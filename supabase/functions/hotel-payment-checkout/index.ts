@@ -86,6 +86,7 @@ const handler = withSupabase({ auth: "none" }, async (req) => {
       orderId = concurrent.gateway_order_id || "";
     } else paymentId = created.id;
   }
+  if (!paymentId) return reply(503, { error: "Could not prepare the hotel payment. Please retry." });
   if (!orderId) {
     const receipt = "hotel_" + paymentId.replaceAll("-", "").slice(0, 32);
     try {
