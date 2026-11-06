@@ -41,6 +41,8 @@ jobs:
             functions/razorpay-subscription-checkout/index.ts \
             functions/razorpay-verify-subscription-payment/index.ts \
             functions/razorpay-payment-webhook/index.ts \
+            functions/hotel-payment-checkout/index.ts \
+            functions/hotel-payment-verify/index.ts \
             functions/generate-shopkeeper-app/index.ts
 
       - name: Validate website files and inline JavaScript
