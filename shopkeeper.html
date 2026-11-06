@@ -1100,45 +1100,7 @@ function printShopReferralQr(){
  if(!shopQrDataUrl)return say("sfLinkMessage","QR is not ready yet. Refresh the shop page and try again.",true);
  const w=window.open("","_blank");if(!w)return say("sfLinkMessage","Allow pop-ups to print the QR code.",true);
  const title=String(currentShop?.name||"My Shop").replace(/[<>&"]/g,"");
- w.document.write("<!doctype html><html><head><title>Customer QR</title><meta name='viewport' content='width=device-width,initial-scale=1'><style>body{font-family:Arial;text-align:center;padding:24px;color:#111}img{width:280px;height:280px;image-rendering:pixelated}h1{font-size:22px}</style></head><body><h1>"+title+"</h1><p>Scan to connect with our shop</p><img alt='Shop QR code' src='"+shopQrDataUrl+"'><p>"+shopPublicUrl(currentShop)+"</p><script>window.onload=()=>window.print()<\/script><script>
-(()=>{
- "use strict";
- const $=id=>document.getElementById(id),form=$("officePayrollForm");
- if(!form)return;
- const num=id=>{const v=$(id)?.value;return v===""||v==null?null:Number(v)};
- const money=n=>Math.round((Number(n)+Number.EPSILON)*100)/100;
- function calculate(){
-  const basic=num("officePayrollBasic")||0,additions=num("officePayrollAdditions")||0,gross=basic+additions;
-  const pfOn=$("officePayrollPfApplicable").checked,esiOn=$("officePayrollEsiApplicable").checked;
-  const pfBase=num("officePayrollPfWageBase")??basic,pfCap=num("officePayrollPfCeiling"),pfRate=num("officePayrollPfRate"),employerPfRate=num("officePayrollEmployerPfRate");
-  const esiBase=num("officePayrollEsiWageBase")??gross,esiCeiling=num("officePayrollEsiCeiling"),esiRate=num("officePayrollEsiRate"),employerEsiRate=num("officePayrollEmployerEsiRate");
-  const vals=[pfBase,pfCap,pfRate,employerPfRate,esiBase,esiCeiling,esiRate,employerEsiRate];
-  if(vals.some(v=>v===null||!Number.isFinite(v)||v<0)||pfRate>100||employerPfRate>100||esiRate>100||employerEsiRate>100){
-   $("officePayrollRulePreview").textContent="Enter valid non-negative wage bases, ceilings and rates (0–100%).";return;
-  }
-  const pfWage=Math.min(pfBase,pfCap),pfEmployee=pfOn?Math.round(pfWage*pfRate/100):0,pfEmployer=pfOn?Math.round(pfWage*employerPfRate/100):0;
-  const esiEmployee=esiOn?Math.round(esiBase*esiRate/100):0,esiEmployer=esiOn?Math.round(esiBase*employerEsiRate/100):0;
-  $("officePayrollPf").value=String(pfEmployee);$("officePayrollEmployerPf").value=String(pfEmployer);
-  $("officePayrollEsi").value=String(esiEmployee);$("officePayrollEmployerEsi").value=String(esiEmployer);
-  const warnings=[];
-  if(pfOn&&pfBase>pfCap)warnings.push("PF capped to ₹"+pfCap+" wage base");
-  if(esiOn&&esiBase>esiCeiling)warnings.push("ESI base is above the coverage ceiling; verify continued coverage before deduction");
-  if(!pfOn)warnings.push("PF not applied (not selected)");
-  if(!esiOn)warnings.push("ESI not applied (not selected)");
-  $("officePayrollRulePreview").textContent="Calculated: employee PF ₹"+pfEmployee+", employer PF ₹"+pfEmployer+", employee ESI ₹"+esiEmployee+", employer ESI ₹"+esiEmployer+". "+warnings.join("; ");
-  window.SMART_PAYROLL_RULE_SNAPSHOT={
-   rule_engine:"configurable-pf-esi-v1",
-   pf:{applicable:pfOn,wage_base:pfBase,contribution_wage:pfWage,ceiling:pfCap,employee_rate_percent:pfRate,employer_rate_percent:employerPfRate,employee_amount:pfEmployee,employer_amount:pfEmployer},
-   esi:{applicable:esiOn,wage_base:esiBase,coverage_ceiling:esiCeiling,employee_rate_percent:esiRate,employer_rate_percent:employerEsiRate,employee_amount:esiEmployee,employer_amount:esiEmployer},
-   tds_mode:"manual_employee_specific_annual_projection",
-   rounding:"nearest_rupee_for_pf_esi"
-  };
- }
- ["officePayrollBasic","officePayrollAdditions","officePayrollPfApplicable","officePayrollPfWageBase","officePayrollPfCeiling","officePayrollPfRate","officePayrollEmployerPfRate","officePayrollEsiApplicable","officePayrollEsiWageBase","officePayrollEsiCeiling","officePayrollEsiRate","officePayrollEmployerEsiRate"].forEach(id=>$(id)?.addEventListener("input",calculate));
- form.addEventListener("submit",calculate,true);
- calculate();
-})();
-</script>
+ w.document.write("<!doctype html><html><head><title>Customer QR</title><meta name='viewport' content='width=device-width,initial-scale=1'><style>body{font-family:Arial;text-align:center;padding:24px;color:#111}img{width:280px;height:280px;image-rendering:pixelated}h1{font-size:22px}</style></head><body><h1>"+title+"</h1><p>Scan to connect with our shop</p><img alt='Shop QR code' src='"+shopQrDataUrl+"'><p>"+shopPublicUrl(currentShop)+"</p><script>window.onload=()=>window.print()<\/script>
 </body></html>");w.document.close();
 }function csvCell(value){
  const raw=String(value??"");
@@ -2221,4 +2183,43 @@ async function loadShopData(){
    }
  });
 })();
-</script></body></html>
+</script><script>
+(()=>{
+ "use strict";
+ const form=document.getElementById("officePayrollForm");
+ if(!form)return;
+ const $=id=>document.getElementById(id);
+ const num=id=>{const v=$(id)?.value;return v===""||v==null?null:Number(v)};
+ function calculate(){
+  const basic=num("officePayrollBasic")||0,additions=num("officePayrollAdditions")||0,gross=basic+additions;
+  const pfOn=$("officePayrollPfApplicable").checked,esiOn=$("officePayrollEsiApplicable").checked;
+  const pfBase=num("officePayrollPfWageBase")??basic,pfCap=num("officePayrollPfCeiling"),pfRate=num("officePayrollPfRate"),employerPfRate=num("officePayrollEmployerPfRate");
+  const esiBase=num("officePayrollEsiWageBase")??gross,esiCeiling=num("officePayrollEsiCeiling"),esiRate=num("officePayrollEsiRate"),employerEsiRate=num("officePayrollEmployerEsiRate");
+  const vals=[pfBase,pfCap,pfRate,employerPfRate,esiBase,esiCeiling,esiRate,employerEsiRate];
+  if(vals.some(v=>v===null||!Number.isFinite(v)||v<0)||pfRate>100||employerPfRate>100||esiRate>100||employerEsiRate>100){
+   $("officePayrollRulePreview").textContent="Enter valid non-negative wage bases, ceilings and rates (0–100%).";return;
+  }
+  const pfWage=Math.min(pfBase,pfCap),pfEmployee=pfOn?Math.round(pfWage*pfRate/100):0,pfEmployer=pfOn?Math.round(pfWage*employerPfRate/100):0;
+  const esiEmployee=esiOn?Math.round(esiBase*esiRate/100):0,esiEmployer=esiOn?Math.round(esiBase*employerEsiRate/100):0;
+  $("officePayrollPf").value=String(pfEmployee);$("officePayrollEmployerPf").value=String(pfEmployer);
+  $("officePayrollEsi").value=String(esiEmployee);$("officePayrollEmployerEsi").value=String(esiEmployer);
+  const warnings=[];
+  if(pfOn&&pfBase>pfCap)warnings.push("PF capped to ₹"+pfCap+" wage base");
+  if(esiOn&&esiBase>esiCeiling)warnings.push("ESI base is above the coverage ceiling; verify continued coverage before deduction");
+  if(!pfOn)warnings.push("PF not applied (not selected)");
+  if(!esiOn)warnings.push("ESI not applied (not selected)");
+  $("officePayrollRulePreview").textContent="Calculated: employee PF ₹"+pfEmployee+", employer PF ₹"+pfEmployer+", employee ESI ₹"+esiEmployee+", employer ESI ₹"+esiEmployer+". "+warnings.join("; ");
+  window.SMART_PAYROLL_RULE_SNAPSHOT={
+   rule_engine:"configurable-pf-esi-v1",
+   pf:{applicable:pfOn,wage_base:pfBase,contribution_wage:pfWage,ceiling:pfCap,employee_rate_percent:pfRate,employer_rate_percent:employerPfRate,employee_amount:pfEmployee,employer_amount:pfEmployer},
+   esi:{applicable:esiOn,wage_base:esiBase,coverage_ceiling:esiCeiling,employee_rate_percent:esiRate,employer_rate_percent:employerEsiRate,employee_amount:esiEmployee,employer_amount:esiEmployer},
+   tds_mode:"manual_employee_specific_annual_projection",
+   rounding:"nearest_rupee_for_pf_esi"
+  };
+ }
+ ["officePayrollBasic","officePayrollAdditions","officePayrollPfApplicable","officePayrollPfWageBase","officePayrollPfCeiling","officePayrollPfRate","officePayrollEmployerPfRate","officePayrollEsiApplicable","officePayrollEsiWageBase","officePayrollEsiCeiling","officePayrollEsiRate","officePayrollEmployerEsiRate"].forEach(id=>$(id)?.addEventListener("input",calculate));
+ form.addEventListener("submit",calculate,true);
+ calculate();
+})();
+</script>
+</body></html>
