@@ -9,10 +9,10 @@ h1{font-size:26px;line-height:1.2;margin:0 0 8px}.muted{color:var(--muted)}.noti
 label{display:block;font-weight:650;margin:14px 0 6px}input,select,textarea{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;background:#fff;color:var(--ink)}
 button{width:100%;border:0;border-radius:11px;background:var(--brand);color:#fff;padding:14px;font:inherit;font-weight:700;margin-top:18px;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
 #message{margin-top:14px;white-space:pre-wrap}.error{color:#b42318}.success{color:#067647}.small{font-size:13px;color:var(--muted)}
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://checkout.razorpay.com/v1/checkout.js"></script></head>
 <body><main><section class="card">
 <p class="small">SMART BUSINESS PRO · HOTEL BOOKING</p><h1>Request a Hotel Room</h1><p class="muted" id="shopInfo">Loading hotel details…</p>
-<div class="notice">Choose a room type and dates to send a booking request. Your room is <strong>not confirmed</strong> until the hotel assigns an available room and confirms your request. No payment is taken on this page.</div>
+<div class="notice">Choose a room type and dates to send a booking request. Your room is <strong>not confirmed</strong> until the hotel assigns an available room and confirms your request. Once approved, you can pay the confirmed room total securely online.</div>
 <form id="bookingForm">
 <label for="roomType">Preferred room type</label><select id="roomType" required disabled><option value="">Loading room types…</option></select>
 <label for="guestName">Guest name</label><input id="guestName" maxlength="120" autocomplete="name" required>
@@ -22,7 +22,7 @@ button{width:100%;border:0;border-radius:11px;background:var(--brand);color:#fff
 <label for="checkOut">Check-out date</label><input id="checkOut" type="date" required>
 <label for="notes">Special request (optional)</label><textarea id="notes" maxlength="500" rows="3" placeholder="Arrival time or other request"></textarea>
 <button id="submitButton" type="submit" disabled>Send booking request</button></form>
-<div id="message" role="status" aria-live="polite"></div>
+<div id="message" role="status" aria-live="polite"></div><div id="paymentPanel" class="notice" hidden><strong>Booking payment</strong><p id="paymentInfo" class="small">After the hotel approves your booking, check here to pay the confirmed total.</p><button id="checkPaymentButton" type="button">Check approval & pay online</button></div>
 <p class="small">Room availability and final rate are confirmed by the hotel. Please do not travel until you receive confirmation.</p>
 </section></main>
 <script>
@@ -31,10 +31,40 @@ button{width:100%;border:0;border-radius:11px;background:var(--brand);color:#fff
  const SUPABASE_URL="https://wqlopfftzvsjsxmrmxeq.supabase.co";
  const SUPABASE_KEY="sb_publishable_qVe9C5dI9jDxP6BpYmJByw_sThouhqX";
  const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),$=id=>document.getElementById(id);
- const shopId=new URLSearchParams(location.search).get("shop_id");let shop=null,customerId=null;
+ const params=new URLSearchParams(location.search),shopId=params.get("shop_id");let shop=null,customerId=null,activeRequestId=params.get("request_id")||null;
  function message(text,bad=false){$("message").textContent=text;$("message").className=bad?"error":""}
  function localDate(date){return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,10)}
  function setDateBounds(){const today=new Date();$("checkIn").min=localDate(today);$("checkIn").max=localDate(new Date(today.getTime()+90*86400000));$("checkOut").min=localDate(new Date(today.getTime()+86400000));$("checkOut").max=localDate(new Date(today.getTime()+90*86400000))}
+ async function checkApprovalAndPay(){
+  if(!activeRequestId||!/^[0-9a-f-]{36}$/i.test(activeRequestId)){message("Booking reference is missing. Submit a booking request first.",true);return}
+  $("checkPaymentButton").disabled=true;$("paymentPanel").hidden=false;$("paymentInfo").textContent="Checking hotel approval and preparing the secure payment…";
+  try{
+   const {data,error}=await db.functions.invoke("hotel-payment-checkout",{body:{booking_request_id:activeRequestId}});
+   if(error){let detail=error.message||"Payment status could not be checked.";try{const body=await error.context?.json();if(body?.error)detail=body.error}catch{}$("paymentInfo").textContent=detail;return}
+   if(data?.verified){$("paymentInfo").textContent="Payment already verified. Your hotel payment is recorded.";message("Hotel payment verified successfully.");return}
+   if(!data?.order_id||!data?.payment_id){$("paymentInfo").textContent=data?.error||"The hotel has not approved this request yet. Check again later.";return}
+   if(typeof window.Razorpay!=="function"){$("paymentInfo").textContent="Secure payment window did not load. Refresh this page and try again.";return}
+   $("paymentInfo").textContent="Confirmed total: ₹"+(Number(data.amount)/100).toFixed(2)+". Complete payment in the secure Razorpay window.";
+   const checkout=new window.Razorpay({
+    key:data.key_id,amount:data.amount,currency:data.currency,order_id:data.order_id,name:data.name,description:data.description,
+    handler:async response=>{
+     $("paymentInfo").textContent="Payment received by gateway. Verifying securely…";
+     const {data:verified,error:verifyError}=await db.functions.invoke("hotel-payment-verify",{body:{
+      payment_id:data.payment_id,booking_request_id:activeRequestId,razorpay_order_id:response.razorpay_order_id,
+      razorpay_payment_id:response.razorpay_payment_id,razorpay_signature:response.razorpay_signature
+     }});
+     if(verifyError||!verified?.verified){$("paymentInfo").textContent=verified?.error||verifyError?.message||"Payment verification is pending. Do not pay again; use Check approval & pay online to retry verification.";return}
+     $("paymentInfo").textContent="Payment verified successfully. Keep your booking reference for hotel check-in.";
+     message("Payment verified successfully. Your hotel payment is recorded.");$("message").className="success";
+    },
+    modal:{ondismiss:()=>{$("paymentInfo").textContent="Payment window closed. No payment is confirmed until gateway verification succeeds."}},
+    theme:{color:"#2459d3"}
+   });
+   checkout.open();
+  }catch(error){$("paymentInfo").textContent="Could not prepare payment: "+(error?.message||"Please retry later.")}
+  finally{$("checkPaymentButton").disabled=false}
+ }
+ $("checkPaymentButton").addEventListener("click",checkApprovalAndPay);
  async function boot(){
   if(!shopId||!/^[0-9a-f-]{36}$/i.test(shopId)){$("shopInfo").textContent="This booking link is incomplete or invalid.";message("Ask the hotel for its correct booking link.",true);return}
   const [{data,error},{data:sessionData}]=await Promise.all([db.from("shops").select("id,name,city").eq("id",shopId).maybeSingle(),db.auth.getSession()]);
@@ -56,8 +86,8 @@ button{width:100%;border:0;border-radius:11px;background:var(--brand);color:#fff
   $("submitButton").disabled=true;message("Sending your booking request…");const id=crypto.randomUUID();
   const {error}=await db.from("hotel_booking_requests").insert({id,shop_id:shop.id,customer_id:customerId,requested_room_type:type,guest_name:name,guest_phone:phone,guest_count:guests,check_in:checkIn,check_out:checkOut,notes:notes||null});
   $("submitButton").disabled=false;if(error){message("Your booking request could not be sent: "+error.message,true);return}
-  $("bookingForm").reset();$("guestCount").value="1";setDateBounds();message("Booking request sent to "+shop.name+".\nReference: "+id.slice(0,8).toUpperCase()+"\nThe hotel will check room availability and contact you to confirm.");$("message").className="success";
+  activeRequestId=id;params.set("request_id",id);history.replaceState(null,"",location.pathname+"?"+params.toString());$("paymentPanel").hidden=false;$("bookingForm").reset();$("guestCount").value="1";setDateBounds();message("Booking request sent to "+shop.name+".\nReference: "+id.slice(0,8).toUpperCase()+"\nThe hotel will check availability. Once approved, use the payment section below.");$("message").className="success";$("paymentInfo").textContent="Your request is waiting for hotel approval. You can safely revisit this page using the same booking link.";
  });
- boot().catch(error=>message("Could not load the booking page: "+error.message,true));
+ boot().then(()=>{if(activeRequestId){$("paymentPanel").hidden=false;checkApprovalAndPay()}}).catch(error=>message("Could not load the booking page: "+error.message,true));
 })();
 </script></body></html>
