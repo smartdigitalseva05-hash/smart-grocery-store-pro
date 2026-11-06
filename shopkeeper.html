@@ -1019,7 +1019,7 @@ async function loadRepairWarranties(){
  if(jobs.error){say("repairWarrantyMessage","Repair jobs could not load: "+jobs.error.message,true);return}
  const previous=jobSelect.value;jobSelect.replaceChildren(new Option("Choose service job",""));
  const warrantyJobIds=new Set((warranties.data||[]).map(w=>w.service_job_id));
- (jobs.data||[]).filter(j=>!warrantyJobIds.has(j.id)).forEach(j=>jobSelect.add(new Option(j.customer_name+" · "+j.device_name+" · "+j.status,j.id)));
+ (jobs.data||[]).filter(j=>["ready","delivered"].includes(j.status)&&!warrantyJobIds.has(j.id)).forEach(j=>jobSelect.add(new Option(j.customer_name+" · "+j.device_name+" · "+j.status,j.id)));
  if((jobs.data||[]).some(j=>j.id===previous&&!warrantyJobIds.has(j.id)))jobSelect.value=previous;
  if(warranties.error){say("repairWarrantyMessage","Warranty register could not load: "+warranties.error.message,true);return}
  const jobMap=new Map((jobs.data||[]).map(j=>[j.id,j]));list.replaceChildren();
