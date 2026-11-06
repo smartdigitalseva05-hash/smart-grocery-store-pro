@@ -344,11 +344,11 @@ a{color:#8ce2b3}
  <form id="officePayrollForm" class="formgrid">
   <div class="product" style="grid-column:1/-1">
    <strong>Configurable PF / ESI calculator</strong>
-   <p class="sub">India reference settings only. Select applicability only after confirming employee eligibility. PF default reference: 12% employee + 12% employer, wage ceiling ₹25,000 effective 17 Sep 2026. ESI reference: 0.75% employee + 3.25% employer; coverage wage ceiling ₹21,000. Rates and wage bases are editable; TDS remains manually entered because annual tax regime/declarations are employee-specific.</p>
+   <p class="sub">India reference settings only. Select applicability only after confirming employee eligibility. PF default reference: 12% employee + 12% employer. The ₹25,000 figure effective 17 Sep 2026 is the mandatory coverage wage ceiling, not a universal contribution cap for every existing/high-wage member; adjust the contribution cap and wage base to the employee\u2019s actual scheme and employer policy. ESI reference: 0.75% employee + 3.25% employer; coverage wage ceiling ₹21,000. Rates and wage bases are editable; TDS remains manually entered because annual tax regime/declarations are employee-specific.</p>
    <div class="formgrid">
     <label class="field"><input id="officePayrollPfApplicable" type="checkbox"> PF coverage confirmed for this employee</label>
     <label class="field">PF wage base (₹; blank = basic salary)<input id="officePayrollPfWageBase" type="number" min="0" max="100000000" step="0.01" placeholder="Use basic salary"></label>
-    <label class="field">PF wage ceiling (₹)<input id="officePayrollPfCeiling" type="number" min="0" step="1" value="25000"></label>
+    <label class="field">PF contribution cap (₹; adjust for existing / higher-wage members)<input id="officePayrollPfCeiling" type="number" min="0" step="1" value="25000"></label>
     <label class="field">Employee PF rate (%)<input id="officePayrollPfRate" type="number" min="0" max="100" step="0.01" value="12"></label>
     <label class="field">Employer PF rate (%)<input id="officePayrollEmployerPfRate" type="number" min="0" max="100" step="0.01" value="12"></label>
     <label class="field"><input id="officePayrollEsiApplicable" type="checkbox"> ESI coverage confirmed for this employee</label>
