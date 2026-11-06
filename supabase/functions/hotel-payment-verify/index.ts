@@ -40,6 +40,13 @@ const handler = withSupabase({ auth: "none" }, async (req) => {
     .eq("id",body.payment_id).eq("booking_request_id",body.booking_request_id).maybeSingle();
   if(error||!p)return reply(404,{verified:false,error:"Hotel payment reference not found."});
   if(p.payment_status==="verified")return reply(200,{verified:true,payment_id:p.id,message:"Payment already verified."});
+  const { error: limitError } = await admin.rpc("consume_payment_endpoint_rate_limit", {
+    p_user_id: p.booking_request_id, p_action: "verify",
+  });
+  if (limitError) {
+    if (limitError.code === "PT429") return reply(429,{verified:false,error:"Too many verification attempts for this booking. Please wait 15 minutes and retry."});
+    return reply(503,{verified:false,error:"Payment protection is temporarily unavailable. Please retry later."});
+  }
   if(p.payment_status!=="pending"||p.gateway!=="razorpay"||p.currency!=="INR"||p.gateway_order_id!==body.razorpay_order_id||!p.reservation_id)
     return reply(409,{verified:false,error:"Payment does not match the approved hotel reservation."});
   const expected=await hmacHex(keySecret,p.gateway_order_id+"|"+body.razorpay_payment_id);
