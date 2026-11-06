@@ -397,6 +397,19 @@ a{color:#8ce2b3}
  <div class="product" style="margin-top:12px"><div class="row"><h2>Repair requests & jobs</h2><button id="electronicsServiceJobsRefresh" type="button" class="secondary">Refresh</button></div>
   <div id="electronicsServiceJobsMessage" class="notice" role="status"></div><div id="electronicsServiceJobsList" class="products"></div>
  </div>
+ <div class="product" style="margin-top:12px"><h2>Warranty register & claims</h2>
+  <p class="sub">Issue a warranty for a completed service job, track expiry and record customer claims.</p>
+  <form id="repairWarrantyForm" class="formgrid">
+   <label class="field">Service job<select id="repairWarrantyJob" required><option value="">Loading repair jobs…</option></select></label>
+   <label class="field">Warranty number<input id="repairWarrantyNumber" maxlength="80" required></label>
+   <label class="field">Start date<input id="repairWarrantyStart" type="date" required></label>
+   <label class="field">Expiry date<input id="repairWarrantyExpiry" type="date" required></label>
+   <label class="field">Coverage<textarea id="repairWarrantyCoverage" maxlength="1000" rows="2" required></textarea></label>
+   <label class="field">Terms<textarea id="repairWarrantyTerms" maxlength="1500" rows="2"></textarea></label>
+   <div class="actions" style="align-items:end"><button id="repairWarrantyAdd" type="submit">Issue warranty</button><button id="repairWarrantyRefresh" type="button" class="secondary">Refresh warranties</button></div>
+  </form>
+  <div id="repairWarrantyMessage" class="notice" role="status"></div><div id="repairWarrantyList" class="products"></div>
+ </div>
 </div><div class="panel hidden" id="medicalManagementPanel">
  <div class="row"><div><h1>Medical Store · Batch & Expiry</h1><p class="muted">Track medicine batch numbers, stock, MRP, supplier and expiry alerts. This is an inventory aid, not a substitute for required pharmacy, prescription or regulatory systems.</p></div><span class="pill">Batch register</span></div>
  <form id="medicalBatchForm">
@@ -419,6 +432,17 @@ a{color:#8ce2b3}
  <div id="medicalMessage" class="notice" role="status"></div>
  <h2 style="margin-top:22px">Batch stock & expiry alerts</h2><button id="medicalRefresh" type="button" class="secondary">Refresh batches</button>
  <div id="medicalBatchList" class="products"></div>
+ <h2 style="margin-top:24px">Batch compliance register</h2>
+ <p class="sub">Record license, storage, cold-chain, recall and expiry reviews. This is an internal checklist, not legal/regulatory certification.</p>
+ <form id="medicalComplianceForm" class="formgrid">
+  <label class="field">Medicine batch<select id="medicalComplianceBatch" required><option value="">Load a batch first</option></select></label>
+  <label class="field">Check type<select id="medicalComplianceType"><option value="license_review">License review</option><option value="prescription_review">Prescription review</option><option value="cold_chain">Cold-chain</option><option value="storage_condition">Storage condition</option><option value="recall_check">Recall check</option><option value="expiry_review">Expiry review</option><option value="other">Other</option></select></label>
+  <label class="field">Result<select id="medicalComplianceResult"><option value="pass">Pass</option><option value="fail">Fail</option><option value="action_required">Action required</option><option value="not_applicable">Not applicable</option></select></label>
+  <label class="field">Evidence reference<input id="medicalComplianceEvidence" maxlength="180" placeholder="Document / register reference"></label>
+  <label class="field">Notes<textarea id="medicalComplianceNotes" maxlength="1000" rows="2"></textarea></label>
+  <div class="actions" style="align-items:end"><button id="medicalComplianceAdd" type="submit">Save compliance check</button><button id="medicalComplianceRefresh" type="button" class="secondary">Refresh checks</button></div>
+ </form>
+ <div id="medicalComplianceMessage" class="notice" role="status"></div><div id="medicalComplianceList" class="products"></div>
 </div><div class="panel hidden" id="digitalSevaPanel">
  <div class="row"><div><h1>Digital Seva · Application Tracking</h1><p class="muted">Register customer requests, maintain document checklists, track progress and record service fees.</p></div><span class="pill">Service desk</span></div>
  <div class="product"><h2>Customer application request link</h2><p class="sub">Share this page with applicants. It collects service requests only; do not ask customers to enter identity numbers, passwords or OTPs in the form.</p><div class="formgrid"><label class="field">Public request link<input id="digitalServicePublicUrl" type="url" readonly></label><div class="actions" style="align-items:end"><button id="digitalServicePublicCopy" type="button" class="secondary">Copy request link</button></div></div></div>
@@ -971,6 +995,38 @@ async function loadMedicalBatches(){
   actions.append(qty,status);card.append(title,meta,details,actions);list.append(card);
  });
 }
+async function loadMedicalCompliance(){
+ const batchSelect=$("medicalComplianceBatch"),list=$("medicalComplianceList");if(!batchSelect||!list||!currentShop)return;
+ const [batches,checks]=await Promise.all([
+  db.from("medical_inventory_batches").select("id,medicine_name,batch_number").eq("shop_id",currentShop.id).order("expiry_date"),
+  db.from("medical_batch_compliance_checks").select("id,batch_id,check_type,result,checked_at,notes,evidence_reference").eq("shop_id",currentShop.id).order("checked_at",{ascending:false}).limit(100)
+ ]);
+ if(batches.error){say("medicalComplianceMessage","Could not load batches: "+batches.error.message,true);return}
+ const prior=batchSelect.value;batchSelect.replaceChildren(new Option("Choose medicine batch",""));
+ (batches.data||[]).forEach(b=>batchSelect.add(new Option(b.medicine_name+" · "+b.batch_number,b.id)));
+ if((batches.data||[]).some(b=>b.id===prior))batchSelect.value=prior;
+ if(checks.error){say("medicalComplianceMessage","Compliance checks could not load: "+checks.error.message,true);return}
+ const names=new Map((batches.data||[]).map(b=>[b.id,b.medicine_name+" · "+b.batch_number]));list.replaceChildren();
+ (checks.data||[]).forEach(c=>{const card=document.createElement("article");card.className="product";const title=document.createElement("div");title.className="product-title";title.textContent=(names.get(c.batch_id)||"Medicine batch")+" · "+c.check_type.replace(/_/g," ");const meta=document.createElement("div");meta.className="sub";meta.textContent=c.result.toUpperCase()+" · "+new Date(c.checked_at).toLocaleString()+(c.evidence_reference?" · Evidence: "+c.evidence_reference:"");const note=document.createElement("div");note.className="sub";note.textContent=c.notes||"No notes";card.append(title,meta,note);list.append(card)});
+ say("medicalComplianceMessage",(checks.data||[]).length+" compliance check(s) shown.");
+}
+async function loadRepairWarranties(){
+ const list=$("repairWarrantyList"),jobSelect=$("repairWarrantyJob");if(!list||!jobSelect||!currentShop)return;
+ const [jobs,warranties]=await Promise.all([
+  db.from("electronics_service_jobs").select("id,customer_name,device_name,status").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(200),
+  db.from("repair_warranty_records").select("id,service_job_id,warranty_number,issued_at,starts_on,expires_on,coverage_description,terms,status,claim_notes").eq("shop_id",currentShop.id).order("expires_on",{ascending:true}).limit(200)
+ ]);
+ if(jobs.error){say("repairWarrantyMessage","Repair jobs could not load: "+jobs.error.message,true);return}
+ const previous=jobSelect.value;jobSelect.replaceChildren(new Option("Choose service job",""));
+ const warrantyJobIds=new Set((warranties.data||[]).map(w=>w.service_job_id));
+ (jobs.data||[]).filter(j=>["ready","delivered"].includes(j.status)&&!warrantyJobIds.has(j.id)).forEach(j=>jobSelect.add(new Option(j.customer_name+" · "+j.device_name+" · "+j.status,j.id)));
+ if((jobs.data||[]).some(j=>j.id===previous&&!warrantyJobIds.has(j.id)))jobSelect.value=previous;
+ if(warranties.error){say("repairWarrantyMessage","Warranty register could not load: "+warranties.error.message,true);return}
+ const jobMap=new Map((jobs.data||[]).map(j=>[j.id,j]));list.replaceChildren();
+ (warranties.data||[]).forEach(w=>{const job=jobMap.get(w.service_job_id)||{};const card=document.createElement("article");card.className="product";const title=document.createElement("div");title.className="product-title";title.textContent=w.warranty_number+" · "+(job.device_name||"Service job");const meta=document.createElement("div");meta.className="sub";meta.textContent="Customer "+(job.customer_name||"—")+" · "+w.starts_on+" to "+w.expires_on+" · "+w.status.toUpperCase();const coverage=document.createElement("div");coverage.className="sub";coverage.textContent=w.coverage_description+(w.terms?" · Terms: "+w.terms:"");card.append(title,meta,coverage);
+  const actions=document.createElement("div");actions.className="formgrid";const status=document.createElement("select");["active","claimed","expired","void"].forEach(v=>status.add(new Option(v.toUpperCase(),v)));status.value=w.status;status.disabled=!canManageProducts();const claim=document.createElement("textarea");claim.rows=2;claim.maxLength=1000;claim.placeholder="Claim details / resolution notes";claim.value=w.claim_notes||"";claim.disabled=!canManageProducts();const save=document.createElement("button");save.type="button";save.textContent="Save claim/status";save.disabled=!canManageProducts();save.addEventListener("click",async()=>{save.disabled=true;const {error}=await db.from("repair_warranty_records").update({status:status.value,claim_notes:claim.value.trim()||null,resolved_at:status.value==="expired"||status.value==="void"?new Date().toISOString():null,updated_at:new Date().toISOString()}).eq("id",w.id).eq("shop_id",currentShop.id);if(error){say("repairWarrantyMessage","Warranty update failed: "+error.message,true);save.disabled=!canManageProducts();return}say("repairWarrantyMessage","Warranty updated.");await loadRepairWarranties()});actions.append(status,claim,save);card.append(actions);list.append(card)});
+ say("repairWarrantyMessage",(warranties.data||[]).length+" warranty record(s) shown.");
+}
 async function loadDigitalApplications(){
  const panel=$("digitalSevaPanel"),list=$("digitalApplicationList");if(!panel||!list)return;
  const active=!!currentShop;panel.classList.toggle("hidden",!active);if(!active)return;
@@ -1395,7 +1451,9 @@ async function loadShopData(){
   await loadOfficeTasks();
   await loadElectronicsInventory();
   await loadElectronicsServiceJobs();
+  await loadRepairWarranties();
   await loadMedicalBatches();
+  await loadMedicalCompliance();
   await loadDigitalApplications();
   await loadGroceryProcurement();await loadCustomerCredit();
   const {data:trial,error:trialError}=await db.from("shop_trials").select("status,started_at,ends_at").eq("shop_id",currentShop.id).maybeSingle();
@@ -1922,6 +1980,10 @@ async function loadShopData(){
  $("electronicsRepairCopy").addEventListener("click",async()=>{const value=$("electronicsRepairUrl").value;if(!value)return;try{await navigator.clipboard.writeText(value);say("electronicsServiceJobsMessage","Repair request link copied. Share it with customers.")}catch{const input=$("electronicsRepairUrl");input.focus();input.select();const copied=document.execCommand("copy");say("electronicsServiceJobsMessage",copied?"Repair request link copied.":"Copy was blocked. Select and copy the link manually.",!copied)}});
  $("medicalBatchForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||!canManageProducts()){say("medicalMessage","An active medical-store subscription is required.",true);return}const name=$("medicalMedicineName").value.trim(),brand=$("medicalBrand").value.trim(),batch=$("medicalBatchNumber").value.trim(),mfg=$("medicalManufactured").value||null,expiry=$("medicalExpiry").value,quantity=Number($("medicalQuantity").value),purchase=$("medicalPurchasePrice").value===""?null:Number($("medicalPurchasePrice").value),mrp=$("medicalMrp").value===""?null:Number($("medicalMrp").value);if(!name||!batch||!expiry||!Number.isInteger(quantity)||quantity<0||(mfg&&expiry<mfg)||(purchase!==null&&(!Number.isFinite(purchase)||purchase<0))||(mrp!==null&&(!Number.isFinite(mrp)||mrp<0))){say("medicalMessage","Check medicine name, batch, expiry, quantity and price details.",true);return}$("medicalBatchAdd").disabled=true;const {error}=await db.from("medical_inventory_batches").insert({shop_id:currentShop.id,medicine_name:name,brand:brand||null,batch_number:batch,manufactured_on:mfg,expiry_date:expiry,quantity,purchase_price:purchase,mrp,supplier:$("medicalSupplier").value.trim()||null,storage_location:$("medicalStorage").value.trim()||null,prescription_required:$("medicalPrescriptionRequired").checked,notes:$("medicalNotes").value.trim()||null});$("medicalBatchAdd").disabled=false;if(error){say("medicalMessage","Could not save batch: "+error.message,true);return}$("medicalBatchForm").reset();$("medicalQuantity").value="0";say("medicalMessage","Medicine batch saved.");await loadMedicalBatches()});
  $("medicalRefresh").addEventListener("click",loadMedicalBatches);
+ $("medicalComplianceRefresh").addEventListener("click",loadMedicalCompliance);
+ $("medicalComplianceForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||!canManageProducts()){say("medicalComplianceMessage","An active subscribed medical shop is required.",true);return}const batch=$("medicalComplianceBatch").value;if(!batch){say("medicalComplianceMessage","Choose a medicine batch.",true);return}const button=$("medicalComplianceAdd");button.disabled=true;const {error}=await db.from("medical_batch_compliance_checks").insert({shop_id:currentShop.id,batch_id:batch,check_type:$("medicalComplianceType").value,result:$("medicalComplianceResult").value,notes:$("medicalComplianceNotes").value.trim()||null,evidence_reference:$("medicalComplianceEvidence").value.trim()||null,checked_by:(await db.auth.getUser()).data.user?.id||null});button.disabled=false;if(error){say("medicalComplianceMessage","Could not save compliance check: "+error.message,true);return} $("medicalComplianceForm").reset();say("medicalComplianceMessage","Compliance check recorded.");await loadMedicalCompliance()});
+ $("repairWarrantyRefresh").addEventListener("click",loadRepairWarranties);
+ $("repairWarrantyForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||!canManageProducts()){say("repairWarrantyMessage","An active subscribed repair shop is required.",true);return}const job=$("repairWarrantyJob").value,number=$("repairWarrantyNumber").value.trim(),start=$("repairWarrantyStart").value,expiry=$("repairWarrantyExpiry").value,coverage=$("repairWarrantyCoverage").value.trim();if(!job||!number||!start||!expiry||expiry<start||!coverage){say("repairWarrantyMessage","Choose a job and enter valid warranty dates and coverage.",true);return}const button=$("repairWarrantyAdd");button.disabled=true;const {error}=await db.from("repair_warranty_records").insert({shop_id:currentShop.id,service_job_id:job,warranty_number:number,issued_at:new Date().toISOString().slice(0,10),starts_on:start,expires_on:expiry,coverage_description:coverage,terms:$("repairWarrantyTerms").value.trim()||null,status:"active"});button.disabled=false;if(error){say("repairWarrantyMessage","Could not issue warranty: "+error.message,true);return} $("repairWarrantyForm").reset();say("repairWarrantyMessage","Warranty issued and saved.");await loadRepairWarranties()});
  $("digitalApplicationForm").addEventListener("submit",async e=>{e.preventDefault();if(!currentShop||!canManageProducts()){say("digitalSevaMessage","An active Digital Seva subscription is required.",true);return}const service=$("digitalServiceName").value.trim(),name=$("digitalApplicantName").value.trim(),phone=$("digitalApplicantPhone").value.trim(),applied=$("digitalAppliedOn").value,expected=$("digitalExpectedDate").value||null,fee=Number($("digitalServiceFee").value),paid=Number($("digitalAmountPaid").value);if(!service||!name||!phone||!applied||(expected&&expected<applied)||!Number.isFinite(fee)||fee<0||!Number.isFinite(paid)||paid<0||paid>fee){say("digitalSevaMessage","Check service, applicant, dates and fee/payment amounts.",true);return}$("digitalApplicationAdd").disabled=true;const {data,error}=await db.from("digital_service_applications").insert({shop_id:currentShop.id,service_name:service,applicant_name:name,applicant_phone:phone,reference_number:$("digitalReference").value.trim()||null,applied_on:applied,expected_date:expected,service_fee:fee,amount_paid:paid,document_checklist:$("digitalDocumentChecklist").value.trim()||null,notes:$("digitalApplicationNotes").value.trim()||null}).select("application_number").single();$("digitalApplicationAdd").disabled=false;if(error){say("digitalSevaMessage","Could not save application: "+error.message,true);return}$("digitalApplicationForm").reset();$("digitalServiceFee").value="0";$("digitalAmountPaid").value="0";say("digitalSevaMessage","Application DS-"+data.application_number+" saved.");await loadDigitalApplications()});
  $("digitalSevaRefresh").addEventListener("click",loadDigitalApplications);
  $("digitalServicePublicCopy").addEventListener("click",async()=>{const value=$("digitalServicePublicUrl").value;if(!value)return;try{await navigator.clipboard.writeText(value);say("digitalSevaMessage","Customer request link copied. Share it with applicants.")}catch{const input=$("digitalServicePublicUrl");input.focus();input.select();const copied=document.execCommand("copy");say("digitalSevaMessage",copied?"Customer request link copied.":"Copy was blocked. Select and copy the link manually.",!copied)}});
