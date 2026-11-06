@@ -1451,7 +1451,9 @@ async function loadShopData(){
   await loadOfficeTasks();
   await loadElectronicsInventory();
   await loadElectronicsServiceJobs();
+  await loadRepairWarranties();
   await loadMedicalBatches();
+  await loadMedicalCompliance();
   await loadDigitalApplications();
   await loadGroceryProcurement();await loadCustomerCredit();
   const {data:trial,error:trialError}=await db.from("shop_trials").select("status,started_at,ends_at").eq("shop_id",currentShop.id).maybeSingle();
