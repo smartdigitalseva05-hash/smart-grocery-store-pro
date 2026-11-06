@@ -40,6 +40,13 @@ const handler = withSupabase({ auth: "none" }, async (req) => {
     .eq("id", body.booking_request_id).maybeSingle();
   if (requestError) return reply(503, { error: "Booking status could not be checked." });
   if (!request) return reply(404, { error: "Booking reference not found." });
+  const { error: limitError } = await admin.rpc("consume_payment_endpoint_rate_limit", {
+    p_user_id: request.id, p_action: "checkout",
+  });
+  if (limitError) {
+    if (limitError.code === "PT429") return reply(429, { error: "Too many payment attempts for this booking. Please wait 15 minutes and retry." });
+    return reply(503, { error: "Payment protection is temporarily unavailable. Please retry later." });
+  }
   if (request.status !== "accepted" || !request.reservation_id)
     return reply(409, { approved: false, pending_approval: request.status === "pending",
       error: request.status === "pending" ? "Your request is awaiting hotel approval. Check again after the hotel confirms it." : "This booking is not approved for payment." });
