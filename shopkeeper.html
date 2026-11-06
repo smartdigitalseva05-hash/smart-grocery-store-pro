@@ -789,7 +789,7 @@ async function loadHotelBookingRequests(){
  list.replaceChildren();say("hotelBookingRequestMessage","Loading guest booking requests…");
  const {data,error}=await db.from("hotel_booking_requests").select("id,requested_room_type,guest_name,guest_phone,guest_count,check_in,check_out,notes,status,created_at,shopkeeper_notes,reservation_id").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(100);
  if(error){say("hotelBookingRequestMessage","Booking requests could not load: "+error.message,true);return}
- const rows=data||[];say("hotelBookingRequestMessage",rows.length+" latest booking request(s) shown.");
+ const rows=data||[];const {data:hotelPayments,error:hotelPaymentError}=await db.from("hotel_payment_records").select("booking_request_id,amount,payment_status,verified_at").eq("shop_id",currentShop.id).order("created_at",{ascending:false}).limit(200);const paymentByRequest=new Map((hotelPayments||[]).filter(p=>p.booking_request_id).map(p=>[p.booking_request_id,p]));if(hotelPaymentError)say("hotelBookingRequestMessage","Booking requests loaded; payment status could not be loaded.",true);else say("hotelBookingRequestMessage",rows.length+" latest booking request(s) shown.");
  if(!rows.length){const empty=document.createElement("div");empty.className="notice";empty.textContent="No guest requests yet. Share the booking link above to receive online requests.";list.append(empty);return}
  rows.forEach(request=>{
   const card=document.createElement("article");card.className="product";
@@ -799,6 +799,7 @@ async function loadHotelBookingRequests(){
   const meta=document.createElement("div");meta.className="sub";meta.textContent=request.requested_room_type+" · "+request.check_in+" → "+request.check_out+" · "+request.guest_phone;card.append(meta);
   if(request.notes){const note=document.createElement("div");note.className="sub";note.textContent="Guest note: "+request.notes;card.append(note)}
   if(request.reservation_id){const linked=document.createElement("div");linked.className="sub";linked.textContent="Linked reservation: "+request.reservation_id;card.append(linked)}
+  const hotelPayment=paymentByRequest.get(request.id);if(hotelPayment){const pay=document.createElement("div");pay.className="sub";pay.textContent="Online payment: "+hotelPayment.payment_status+" · "+money(hotelPayment.amount);if(hotelPayment.verified_at)pay.textContent+=" · verified "+new Date(hotelPayment.verified_at).toLocaleString();card.append(pay)}
   if(request.status==="pending"){
    const actions=document.createElement("div");actions.className="product-actions";
    const use=document.createElement("button");use.type="button";use.textContent="Use request & assign room";use.disabled=!canManageProducts();
