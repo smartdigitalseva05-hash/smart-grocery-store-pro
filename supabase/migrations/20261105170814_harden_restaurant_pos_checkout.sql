@@ -32,3 +32,4 @@ CREATE INDEX IF NOT EXISTS restaurant_sale_items_sale_idx
  ON public.restaurant_sale_items(sale_id);
 CREATE INDEX IF NOT EXISTS restaurant_sale_items_menu_item_idx
  ON public.restaurant_sale_items(menu_item_id);
+
