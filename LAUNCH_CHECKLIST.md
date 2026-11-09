@@ -1,17 +1,14 @@
 # Smart Business Pro — Launch Readiness Checklist
 
-Last verified: 2026-11-04
+Last verified: 2026-11-09
 
 ## Verified and deployed
 
 - GitHub Pages deployment workflow succeeded for latest verified website commit `c244dcf1b3e056d22d702f7829c836e00aa8fb05`.
 - All 14 deployed HTML pages passed inline JavaScript syntax and duplicate-ID validation.
-- All three deployed Supabase Edge Functions passed Deno type-checking:
-  - `razorpay-subscription-checkout`
-  - `razorpay-verify-subscription-payment`
-  - `razorpay-payment-webhook`
+- Six Supabase Edge Functions are ACTIVE: the three subscription payment functions, `generate-shopkeeper-app`, `hotel-payment-checkout` and `hotel-payment-verify`. The latest main-branch CI type-checked all deployed function sources.
 - The approved customer storefront `index.html` remains unchanged. Its protected Git blob SHA is `854f4646215be9f0a5aaacc72ad4b7b56ac58f3e`.
-- All 48 public application tables have Row Level Security enabled (latest production query: 48 enabled, 0 disabled).
+- All 54 public application tables have Row Level Security enabled (production query on 2026-11-09: 54 enabled, 0 disabled); 197 migrations are applied.
 - Security Advisor has one remaining warning: leaked-password protection is disabled.
 - Performance Advisor has no remaining unindexed-foreign-key or multiple-permissive-policy findings. It reports unused indexes; do not remove those until real workload data is available.
 - Temporary smoke-test rows were rolled back. No smoke-test shops, reservations, payroll rows, repair jobs or service requests remain.
@@ -25,17 +22,16 @@ Last verified: 2026-11-04
 
 ## Current live-data baseline
 
-- 4 active profiles: 2 customers, 1 shopkeeper and 1 super admin.
-- 1 shop exists and is active: Grocery.
-- The grocery shop is on its one-time 7-day trial, started 2026-10-31 03:53 UTC and expiring 2026-11-07 03:53 UTC.
-- 1 product; 0 customer orders.
-- 1 ₹99 INR Razorpay payment record remains `pending` and `verified=false`; 0 paid subscriptions; 1 trial record.
+- 6 Auth users; 1 active Super Admin with a verified TOTP factor; 1 active shopkeeper.
+- 1 Grocery shop exists, currently inactive because its one-time 7-day trial is expired; 0 active trials.
+- 1 product; 0 customer orders; 0 active paid subscriptions.
+- 0 verified payments; 1 Razorpay payment record remains `pending` and `verified=false`.
 - 3 active subscription plans:
   - Basic: ₹99 monthly / ₹990 yearly
   - Pro: ₹199 monthly / ₹1,990 yearly
   - Enterprise: ₹299 monthly / ₹2,990 yearly
 - No live payment or paid-subscription transaction has yet been verified.
-- Only the grocery category currently has an active shop. Other business-type workflows still need real category accounts for full browser acceptance testing.
+- No shop is currently active. Other business-type workflows also need real category accounts for full browser acceptance testing.
 
 ## Required before public launch
 
@@ -85,11 +81,11 @@ Use real test accounts and category-specific shops to verify:
 
 These items are not represented as completed:
 
-- Restaurant POS, tax invoices and payment settlement.
-- Hotel online payment collection and automatic room-status/housekeeping synchronization.
-- Office task/project workflows and statutory payroll calculations (TDS, PF, ESI, gratuity and overtime).
-- Electronics warranty-claim automation.
-- Medical prescription/dispensing and regulatory workflows. The current medical module is inventory support only.
+- GST-compliant restaurant tax invoices and verified online POS settlement; the basic POS invoice/receipt workflow exists, but UPI/card selection only records a payment method.
+- Automatic hotel room-status/housekeeping synchronization and live end-to-end acceptance of the deployed hotel Razorpay payment flow.
+- Advanced office project reporting, gratuity/overtime automation; PF/ESI reference calculations and itemized payroll are implemented but require employer-confirmed rules and professional review; TDS remains manual.
+- Electronics manufacturer warranty-claim automation; warranty register, issuance and claim notes are implemented.
+- Medical prescription/dispensing and full regulatory workflows; inventory and batch-compliance checks are implemented.
 - Digital Seva private document storage and official portal integrations. The public form intentionally does not collect identity numbers, OTPs or document scans.
 - Full end-to-end acceptance testing for all 11 business types.
 
@@ -149,3 +145,14 @@ These items are not represented as completed:
 - Real browser acceptance testing for all 11 categories, end-to-end Razorpay captured/failed/dismissed/duplicate-webhook cases, and recovery/backup restore tests remain open. No physical Android/browser tests are claimed.
 - Medical workflows remain inventory support only; prescription/dispensing and regulatory workflows are not complete. Other specialist scope listed above remains pending.
 - Preserve the existing customer storefront and production data. Never manually mark a payment successful or activate a subscription without gateway verification.
+
+
+## Production verification update — 2026-11-09
+
+- Production database read-only audit: 54 public tables, all with RLS enabled; 197 migrations applied; 57 catalogue categories across 12 business-type values (the 11 core categories remain preserved, plus a separate `healthy_food_breakfast` extension).
+- Live state: 6 Auth users; 1 active Super Admin with verified TOTP; 1 active shopkeeper; 1 Grocery shop inactive after trial expiry; 1 product; 0 orders; 0 active paid subscriptions; 0 verified payments; 1 pending/unverified payment.
+- Six Edge Functions report ACTIVE. Subscription checkout/verification/webhook and shopkeeper-app generation are deployed; hotel payment checkout/verification are also deployed. Their live end-to-end payment acceptance is not yet verified.
+- PR #8 merged to main as `bfe26fa284f82d81bd5595344afefbf71c40308f`. It adds the two deployed hotel payment sources to version control, per-booking rate-limit calls (5 checkout and 10 verification attempts per rolling 15 minutes, fail-closed), regression tests and CI Deno type-checking. This PR did not deploy updated Edge Function code or change Supabase production settings.
+- GitHub Actions run 42581881283: static project validation, hotel payment Deno type-check, reachable-history secret scan, static page/category checks and payment helper tests succeeded. Runs 42581881306 and 42581880711: custom deployment and GitHub Pages build/deployment succeeded.
+- Security Advisor: one warning remains, leaked-password protection disabled; this setting is plan-gated on the current Free tier. Performance Advisor reports unused indexes; no index was dropped.
+- Launch remains blocked on real Razorpay Test Mode acceptance (including existing pending-payment reconciliation), production hotel endpoint rate-limit deployment/review, fresh Super Admin MFA login and sensitive-action tests, all-11-category real-account browser acceptance, and backup/recovery restore evidence. Do not manually activate the expired shop or mark any payment successful.
