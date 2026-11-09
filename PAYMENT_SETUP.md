@@ -1,4 +1,4 @@
-# Razorpay setup — Smart Grocery Store Pro
+# Razorpay setup — Smart Business Pro
 
 The subscription and hotel-booking Razorpay Edge Functions are deployed. Payments are **not ready for public/live use** until the merchant adds API credentials to Supabase Edge Function Secrets, registers the webhook, and completes the Test Mode acceptance checks below.
 
