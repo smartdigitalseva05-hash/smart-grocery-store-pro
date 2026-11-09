@@ -1,4 +1,4 @@
-# Smart Grocery Store Pro
+# Smart Business Pro
 
 Multi-business commerce and operations platform with a grocery customer storefront, shopkeeper workspaces, Owner controls, subscriptions, order tracking and specialist modules for garments, jewellery, restaurants, hotels, offices, electronics, medical inventory and Digital Seva.
 
