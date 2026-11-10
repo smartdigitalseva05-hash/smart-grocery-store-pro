@@ -160,6 +160,7 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
      if(readyDownloadUrl){window.location.assign(readyDownloadUrl);return;}
      if(button.disabled)return;
      if(!window.confirm("Generate a separate Android app for "+(shop.name||"this shop")+"? It will be pinned to this shop and still require the approved shopkeeper login."))return;
+     const buildStartedAt=Date.now();
      button.disabled=true;button.textContent="⏳ Queueing app build…";
      const {data,error}=await client.functions.invoke("generate-shopkeeper-app",{body:{shop_id:shop.id}});
      if(error||!data?.queued){
@@ -181,7 +182,8 @@ button{border:0;border-radius:11px;padding:12px 16px;background:#38bdf8;color:#0
          if(response.ok){
            const release=await response.json();
            const apk=(release.assets||[]).find(asset=>String(asset.name||"").toLowerCase().endsWith(".apk"));
-           if(apk?.browser_download_url){
+           const uploadedAt=Date.parse(apk?.updated_at||apk?.created_at||"");
+           if(apk?.browser_download_url&&Number.isFinite(uploadedAt)&&uploadedAt>=buildStartedAt-60000){
              button.textContent="⬇ Download Shopkeeper APK";button.disabled=false;
              button.className="safe";
              readyDownloadUrl=apk.browser_download_url;
