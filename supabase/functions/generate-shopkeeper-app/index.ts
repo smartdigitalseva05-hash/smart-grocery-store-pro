@@ -11,16 +11,6 @@ const cors = {
 function reply(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: cors });
 }
-function adminClient() {
-  const url = Deno.env.get("SUPABASE_URL") || "";
-  const raw = Deno.env.get("SUPABASE_SECRET_KEYS") || "";
-  let key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  if (raw) {
-    try { const parsed = JSON.parse(raw); if (typeof parsed?.default === "string") key = parsed.default; } catch { /* legacy key fallback */ }
-  }
-  if (!url || !key) throw new Error("Supabase server secret is unavailable.");
-  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
-}
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
@@ -47,18 +37,27 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
     error: "APK builder is not connected yet. Add a GitHub token as Supabase Edge Function secret GITHUB_ACTIONS_TOKEN (Actions: write permission), then retry."
   });
 
-  const admin = adminClient();
-  const { data: shop, error: shopError } = await admin.from("shops")
+  // Use the authenticated Owner session for database reads. This applies the
+  // existing Super Admin RLS policies and avoids a separately configured key.
+  const { data: shop, error: shopError } = await ctx.supabase.from("shops")
     .select("id,owner_id,name,status,is_active,subscription_expires_at")
     .eq("id", body.shop_id).maybeSingle();
-  if (shopError || !shop) return reply(404, { error: "Shop not found." });
+  if (shopError) {
+    console.error("Shop lookup failed", shopError.code, shopError.message);
+    return reply(500, { error: "Could not verify the shop record. Refresh the Owner Panel and retry." });
+  }
+  if (!shop) return reply(404, { error: "Shop not found in the Owner-accessible shop list." });
   if (shop.status !== "active" || shop.is_active !== true ||
       !shop.subscription_expires_at || new Date(shop.subscription_expires_at).getTime() <= Date.now()) {
     return reply(409, { error: "Only an active shop with a current subscription can receive an app." });
   }
-  const { data: profile, error: profileError } = await admin.from("profiles")
+  const { data: profile, error: profileError } = await ctx.supabase.from("profiles")
     .select("id,role,is_active").eq("id", shop.owner_id).maybeSingle();
-  if (profileError || !profile || profile.role !== "shopkeeper" || profile.is_active !== true) {
+  if (profileError) {
+    console.error("Shopkeeper profile lookup failed", profileError.code, profileError.message);
+    return reply(500, { error: "Could not verify the linked shopkeeper account. Refresh and retry." });
+  }
+  if (!profile || profile.role !== "shopkeeper" || profile.is_active !== true) {
     return reply(409, { error: "The linked shopkeeper account is not approved and active." });
   }
 
