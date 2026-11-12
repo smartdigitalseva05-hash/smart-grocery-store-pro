@@ -144,13 +144,51 @@ jobs:
           android {{
             namespace '{pkg}'
             compileSdk 35
+            signingConfigs {{
+              release {{
+                storeFile file(System.getenv("ANDROID_KEYSTORE_PATH"))
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+              }}
+            }}
+            buildTypes {{
+              release {{ signingConfig signingConfigs.release; minifyEnabled false }}
+            }}
             defaultConfig {{ applicationId '{pkg}'; minSdk 23; targetSdk 35; versionCode 1; versionName '1.0.0' }}
           }}""",encoding="utf-8")
           print("Building isolated app package:",pkg)
           PY
 
-      - name: Build shopkeeper APK
-        run: gradle --no-daemon assembleDebug
+      - name: Prepare Android release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Missing required GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+          KEYSTORE_PATH="$RUNNER_TEMP/smart-business-pro-release.keystore"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          chmod 600 "$KEYSTORE_PATH"
+          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Build and verify signed shopkeeper APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          gradle --no-daemon assembleRelease
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
 
       - name: Publish per-shop APK release
         env:
@@ -165,6 +203,7 @@ jobs:
           TAG="shopkeeper-${SHOP_ID}"
           SLUG="$(printf '%s' "$SHOP_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g' | sed -E 's/^-|-$//g' | cut -c1-32)"
           FILE="SmartBusinessPro-${SLUG:-shop}-${PACKAGE_SUFFIX}.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "$FILE"
+          cp app/build/outputs/apk/release/app-release.apk "$FILE"
+          sha256sum "$FILE" > "$FILE.sha256"
           gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1 || gh release create "$TAG" --repo "$GH_REPO" --title "Smart Business Pro · $SHOP_NAME" --notes "Shopkeeper Android app for the approved shop. Package suffix: $PACKAGE_SUFFIX. Login and database RLS remain required."
           gh release upload "$TAG" "$FILE" --repo "$GH_REPO" --clobber
